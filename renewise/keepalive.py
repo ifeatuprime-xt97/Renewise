@@ -77,7 +77,7 @@ def load_settings(
 ) -> KeepAliveSettings:
     env = os.environ if environ is None else environ
 
-    port_raw = env.get("KEEP_ALIVE_PORT") or env.get("PORT") or "0"
+    port_raw = env.get("KEEP_ALIVE_PORT") or env.get("PORT") or "10000"
     try:
         port = int(port_raw)
     except ValueError:

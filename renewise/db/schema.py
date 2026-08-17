@@ -370,7 +370,7 @@ async def init_db() -> None:
             # Seed platform_config singleton
             await db.execute(
                 "INSERT INTO platform_config (id, payments_paused) "
-                "VALUES (1, FALSE) ON CONFLICT DO NOTHING"
+                "OVERRIDING SYSTEM VALUE VALUES (1, FALSE) ON CONFLICT DO NOTHING"
             )
             # Seed fee defaults
             buyer_bps_default = int(os.getenv("BUYER_FEE_BPS", "200"))
