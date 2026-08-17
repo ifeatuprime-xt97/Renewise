@@ -1,0 +1,13 @@
+{
+  "projects": [
+    {
+      "name": "PaymentVault",
+      "path": "PaymentVault.tact",
+      "output": "build",
+      "options": {
+        "debug": false,
+        "masterchain": false
+      }
+    }
+  ]
+}

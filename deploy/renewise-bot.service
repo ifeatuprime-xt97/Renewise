@@ -1,0 +1,25 @@
+[Unit]
+Description=Renewise — Main Bot + Watcher
+After=network.target
+
+[Service]
+# ── adjust these three lines for your server ──
+User=renewise
+WorkingDirectory=/opt/renewise
+EnvironmentFile=/opt/renewise/.env
+
+ExecStart=/opt/renewise/.venv/bin/python run.py
+
+# Restart automatically on any non-zero exit or signal
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Log goes to journald; view with: journalctl -u renewise-bot -f
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=renewise-bot
+
+[Install]
+WantedBy=multi-user.target

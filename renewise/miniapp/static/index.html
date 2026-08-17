@@ -1,0 +1,4018 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Renewise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Concert+One&family=Nunito:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    /* ── Design tokens — MyTonWallet-inspired palette ── */
+    :root {
+      --bg: #090D16;
+      --surface: #131821;
+      --surface2: #1a2133;
+      --text: #ffffff;
+      --sub: rgba(255, 255, 255, 0.55);
+      --accent: #0098EA;
+      --accent-dark: #007ac4;
+      --accent-txt: #ffffff;
+      --link: #0098EA;
+      --destructive: #ff5c5c;
+      /* semantic */
+      --success: #4ade80;
+      --warn: #fbbf24;
+      --danger: #ff5c5c;
+      /* glass */
+      --glass-bg: rgba(255, 255, 255, 0.04);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-blur: 14px;
+      /* geometry */
+      --r: 32px;
+      --r-sm: 24px;
+      --r-xs: 12px;
+      /* fonts */
+      --font-display: 'Concert One', cursive;
+      --font-body: 'Nunito', 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      height: 100%;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.55;
+      min-height: 100%;
+      padding-bottom: calc(90px + env(safe-area-inset-bottom));
+    }
+
+    /* ══════════════════════════════════════════════════
+       TOP BAR
+    ══════════════════════════════════════════════════ */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      padding: 12px 18px 12px;
+      background: var(--bg);
+      border-bottom: none;
+    }
+
+    .brand-logo {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .brand-wordmark {
+      font-size: 21px;
+      font-weight: 400;
+      letter-spacing: .5px;
+      line-height: 1;
+      font-family: var(--font-display);
+    }
+
+    .brand-wordmark .rene {
+      color: #ffffff;
+    }
+
+    .brand-wordmark .wise {
+      color: var(--accent);
+    }
+
+    /* ══════════════════════════════════════════════════
+       BOTTOM NAV — wallet-style
+    ══════════════════════════════════════════════════ */
+    .bottom-nav {
+      position: fixed;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      width: calc(100% - 48px);
+      max-width: 380px;
+      background: #131821;
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: 40px;
+      padding: 6px 8px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, .8), 0 2px 8px rgba(0, 0, 0, .5);
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 8px 6px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: .2px;
+      transition: color .18s, background .18s;
+      -webkit-tap-highlight-color: transparent;
+      border-radius: 32px;
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: #ffffff;
+      transition: transform .18s;
+    }
+
+    /* active: TON (GRAM) blue pill */
+    .nav-item.active {
+      color: var(--accent);
+      background: rgba(0, 152, 234, .15);
+    }
+
+    .nav-item.active svg {
+      stroke: var(--accent);
+      transform: scale(1.08);
+    }
+
+    .nav-indicator {
+      display: none;
+    }
+
+    /* ══════════════════════════════════════════════════
+       PAGE LAYOUT
+    ══════════════════════════════════════════════════ */
+    .page {
+      display: none;
+      padding: 24px 20px 110px;
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    .page.show {
+      display: block;
+      animation: pageIn .25s ease-out forwards;
+    }
+
+    @keyframes pageIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .page-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -.4px;
+    }
+
+    /* ══════════════════════════════════════════════════
+       GLASS CARD BASE
+    ══════════════════════════════════════════════════ */
+    .glass {
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--r);
+      box-shadow:
+        0 1px 2px rgba(0, 0, 0, .3),
+        0 8px 24px rgba(0, 0, 0, .25);
+    }
+
+    /* ══════════════════════════════════════════════════
+       NETWORK CARD
+    ══════════════════════════════════════════════════ */
+    .net-card {
+      padding: 18px;
+      margin-bottom: 12px;
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        0 1px 2px rgba(0, 0, 0, .3),
+        0 8px 24px rgba(0, 0, 0, .25);
+      transition: transform .15s, box-shadow .15s;
+    }
+
+    .net-card:active {
+      transform: scale(.985);
+    }
+
+    .net-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0), transparent);
+    }
+
+    /* ── Card header ── */
+    .net-hdr {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-dot.active {
+      background: var(--success);
+      box-shadow: 0 0 6px rgba(74, 222, 128, .5);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 6px rgba(74, 222, 128, .5); }
+      50%       { box-shadow: 0 0 12px rgba(74, 222, 128, .8); }
+    }
+
+    .status-dot.paused {
+      background: var(--warn);
+      box-shadow: 0 0 6px rgba(240, 165, 0, .4);
+    }
+
+    .status-dot.frozen,
+    .status-dot.suspended {
+      background: var(--danger);
+      box-shadow: 0 0 6px rgba(224, 92, 92, .4);
+    }
+
+    .net-name {
+      font-size: 16px;
+      font-weight: 700;
+      flex: 1;
+      color: #ffffff;
+      letter-spacing: -.2px;
+    }
+
+    .type-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .type-badge.channel {
+      color: #ffffff;
+      background: rgb(2, 158, 249);
+    }
+
+    .type-badge.group {
+      color: #ffffff;
+      background: rgb(172, 79, 249);
+    }
+
+    /* ── Data rows ── */
+    .net-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .data-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Wallet-app style: circular coloured icon container */
+    .data-row .ico {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ico-price {
+      background: #1a6ed4;
+    }
+
+    .ico-members {
+      background: #0f8c5a;
+    }
+
+    .ico-wallet {
+      background: #8b3fd8;
+    }
+
+    .ico-link {
+      background: #c07010;
+    }
+
+    .data-row .ico svg {
+      width: 17px;
+      height: 17px;
+      stroke: #ffffff;
+    }
+
+    .data-row .content {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .data-row .label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .5);
+      letter-spacing: .2px;
+    }
+
+    .data-row .value {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .data-row .value.mono {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      letter-spacing: .3px;
+    }
+
+    .data-row .value a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ── Divider ── */
+    .net-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, .07);
+      margin: 2px 0 14px;
+    }
+
+    /* ── Action buttons row ── */
+    .net-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .act-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 10px;
+      border-radius: var(--r-sm);
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .1);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .act-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .act-btn:active {
+      background: rgba(255, 255, 255, .14);
+      transform: scale(.97);
+    }
+
+    .act-btn.primary {
+      background: var(--accent);
+      border-color: transparent;
+      color: #ffffff;
+    }
+
+    .act-btn.primary svg {
+      stroke: #ffffff;
+    }
+
+    .act-btn.warn {
+      background: rgba(240, 165, 0, .22);
+      border-color: rgba(240, 165, 0, .32);
+      color: #ffffff;
+    }
+
+    .act-btn.warn svg {
+      stroke: #ffffff;
+    }
+
+    /* ══════════════════════════════════════════════════
+       SUBSCRIPTION CARD
+    ══════════════════════════════════════════════════ */
+    .sub-card {
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow:
+        0 1px 2px rgba(0, 0, 0, .3),
+        0 8px 24px rgba(0, 0, 0, .25);
+      transition: transform .15s, box-shadow .15s;
+    }
+
+    .sub-card:active {
+      transform: scale(.985);
+    }
+
+    .sub-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .sub-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .sub-price {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 6px 0;
+      letter-spacing: -.3px;
+      color: #ffffff;
+    }
+
+    .sub-price span {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, .55);
+    }
+
+    .sub-meta {
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, .55);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sub-meta svg {
+      width: 13px;
+      height: 13px;
+      stroke: #ffffff;
+    }
+
+    /* ── Status pill ── */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 20px;
+      color: #ffffff;
+    }
+
+    .pill svg {
+      width: 9px;
+      height: 9px;
+    }
+
+    .pill-active {
+      background: rgba(62, 207, 110, .3);
+    }
+
+    .pill-expired {
+      background: rgba(224, 92, 92, .3);
+    }
+
+    .pill-comped {
+      background: rgba(240, 165, 0, .3);
+    }
+
+    .pill-paused {
+      background: rgba(240, 165, 0, .3);
+    }
+
+    .pill-pending {
+      background: rgba(255, 255, 255, .15);
+    }
+
+    /* ══════════════════════════════════════════════════
+       BUTTONS
+    ══════════════════════════════════════════════════ */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: var(--r);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active {
+      opacity: .8;
+      transform: scale(.98);
+    }
+
+    .btn svg {
+      width: 17px;
+      height: 17px;
+      stroke: #ffffff;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 4px 24px rgba(0, 152, 234, .35);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .1);
+      color: #ffffff;
+      margin-top: 10px;
+    }
+
+    .btn-ghost svg {
+      stroke: #ffffff;
+    }
+
+    .btn-add-network {
+      background: rgba(0, 152, 234, 0.15);
+      border: 1.8px dashed rgba(0, 152, 234, 0.6);
+      color: var(--accent);
+      margin-top: 5px;
+    }
+
+    .btn-add-network svg {
+      stroke: #ffffff;
+    }
+
+    .btn-renew {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: #ffffff;
+      margin-top: 10px;
+    }
+
+    .btn-renew svg {
+      stroke: #ffffff;
+    }
+
+    .btn-link {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 4px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ══════════════════════════════════════════════════
+       FORM ELEMENTS
+    ══════════════════════════════════════════════════ */
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .6);
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    .field input,
+    .field select {
+      display: block;
+      width: 100%;
+      background: #1a2133;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, .09);
+      border-radius: var(--r-sm);
+      padding: 13px 14px;
+      font-family: inherit;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .field input::placeholder {
+      color: rgba(255, 255, 255, .3);
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: rgba(0, 152, 234, .6);
+      box-shadow: 0 0 0 3px rgba(0, 152, 234, .12);
+    }
+
+    .field select option {
+      background: var(--surface);
+      color: #ffffff;
+    }
+
+    .field-err {
+      color: #ff7070;
+      font-size: 12px;
+      margin-top: 5px;
+      font-weight: 600;
+    }
+
+    /* ══════════════════════════════════════════════════
+       WIZARD STEPPER
+    ══════════════════════════════════════════════════ */
+    .stepper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 16px 0 22px;
+    }
+
+    .step-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .2);
+      transition: width .25s ease, background .25s ease, box-shadow .25s ease;
+    }
+
+    .step-dot.active {
+      background: var(--accent);
+      width: 20px;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0, 152, 234, .5);
+    }
+
+    .step-dot.done {
+      background: var(--success);
+    }
+
+    .wiz-step {
+      display: none;
+    }
+
+    .wiz-step.show {
+      display: block;
+    }
+
+    /* ══════════════════════════════════════════════════
+       CHAT PICKER
+    ══════════════════════════════════════════════════ */
+    .chat-item {
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border-radius: var(--r-sm);
+      background: #1a2133;
+      border: 1px solid rgba(255, 255, 255, .07);
+      cursor: pointer;
+      transition: border-color .18s, background .18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .chat-item:active {
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .chat-item.selectable:hover {
+      border-color: rgba(0, 152, 234, .4);
+    }
+
+    .chat-item .ci-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chat-item .ci-name svg {
+      width: 16px;
+      height: 16px;
+      stroke: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .chat-item .ci-warn {
+      font-size: 12px;
+      color: var(--warn);
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .chat-item .ci-warn svg {
+      width: 12px;
+      height: 12px;
+      stroke: var(--warn);
+    }
+
+    .chat-item.disabled {
+      opacity: .4;
+      cursor: default;
+    }
+
+    .chat-item.selectable:hover {
+      border-color: rgba(0, 152, 234, .5);
+    }
+
+    /* ══════════════════════════════════════════════════
+       FEE BOX
+    ══════════════════════════════════════════════════ */
+    .fee-box {
+      padding: 14px 16px;
+      border-radius: var(--r-sm);
+      margin: 14px 0;
+    }
+
+    .fee-box-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .6);
+      letter-spacing: .3px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .fee-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .fee-row:last-child {
+      border-bottom: none;
+    }
+
+    .fee-row .fl {
+      font-size: 13px;
+      color: rgba(255, 255, 255, .6);
+    }
+
+    .fee-row .fv {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    /* ══════════════════════════════════════════════════
+       HISTORY LIST
+    ══════════════════════════════════════════════════ */
+    .hist-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 13px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .hist-item:last-child {
+      border-bottom: none;
+    }
+
+    .hist-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hist-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .hist-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .hist-date {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .55);
+    }
+
+    .hist-hash {
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    .hist-price {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    /* ══════════════════════════════════════════════════
+       ALERTS
+    ══════════════════════════════════════════════════ */
+    .alert {
+      padding: 12px 14px;
+      border-radius: var(--r-sm);
+      font-size: 13.5px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: #ffffff;
+    }
+
+    .alert svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      stroke: #ffffff;
+    }
+
+    .alert-error {
+      background: rgba(224, 92, 92, .25);
+      border: 1px solid rgba(224, 92, 92, .35);
+    }
+
+    .alert-success {
+      background: rgba(62, 207, 110, .22);
+      border: 1px solid rgba(62, 207, 110, .32);
+    }
+
+    .alert-info {
+      background: rgba(0, 152, 234, .18);
+      border: 1px solid rgba(0, 152, 234, .3);
+    }
+
+    /* ══════════════════════════════════════════════════
+       SETTINGS
+    ══════════════════════════════════════════════════ */
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .settings-row.no-border {
+      border-bottom: none;
+    }
+
+    .settings-row .sr-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .settings-row .sr-ico {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(0, 152, 234, .2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .settings-row .sr-ico svg {
+      width: 17px;
+      height: 17px;
+      stroke: #ffffff;
+    }
+
+    .settings-row .sr-label {
+      font-size: 15px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .settings-row .sr-sub {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .55);
+      margin-top: 1px;
+    }
+
+    .settings-row .sr-right svg {
+      width: 16px;
+      height: 16px;
+      stroke: rgba(255, 255, 255, .45);
+      transition: transform 0.2s;
+    }
+
+    /* Accordion styles */
+    .accordion-content {
+      display: none;
+      padding: 0 16px 16px 60px;
+      font-size: 13.5px;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.6;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .accordion-content b {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .accordion-content:last-child {
+      border-bottom: none;
+    }
+
+    .settings-row.open+.accordion-content {
+      display: block;
+    }
+
+    .settings-row.open .sr-right svg {
+      transform: rotate(180deg);
+    }
+
+    /* ══════════════════════════════════════════════════
+       UTILITY
+    ══════════════════════════════════════════════════ */
+    .back-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      padding: 4px 0;
+    }
+
+    .back-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: #ffffff;
+    }
+
+    .section-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .page-title {
+      color: #ffffff;
+      font-family: var(--font-display);
+      font-weight: 400;
+      letter-spacing: .3px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 48px 0;
+      color: rgba(255, 255, 255, .5);
+      font-size: 14px;
+    }
+
+    /* ── Skeleton shimmer ── */
+    .skeleton-card {
+      height: 120px;
+      border-radius: var(--r);
+      margin-bottom: 12px;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px 0;
+      color: rgba(255, 255, 255, .5);
+      font-size: 14px;
+      animation: pageIn .3s ease-out;
+    }
+
+    .empty svg {
+      width: 40px;
+      height: 40px;
+      stroke: rgba(255, 255, 255, .18);
+      display: block;
+      margin: 0 auto 12px;
+    }
+
+    /* ── Confirm overlay ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .6);
+      z-index: 100;
+      display: none;
+      align-items: flex-end;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    .overlay-sheet {
+      width: 100%;
+      border-radius: var(--r) var(--r) 0 0;
+      background: var(--surface);
+      border-top: 1px solid rgba(255, 255, 255, .1);
+      padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+    }
+
+    .overlay-sheet h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .overlay-sheet p {
+      font-size: 14px;
+      color: rgba(255, 255, 255, .6);
+      margin-bottom: 22px;
+    }
+
+    /* ── Instruction list (wizard step 0) ── */
+    .inst-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 14px 0;
+    }
+
+    .inst-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .inst-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: rgba(0, 152, 234, .2);
+      border: 1px solid rgba(0, 152, 234, .35);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .inst-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #ffffff;
+      padding-top: 2px;
+    }
+
+    .inst-text b {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .inst-text small {
+      color: rgba(255, 255, 255, .6);
+      font-size: 12px;
+    }
+
+    /* ══════════════════════════════════════════════════
+       MANAGE PAGE
+    ══════════════════════════════════════════════════ */
+    .manage-stats {
+      display: flex;
+      align-items: stretch;
+      border-radius: var(--r);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .manage-stat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 8px;
+      gap: 4px;
+    }
+
+    .manage-stat-divider {
+      width: 1px;
+      background: rgba(255, 255, 255, .08);
+      align-self: stretch;
+    }
+
+    .ms-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -.5px;
+    }
+
+    .ms-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, .55);
+      letter-spacing: .3px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .manage-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mgmt-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 10px;
+      background: #131821;
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: var(--r-sm);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+      text-align: center;
+    }
+
+    .mgmt-btn:active {
+      background: rgba(255, 255, 255, .1);
+      transform: scale(.97);
+    }
+
+    .mgmt-ico {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mgmt-ico svg {
+      stroke: #ffffff;
+    }
+
+    /* inline sub-panels */
+    .subpanel {
+      background: #131821;
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: var(--r);
+      padding: 18px;
+      margin-top: 2px;
+    }
+
+    .subpanel h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .member-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .member-row:last-child {
+      border-bottom: none;
+    }
+
+    .member-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .member-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .member-sub {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .55);
+    }
+
+    .member-comp-btn {
+      background: rgba(0, 152, 234, .18);
+      border: 1px solid rgba(0, 152, 234, .3);
+      color: var(--accent);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ══════════════════════════════════════════════════
+       ADMIN DASHBOARD & PRELOADER CSS
+    ══════════════════════════════════════════════════ */
+    #preloader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--accent);
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .admin-card {
+      background: linear-gradient(135deg, #005fa3 0%, #0098EA 50%, #38c8f5 100%);
+      border: none;
+      border-radius: var(--r);
+      padding: 22px 20px 20px;
+      margin: 0 0 18px;
+      position: relative;
+      overflow: hidden;
+      animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 12px 40px rgba(0, 152, 234, .4), 0 4px 12px rgba(0, 0, 0, .3);
+    }
+
+    .admin-card::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 160px;
+      height: 160px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .admin-card-title {
+      font-size: 28px;
+      font-weight: 400;
+      font-family: var(--font-display);
+      margin-bottom: 20px;
+      letter-spacing: 0.3px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .admin-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .admin-stat {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+    }
+
+    .admin-stat-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .admin-stat-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 16px;
+    }
+
+    .admin-stat-icon svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .admin-stat-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    .admin-stat-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.65);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    .admin-stat-value {
+      font-size: 24px;
+      font-weight: 800;
+      white-space: nowrap;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .admin-stat-value.hero {
+      font-family: var(--font-body);
+      font-size: clamp(28px, 12vw, 56px);
+      font-weight: 950;
+      letter-spacing: 0.5px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-symbol {
+      font-size: 1em;
+      opacity: 0.85;
+    }
+
+    .hero-cents {
+      font-size: 0.7em;
+      opacity: 0.85;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(74, 222, 128, 0.15);
+      color: #4ade80;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 8px;
+      letter-spacing: 0.2px;
+    }
+
+    /* ── Revenue unit toggle ── */
+    .rev-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 3px;
+      margin-top: 12px;
+    }
+    .rev-toggle-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: rgba(255,255,255,0.45);
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 4px 12px;
+      border-radius: 16px;
+      transition: background 0.18s, color 0.18s;
+      line-height: 1;
+    }
+    .rev-toggle-btn.active {
+      background: rgba(0,152,234,0.25);
+      color: var(--accent);
+    }
+
+    .hero-wallet {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.15);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.9);
+      gap: 6px;
+      margin-top: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .admin-stat-value.sub {
+      font-size: 18px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
+      text-shadow: none;
+    }
+
+    .admin-stat-label.sub {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-top: 2px;
+    }
+
+    .admin-sub-stats {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      margin-top: 4px;
+      align-items: center;
+    }
+
+    .admin-sub-stats>div {
+      padding-right: 16px;
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .admin-sub-stats>div:last-child {
+      border-right: none;
+      padding-right: 0;
+    }
+
+    .admin-card-footer {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding-top: 14px;
+    }
+
+    .text-yellow {
+      color: rgba(255, 230, 100, 0.95);
+    }
+
+    .text-purple {
+      color: rgba(220, 180, 255, 0.95);
+    }
+
+    .text-green {
+      color: rgba(100, 240, 160, 0.95);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- PRELOADER -->
+  <div id="preloader">
+    <div class="spinner"></div>
+    <div class="brand-wordmark" style="font-size: 24px;"><span class="rene">rene</span><span class="wise">wise</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════
+     TERMS OF SERVICE GATE — shown before any other UI
+     Hidden by default; displayed when terms not yet accepted.
+════════════════════════════════════════════════════ -->
+  <div id="tos-gate"
+    style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);overflow-y:auto;padding:0 0 120px;">
+    <div
+      style="padding:24px 20px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:16px;position:sticky;top:0;background:var(--bg);z-index:1;">
+      <img src="/static/public/logo.jpeg" alt="Renewise" style="width:36px;height:36px;border-radius:50%;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:18px;"><span class="rene">rene</span><span
+            class="wise">wise</span></div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:1px;">Terms of Service &amp; Privacy Policy
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:20px 20px 0;">
+      <div
+        style="background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);border-radius:12px;padding:13px 15px;margin-bottom:20px;font-size:13px;color:rgba(255,255,255,.8);line-height:1.55;">
+        Please read and accept our Terms of Service and Privacy Policy before using Renewise. You only need to do this
+        once — acceptance is shared between the bot and this app.
+      </div>
+
+      <!-- ToS body -->
+      <div id="tos-body" style="font-size:13.5px;line-height:1.7;color:rgba(255,255,255,.85);">
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">1. What Renewise Is</h2>
+        <p style="margin:0 0 16px;">Renewise is a Telegram bot and Mini App that lets group and channel admins charge
+          for membership access. Members pay in <strong>GRAM (TON)</strong>. Payments go directly to a smart contract
+          that atomically splits funds between the admin and Renewise's platform fee — no middleman holds your money.
+        </p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">2. Non-Custodial Architecture</h2>
+        <p style="margin:0 0 16px;">Renewise never holds, controls, or has discretionary access to admin or member funds. Completed
+          on-chain splits are final and cannot be reversed. Overpayments above $1.00 USD are detected by Renewise's backend
+          and refunded to the member's TON (GRAM) wallet via a dedicated on-chain trigger, typically within 24 hours.</p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">3. Fees</h2>
+        <p style="margin:0 0 16px;">A <strong>2.00% buyer fee</strong> is added to the subscription price paid by the
+          member. A <strong>3.30% admin fee</strong> is deducted from the admin's payout. Both fees are always shown
+          to both parties before any payment is made.</p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">4. Pricing &amp; Currency</h2>
+        <p style="margin:0 0 16px;">Admins set prices in USD. The GRAM equivalent is calculated at the live exchange
+          rate at the time the payment link is generated and locked in — it does not change after the link is issued.
+        </p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">5. Subscriptions &amp; Renewals</h2>
+        <p style="margin:0 0 16px;">Renewal reminders are sent 3 days before expiry. A 3-day grace period applies before
+          automatic removal. Comped members are excluded from enforcement.</p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">6. Admin Responsibilities</h2>
+        <p style="margin:0 0 16px;">Admins are solely responsible for the legality and content of their paywalled group
+          or channel, compliance with Telegram's Terms of Service, and the accuracy of their pricing and wallet address.
+        </p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">7. Prohibited Use</h2>
+        <p style="margin:0 0 16px;">Renewise may not be used for illegal content, fraud, intellectual property
+          infringement, or anything that violates Telegram's Terms of Service. Renewise may suspend or ban any account
+          at its discretion.</p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">8. No Warranty</h2>
+        <p style="margin:0 0 16px;">The service is provided "as is." Renewise is not liable for blockchain outages,
+          wallet failures, exchange-rate fluctuations, or third-party service issues.</p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">9. Privacy — What We Collect</h2>
+        <p style="margin:0 0 8px;">We store:</p>
+        <ul style="margin:0 0 16px;padding-left:18px;">
+          <li>Your Telegram user ID, first name, and username</li>
+          <li>Subscription status, renewal dates, and payment transaction hashes</li>
+          <li>For admins: group/channel settings, pricing, and payout wallet address</li>
+          <li>An audit log of all administrative actions</li>
+        </ul>
+        <p style="margin:0 0 16px;">We do <strong>not</strong> collect private keys, wallet seed phrases, or the content
+          of your Telegram messages outside direct bot interactions.</p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">10. On-Chain Data is Public</h2>
+        <p style="margin:0 0 16px;">Every payment transaction — including amounts and wallet addresses — is permanently
+          and publicly visible on the TON (GRAM) blockchain. This is a property of the blockchain, not a choice Renewise makes.
+        </p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">11. Data Sharing</h2>
+        <p style="margin:0 0 16px;">We share data only with TonCenter (on-chain verification) and CoinGecko (exchange
+          rates). We never sell your data.</p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">12. Your Rights</h2>
+        <p style="margin:0 0 16px;">You may request access to or deletion of your off-chain personal data via support at
+          any time. On-chain data is immutable and cannot be deleted.</p>
+
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">13. Age</h2>
+        <p style="margin:0 0 24px;">You must be 18 or older (or the age of majority in your jurisdiction) to use this
+          service.</p>
+
+      </div><!-- /tos-body -->
+
+      <!-- Agree / Decline -->
+      <div
+        style="position:fixed;bottom:0;left:0;right:0;padding:16px 20px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 70%,transparent);z-index:2;">
+        <div id="tos-err"
+          style="display:none;background:rgba(224,92,92,.2);border:1px solid rgba(224,92,92,.3);border-radius:10px;padding:10px 13px;font-size:12.5px;color:#ff9090;margin-bottom:10px;">
+        </div>
+        <button id="tos-agree-btn" class="btn btn-primary" style="margin-bottom:10px;" onclick="tosAgree()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          I Agree — Continue
+        </button>
+        <button class="btn btn-ghost" style="font-size:13px;padding:11px;" onclick="tosDecline()">
+          ❌ Decline &amp; Close
+        </button>
+      </div>
+
+    </div>
+  </div><!-- /tos-gate -->
+  <!-- ════════════════════════════════════════════════════
+     TOP BAR
+════════════════════════════════════════════════════ -->
+  <header class="top-bar">
+    <img class="brand-logo" src="/static/public/logo.jpeg" alt="Renewise">
+    <div class="brand-wordmark"><span class="rene">rene</span><span class="wise">wise</span></div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Dashboard (My Networks)
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-dashboard">
+    <!-- Admin Dashboard Card -->
+    <div class="admin-card" id="admin-hero-card" style="display:none">
+      <div class="admin-card-title" id="admin-welcome-title">Welcome back!</div>
+      <div class="admin-stats">
+        <!-- Hero: Total Revenue -->
+        <div style="padding: 10px 0 20px; text-align: center;">
+          <div class="admin-stat-value hero" id="admin-total-revenue">
+            <span class="hero-symbol">$</span>0<span class="hero-cents">.00</span>
+          </div>
+        </div>
+
+        <!-- Sub-stats row: active members + networks -->
+        <div class="admin-sub-stats">
+          <div>
+            <div class="admin-stat-value sub" id="admin-total-members">0</div>
+            <div class="admin-stat-label sub">Active Members</div>
+          </div>
+          <div>
+            <div class="admin-stat-value sub" id="admin-total-groups">0</div>
+            <div class="admin-stat-label sub">Groups</div>
+          </div>
+          <div>
+            <div class="admin-stat-value sub" id="admin-total-channels">0</div>
+            <div class="admin-stat-label sub">Channels</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="section-hdr" id="dashboard-hdr" style="display:none">
+      <h1 class="page-title">My Networks</h1>
+      <button class="btn-link" onclick="startWizard()">+ Add</button>
+    </div>
+    <div id="networks-list">
+      <div class="loading">Loading…</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Subscriptions
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-subs">
+    <div class="section-hdr" style="margin-bottom:8px">
+      <h1 class="page-title">Subscriptions</h1>
+    </div>
+    <p style="font-size:13px;margin-bottom:16px">
+      Payments on <span style="color:var(--accent);font-weight:700">Gram</span>.
+      Subscriptions made simple.
+    </p>
+    <!-- Active / History toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:18px">
+      <button id="subs-tab-active" onclick="showSubsTab('active')"
+        style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;
+               background:var(--accent);color:#fff;cursor:pointer">Active</button>
+      <button id="subs-tab-history" onclick="showSubsTab('history')"
+        style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;
+               background:var(--surface2);color:rgba(255,255,255,.6);cursor:pointer">History</button>
+    </div>
+    <div id="subs-list">
+      <div class="loading">Loading…</div>
+    </div>
+    <div id="subs-history-list" style="display:none">
+      <div class="loading">Loading…</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Settings
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-settings">
+    <h1 class="page-title" style="margin-bottom:20px">Settings</h1>
+    <div class="glass" style="border-radius:var(--r);overflow:hidden;margin-bottom:14px" id="settings-accordion-group">
+
+      <!-- Revenue Currency (admin-only, shown/hidden by JS) -->
+      <div class="settings-row" id="rev-unit-row" style="display:none">
+        <div class="sr-left">
+          <div class="sr-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v4l3 3"/>
+            </svg>
+          </div>
+          <div>
+            <div class="sr-label">Revenue Display</div>
+            <div class="sr-sub" id="rev-unit-sub">Showing in USD</div>
+          </div>
+        </div>
+        <div class="sr-right" style="gap:0">
+          <div class="rev-toggle" style="display:inline-flex;margin:0">
+            <button class="rev-toggle-btn active" id="rev-btn-usd" onclick="_setRevUnit('USD')">USD</button>
+            <button class="rev-toggle-btn" id="rev-btn-gram" onclick="_setRevUnit('GRAM')">GRAM</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- How it works -->
+      <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4" />
+              <path d="M12 8h.01" />
+            </svg></div>
+          <div>
+            <div class="sr-label">How it Works</div>
+            <div class="sr-sub">Guide for admins & members</div>
+          </div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
+      </div>
+      <div class="accordion-content">
+        <b>1️⃣ Add the bot as admin</b><br>
+        Add Renewise to your group or channel as an Admin with the required permissions Invite Users and Manage Chat /
+        Post Messages.<br><br>
+        <b>2️⃣ Set your price</b><br>
+        Choose a USD price and billing interval (weekly or monthly). Members always pay the equivalent amount in GRAM at
+        the live exchange rate.<br><br>
+        <b>3️⃣ Members pay the bot handles the rest</b><br>
+        Share your unique invite link. When someone pays, the bot auto-approves their join request and sends them a
+        welcome message. No manual work needed.<br><br>
+        <b>4️⃣ Automatic renewal &amp; removal</b><br>
+        Before a subscription expires, members get a renewal reminder via DM. If they don't renew, the bot removes them
+        automatically. Payouts go directly to your TON (GRAM) wallet — no middleman.
+      </div>
+
+      <!-- Reminders -->
+      <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico" id="sr-ico-bell"></div>
+          <div>
+            <div class="sr-label">Renewal Reminders</div>
+            <div class="sr-sub">Sent via bot DM</div>
+          </div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
+      </div>
+      <div class="accordion-content">
+        Renewise automatically handles reminders! Subscribers will receive a direct message from the bot 72
+        hours before their subscription expires.<br><br>
+        They can renew directly through that message using their TON (GRAM) wallet without needing to open the app.
+      </div>
+
+      <!-- Contact Support -->
+      <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico" id="sr-ico-msg"></div>
+          <div>
+            <div class="sr-label">Contact Support</div>
+            <div class="sr-sub">Message the team</div>
+          </div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
+      </div>
+      <div class="accordion-content">
+        Support is handled directly through the Renewise bot.<br><br>
+        Open your DM with the bot, tap the <b>Contact Support</b> button from the main menu, then type your message. It
+        goes straight to our team and you'll get a reply back through the bot.
+      </div>
+
+      <!-- Terms & Privacy -->
+      <div class="settings-row accordion-trigger no-border" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico" id="sr-ico-terms">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          </div>
+          <div>
+            <div class="sr-label">Terms &amp; Privacy</div>
+            <div class="sr-sub">Last accepted on sign-up</div>
+          </div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
+      </div>
+      <div class="accordion-content no-border" id="tos-accordion-content">
+
+        <b>1. What Renewise Is</b><br>
+        Renewise is a Telegram bot and Mini App that lets admins charge for group/channel membership. Members pay in
+        GRAM (TON) via a smart contract that atomically splits funds between the admin and Renewise's platform
+        fee.<br><br>
+
+        <b>2. Non-Custodial Architecture</b><br>
+        Renewise never holds admin or member funds. Completed on-chain splits are final and irreversible. Overpayments above $1.00
+        USD are detected by Renewise's backend and refunded to the member's TON (GRAM) wallet via a dedicated on-chain trigger.<br><br>
+
+        <b>3. Fees</b><br>
+        A <b>2.00% buyer fee</b> is added on top of the subscription price paid by the member. A <b>3.30% admin fee</b> is deducted from
+        the admin's payout. Both are shown to both parties before any payment.<br><br>
+
+        <b>4. Pricing &amp; Currency</b><br>
+        Prices are set in USD and converted to GRAM at the live rate at link-generation time. The required amount is
+        locked in and does not change after the link is issued.<br><br>
+
+        <b>5. Subscriptions &amp; Renewals</b><br>
+        Renewal reminders are sent 3 days before expiry. A 3-day grace period applies before automatic removal. Comped
+        members are excluded.<br><br>
+
+        <b>6. Prohibited Use</b><br>
+        Renewise may not be used for illegal content, fraud, IP infringement, or Telegram ToS violations. Accounts may
+        be suspended at Renewise's discretion.<br><br>
+
+        <b>7. No Warranty</b><br>
+        The service is provided "as is." Renewise is not liable for blockchain outages, wallet failures, or third-party
+        service issues.<br><br>
+
+        <b>8. Privacy — What We Collect</b><br>
+        We store your Telegram user ID, first name, username, subscription records, and payment transaction hashes. We
+        do <b>not</b> store private keys, seed phrases, or message content outside bot interactions. On-chain data is
+        public by nature.<br><br>
+
+        <b>9. Data Sharing</b><br>
+        Only with TonCenter (on-chain verification) and CoinGecko (exchange rates). We never sell your data.<br><br>
+
+        <b>10. Your Rights</b><br>
+        You may request access to or deletion of off-chain personal data via support. On-chain data is
+        immutable.<br><br>
+
+        <b>11. Age</b><br>
+        You must be 18 or older to use this service.<br><br>
+
+        <div id="tos-accepted-badge"
+          style="display:none;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.25);border-radius:10px;padding:10px 13px;font-size:12.5px;margin-top:4px;">
+          ✅ <b>You accepted these terms</b> — <span id="tos-accepted-date" style="color:rgba(255,255,255,.6)"></span>
+        </div>
+
+      </div>
+
+    </div>
+    <div class="glass" style="border-radius:var(--r);padding:20px;text-align:center">
+      <img class="brand-logo" src="/static/public/logo.jpeg" alt="logo"
+        style="width:48px;height:48px;border-radius:50%;margin:0 auto 10px">
+      <div class="brand-wordmark" style="font-size:20px;display:block;text-align:center">
+        <span class="rene">rene</span><span class="wise">wise</span>
+      </div>
+      <p style="margin-top:8px;font-size:12.5px">Subscriptions made simple.<br>Payments on Gram.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Payment History
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-history">
+    <div class="back-row">
+      <button class="back-btn" id="history-back-btn">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+        Manage
+      </button>
+    </div>
+    <h1 class="page-title" id="history-title" style="margin-bottom:18px">Payment History</h1>
+    <div class="glass" style="padding:4px 16px">
+      <div id="history-list">
+        <div class="loading">Loading…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Add Network Wizard (5 steps)
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-wizard">
+    <div class="back-row">
+      <button class="back-btn" id="wiz-back-btn" onclick="Wiz.back()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+        <span id="wiz-back-label">Cancel</span>
+      </button>
+    </div>
+    <h1 class="page-title" style="margin-bottom:4px">Add a Network</h1>
+    <p style="margin-bottom:0;font-size:13px">Connect a group or channel to Renewise.</p>
+    <div class="stepper" id="wiz-stepper">
+      <div class="step-dot active" id="dot-0"></div>
+      <div class="step-dot" id="dot-1"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <div class="step-dot" id="dot-3"></div>
+      <div class="step-dot" id="dot-4"></div>
+    </div>
+
+    <!-- Step 0: Instructions -->
+    <div class="wiz-step show" id="wiz-step-0">
+      <div class="glass" style="padding:18px;margin-bottom:18px">
+        <div
+          style="font-size:13px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.3px;text-transform:uppercase;margin-bottom:14px">
+          Before you continue</div>
+        <div class="inst-list">
+          <div class="inst-item">
+            <div class="inst-num">1</div>
+            <div class="inst-text"><b>Set to Private</b> — disable the public join link</div>
+          </div>
+          <div class="inst-item">
+            <div class="inst-num">2</div>
+            <div class="inst-text"><b>Enable Join Approval</b> — turn on Approve New Members / Join Requests</div>
+          </div>
+          <div class="inst-item">
+            <div class="inst-num">3</div>
+            <div class="inst-text"><b>Add me as Admin</b> with:<br><small>✓ Add Users &amp; Process Join Requests<br>✓
+                Ban Users &nbsp;✓ Manage Messages (channels)</small></div>
+          </div>
+        </div>
+      </div>
+      <div id="wiz-0-error"></div>
+      <button class="btn btn-primary" onclick="Wiz.detect()" id="wiz-detect-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        Done Check Now
+      </button>
+    </div>
+
+    <!-- Step 1: Chat picker -->
+    <div class="wiz-step" id="wiz-step-1">
+      <p style="margin-bottom:14px;font-size:14px">Select the network to set up:</p>
+      <div id="wiz-chat-list"></div>
+      <button class="btn btn-ghost" onclick="Wiz.goStep(0)" style="margin-top:4px">Try Again</button>
+    </div>
+
+    <!-- Step 2: Pricing -->
+    <div class="wiz-step" id="wiz-step-2">
+      <div class="field">
+        <label>Billing Interval</label>
+        <select id="wiz-interval">
+          <option value="30">Monthly — every 30 days</option>
+          <option value="7">Weekly — every 7 days</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Price (USD)</label>
+        <input id="wiz-price" type="number" min="1" step="0.01" placeholder="e.g. 9.99">
+        <div class="field-err" id="wiz-price-err"></div>
+      </div>
+      <button class="btn btn-primary" onclick="Wiz.submitPrice()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+        Continue
+      </button>
+    </div>
+
+    <!-- Step 3: Fee preview + Wallet -->
+    <div class="wiz-step" id="wiz-step-3">
+      <div class="glass fee-box" id="wiz-fee-box"></div>
+      <div class="field" style="margin-top:18px">
+        <label>TON Payout Wallet Address</label>
+        <input id="wiz-wallet" type="text" placeholder="EQ…">
+        <div class="field-err" id="wiz-wallet-err"></div>
+      </div>
+      <button class="btn btn-primary" onclick="Wiz.submitWallet()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+        Review Summary
+      </button>
+    </div>
+
+    <!-- Step 4: Summary + activate -->
+    <div class="wiz-step" id="wiz-step-4">
+      <div class="glass" style="padding:18px;margin-bottom:16px" id="wiz-summary"></div>
+      <div id="wiz-final-error"></div>
+      <button class="btn btn-primary" id="wiz-activate-btn" onclick="Wiz.activate()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Activate Paywall
+      </button>
+      <button class="btn btn-ghost" onclick="Wiz.goStep(3)">Edit Wallet</button>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Manage Network (slide-in sub-page)
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-manage">
+    <div class="back-row">
+      <button class="back-btn" onclick="App.nav('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+        My Networks
+      </button>
+    </div>
+
+    <!-- Stats banner -->
+    <div class="glass manage-stats" id="manage-stats">
+      <div class="manage-stat">
+        <span class="ms-val" id="ms-members">—</span>
+        <span class="ms-label">Members</span>
+      </div>
+      <div class="manage-stat-divider"></div>
+      <div class="manage-stat">
+        <span class="ms-val" id="ms-revenue">—</span>
+        <span class="ms-label">Earnings</span>
+      </div>
+      <div class="manage-stat-divider"></div>
+      <div class="manage-stat">
+        <span class="ms-val" id="ms-price">—</span>
+        <span class="ms-label">Price</span>
+      </div>
+    </div>
+
+    <!-- Current details -->
+    <div class="glass net-card" id="manage-detail-card" style="margin-top:14px"></div>
+
+    <!-- Action grid -->
+    <div class="manage-grid" style="margin-top:14px">
+      <button class="mgmt-btn" id="mgmt-payments">
+        <span class="mgmt-ico ico-price" id="ico-payments"></span>
+        <span>Payment History</span>
+      </button>
+      <button class="mgmt-btn" id="mgmt-members">
+        <span class="mgmt-ico ico-members" id="ico-members-btn"></span>
+        <span>View Members</span>
+      </button>
+      <button class="mgmt-btn" id="mgmt-price">
+        <span class="mgmt-ico ico-wallet" id="ico-price-btn"></span>
+        <span>Update Price</span>
+      </button>
+      <button class="mgmt-btn" id="mgmt-wallet">
+        <span class="mgmt-ico ico-link" id="ico-wallet-btn"></span>
+        <span>Update Wallet</span>
+      </button>
+      <button class="mgmt-btn" id="mgmt-comp">
+        <span class="mgmt-ico" style="background:#1a6ed4" id="ico-comp-btn"></span>
+        <span>Comp a Member</span>
+      </button>
+      <button class="mgmt-btn" id="mgmt-pause">
+        <span class="mgmt-ico" style="background:#8b3fd8" id="mgmt-pause-ico"></span>
+        <span id="mgmt-pause-label">Pause</span>
+      </button>
+    </div>
+    <!-- Delete Network — full-width, destructive, below the grid -->
+    <button class="btn" id="mgmt-delete"
+      style="margin-top:14px;background:rgba(224,92,92,.12);border:1px solid rgba(224,92,92,.25);color:var(--danger)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        style="width:17px;height:17px;flex-shrink:0">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        <path d="M10 11v6"/><path d="M14 11v6"/>
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      </svg>
+      Delete This Network
+    </button>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Delete Network (two-step confirmation)
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-delete">
+    <div class="back-row">
+      <button class="back-btn" onclick="App.nav('manage')">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+        Manage
+      </button>
+    </div>
+    <!-- Step 1: warning -->
+    <div id="delete-step1">
+      <h1 class="page-title" style="margin-bottom:14px;color:var(--danger)">Delete Network</h1>
+      <div class="glass" style="padding:20px;margin-bottom:18px">
+        <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.3px;text-transform:uppercase;margin-bottom:14px">What will happen, in order</div>
+        <div class="inst-list">
+          <div class="inst-item">
+            <div class="inst-num" style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">1</div>
+            <div class="inst-text">All new and pending payments are <b>immediately paused</b></div>
+          </div>
+          <div class="inst-item">
+            <div class="inst-num" style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">2</div>
+            <div class="inst-text">The bot <b>leaves the group/channel</b> automatically</div>
+          </div>
+          <div class="inst-item">
+            <div class="inst-num" style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">3</div>
+            <div class="inst-text">All subscriber and group records are <b>permanently deleted</b></div>
+          </div>
+          <div class="inst-item">
+            <div class="inst-num" style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">4</div>
+            <div class="inst-text"><b>This cannot be undone.</b> Active subscribers lose access immediately.</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn"
+        style="background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.3);color:var(--danger)"
+        onclick="deleteStep2()">
+        ⚠️ Continue to Confirmation
+      </button>
+      <button class="btn btn-ghost" onclick="App.nav('manage')">Cancel</button>
+    </div>
+    <!-- Step 2: type-to-confirm -->
+    <div id="delete-step2" style="display:none">
+      <h1 class="page-title" style="margin-bottom:6px;color:var(--danger)">Final Confirmation</h1>
+      <p style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px">Type the exact network name to confirm.</p>
+      <div class="glass" style="padding:20px">
+        <div class="field">
+          <label>Type exactly:
+            <span id="delete-name-label"
+              style="text-transform:none;font-family:'Courier New',monospace;color:var(--accent);font-size:13px;letter-spacing:.3px;margin-left:4px"></span>
+          </label>
+          <input id="delete-name-input" type="text" placeholder="Type exact name here">
+          <div class="field-err" id="delete-name-err"></div>
+        </div>
+        <div class="alert alert-error" style="margin-bottom:20px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;flex-shrink:0">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>This action is irreversible. All subscriber records will be permanently deleted.</span>
+        </div>
+        <button class="btn" id="delete-confirm-btn"
+          style="background:rgba(224,92,92,.2);border:1px solid rgba(224,92,92,.35);color:var(--danger)"
+          onclick="submitDelete()">
+          🗑️ Delete This Network
+        </button>
+      </div>
+      <div id="delete-result" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — View Members
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-members">
+    <div class="back-row">
+      <button class="back-btn" onclick="App.nav('manage')">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+        Manage
+      </button>
+    </div>
+    <h1 class="page-title" id="members-title" style="margin-bottom:4px">Members</h1>
+    <p id="members-count" style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:18px"></p>
+    <div id="members-list">
+      <div class="loading">Loading…</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Update Price
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-price">
+    <div class="back-row">
+      <button class="back-btn" onclick="App.nav('manage')">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+        Manage
+      </button>
+    </div>
+    <h1 class="page-title" style="margin-bottom:6px">Update Price</h1>
+    <p id="price-current-label" style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px"></p>
+    <div class="glass" style="padding:20px">
+      <div class="field">
+        <label>New Price (USD)</label>
+        <input id="price-input" type="number" min="1" step="0.01" placeholder="e.g. 9.99">
+        <div class="field-err" id="price-err"></div>
+      </div>
+      <div class="alert alert-info" style="margin-bottom:20px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <span>Existing subscribers keep their locked-in price until their next renewal cycle.</span>
+      </div>
+      <button class="btn btn-primary" id="price-submit-btn" onclick="submitPrice()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Update Price
+      </button>
+    </div>
+    <div id="price-result" style="margin-top:14px"></div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Update Wallet
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-wallet">
+    <div class="back-row">
+      <button class="back-btn" onclick="App.nav('manage')">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+        Manage
+      </button>
+    </div>
+    <h1 class="page-title" style="margin-bottom:6px">Update Wallet</h1>
+    <p id="wallet-current-label" style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px"></p>
+    <div class="glass" style="padding:20px">
+      <div class="field">
+        <label>TON Payout Wallet Address</label>
+        <input id="wallet-input" type="text" placeholder="EQ…">
+        <div class="field-err" id="wallet-err"></div>
+      </div>
+      <button class="btn btn-primary" id="wallet-submit-btn" onclick="submitWallet()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Update Wallet
+      </button>
+    </div>
+    <div id="wallet-result" style="margin-top:14px"></div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Comp a Member
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-comp">
+    <div class="back-row">
+      <button class="back-btn" onclick="App.nav('manage')">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+        Manage
+      </button>
+    </div>
+    <h1 class="page-title" style="margin-bottom:6px">Comp a Member</h1>
+    <p style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px">Grant free access to any Telegram user by
+      entering their user ID.</p>
+    <div class="glass" style="padding:20px">
+      <div class="field">
+        <label>Telegram User ID</label>
+        <input id="comp-input" type="number" placeholder="e.g. 123456789">
+        <div class="field-err" id="comp-err"></div>
+      </div>
+      <button class="btn btn-primary" id="comp-submit-btn" onclick="submitComp()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Grant Free Access
+      </button>
+    </div>
+    <div id="comp-result" style="margin-top:14px"></div>
+  </section>
+
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-item" id="nav-dashboard" onclick="App.nav('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+      Dashboard
+      <span class="nav-indicator"></span>
+    </button>
+    <button class="nav-item active" id="nav-subs" onclick="App.nav('subs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path
+          d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      </svg>
+      Subscriptions
+      <span class="nav-indicator"></span>
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="App.nav('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+      Settings
+      <span class="nav-indicator"></span>
+    </button>
+  </nav>
+
+  <!-- ════════════════════════════════════════════════════
+     CONFIRM OVERLAY
+════════════════════════════════════════════════════ -->
+  <!-- ════════════════════════════════════════════════════
+     PAYMENT DETAIL SHEET — slide-up overlay
+════════════════════════════════════════════════════ -->
+  <div class="overlay" id="pmt-detail-overlay" onclick="_pmtDetailOverlayClick(event)">
+    <div class="overlay-sheet" id="pmt-detail-sheet" style="padding:20px 18px calc(28px + env(safe-area-inset-bottom))">
+      <!-- Header row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <h2 style="font-size:17px;font-weight:800;color:#fff;margin:0">Payment Details</h2>
+        <button onclick="PmtDetail.hide()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:22px;cursor:pointer;line-height:1;padding:0 4px">&times;</button>
+      </div>
+      <!-- Content filled by JS -->
+      <div id="pmt-detail-body">
+        <div class="loading">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="confirm-overlay">
+    <div class="overlay-sheet">
+      <h2 id="confirm-title">Are you sure?</h2>
+      <p id="confirm-body"></p>
+      <button class="btn"
+        style="background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.25);color:var(--danger)"
+        id="confirm-yes">Confirm</button>
+      <button class="btn btn-ghost" onclick="Confirm.hide()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════
+    // SVG ICON HELPER — Lucide-compatible inline SVGs
+    // ════════════════════════════════════════════════════
+    const ICONS = {
+      'dollar': '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+      'users': '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+      'wallet': '<path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H8L4 7h16l-4-4z"/><circle cx="17" cy="13" r="1" fill="currentColor"/>',
+      'link': '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+      'credit': '<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+      'pause': '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
+      'play': '<polygon points="5 3 19 12 5 21 5 3"/>',
+      'plus': '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+      'chevron-r': '<polyline points="9 18 15 12 9 6"/>',
+      'bell': '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+      'message': '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+      'hash': '<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>',
+      'broadcast': '<path d="M18 8.5a9.5 9.5 0 0 0-12 0"/><path d="M22 4.5a15.5 15.5 0 0 0-20 0"/><path d="M14 12.5a3.5 3.5 0 0 0-4 0"/><circle cx="12" cy="16" r="1" fill="currentColor"/>',
+      'alert': '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+      'check': '<polyline points="20 6 9 17 4 12"/>',
+    };
+
+    function ico(name, size = 16, color = 'currentColor') {
+      const paths = ICONS[name] || '';
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+    }
+
+    // ════════════════════════════════════════════════════
+    // Bootstrap
+    // ════════════════════════════════════════════════════
+    const WebApp = window.Telegram.WebApp;
+    WebApp.expand();
+    WebApp.ready();
+    function hidePreloader() {
+      const preloader = document.getElementById('preloader');
+      if (preloader) {
+        preloader.style.opacity = '0';
+        setTimeout(() => preloader.remove(), 500);
+      }
+    }
+
+    const API = '/api';
+    const initData = WebApp.initData;
+    const H = () => ({ 'Authorization': 'tma ' + initData, 'Content-Type': 'application/json' });
+
+    let BOT_USERNAME = '';
+
+    // ════════════════════════════════════════════════════
+    // Global fetch wrapper — intercepts 401 session expiry
+    // ════════════════════════════════════════════════════
+    let _sessionExpired = false;  // show the overlay only once per session
+
+    function _showSessionExpired() {
+      if (_sessionExpired) return;
+      _sessionExpired = true;
+      // Cover the whole screen so no further interaction is possible
+      const overlay = document.createElement('div');
+      overlay.id = 'session-expired-overlay';
+      overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:99999',
+        'background:rgba(9,13,22,.96)',
+        'display:flex', 'flex-direction:column',
+        'align-items:center', 'justify-content:center',
+        'padding:32px 24px', 'text-align:center',
+        'gap:14px',
+      ].join(';');
+      overlay.innerHTML = `
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+             stroke="rgba(255,255,255,.35)" stroke-width="1.5"
+             style="flex-shrink:0">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p style="font-size:17px;font-weight:700;color:#fff;margin:0">Session expired</p>
+        <p style="font-size:14px;color:rgba(255,255,255,.6);margin:0;line-height:1.5">
+          Please close this window and reopen<br>the app from Telegram.
+        </p>
+        <button onclick="WebApp.close()"
+          style="margin-top:8px;padding:12px 28px;border-radius:24px;
+                 background:#0098EA;color:#fff;border:none;
+                 font-family:inherit;font-size:15px;font-weight:700;cursor:pointer">
+          Close
+        </button>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    async function apiFetch(url, options) {
+      const resp = await fetch(url, options);
+      if (resp.status === 401) {
+        _showSessionExpired();
+        const err = new Error('Session expired');
+        err.status = 401;
+        throw err;
+      }
+      return resp;
+    }
+
+    // Safe JSON error extractor — never throws even if the response body is
+    // plain text (e.g. a 500 "Internal Server Error" from the server before
+    // the JSON exception handler fires, or a proxy error).
+    async function _errDetail(resp) {
+      try {
+        const data = await resp.clone().json();
+        if (data && data.detail) return String(data.detail);
+      } catch (_) { /* not JSON */ }
+      try {
+        const text = await resp.text();
+        if (text && text.length < 200) return text;
+      } catch (_) { /* can't read body */ }
+      return `HTTP ${resp.status}`;
+    }
+
+    // ════════════════════════════════════════════════════
+    // Settings — inject SVG icons
+    // ════════════════════════════════════════════════════
+    document.getElementById('sr-ico-bell').innerHTML = ico('bell', 16);
+    document.getElementById('sr-ico-msg').innerHTML = ico('message', 16);
+
+    // ════════════════════════════════════════════════════
+    // Navigation
+    // ════════════════════════════════════════════════════
+    const PAGES = ['dashboard', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
+    const NAV_PAGES = ['dashboard', 'subs', 'settings'];
+
+    function toggleAcc(el) {
+      const wasOpen = el.classList.contains('open');
+      const group = el.parentElement;
+      // Close all others
+      group.querySelectorAll('.accordion-trigger').forEach(trigger => {
+        trigger.classList.remove('open');
+        trigger.classList.remove('no-border'); // reset borders
+      });
+      if (!wasOpen) {
+        el.classList.add('open');
+        el.classList.add('no-border'); // hide border of the row since content has it
+      }
+
+      // Ensure the very last row in group keeps no-border if it's the last child
+      const lastRow = group.querySelector('.accordion-trigger:last-of-type');
+      if (lastRow && !lastRow.classList.contains('open')) {
+        lastRow.classList.add('no-border');
+      }
+    }
+
+    function toggleAcc(el) {
+      const wasOpen = el.classList.contains('open');
+      const group = el.parentElement;
+      // Close all others
+      group.querySelectorAll('.accordion-trigger').forEach(trigger => {
+        trigger.classList.remove('open');
+        trigger.classList.remove('no-border'); // reset borders
+      });
+      if (!wasOpen) {
+        el.classList.add('open');
+        el.classList.add('no-border'); // hide border of the row since content has it
+      }
+
+      // Ensure the very last row in group keeps no-border if it's the last child
+      const lastRow = group.querySelector('.accordion-trigger:last-of-type');
+      if (lastRow && !lastRow.classList.contains('open')) {
+        lastRow.classList.add('no-border');
+      }
+    }
+
+    const App = {
+      _cur: 'dashboard',
+
+      nav(page) {
+        PAGES.forEach(p => document.getElementById('page-' + p).classList.toggle('show', p === page));
+        NAV_PAGES.forEach(t => {
+          const el = document.getElementById('nav-' + t);
+          if (el) el.classList.toggle('active', t === page);
+        });
+        const subPages = ['history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
+        const bn = document.getElementById('bottom-nav');
+        bn.style.display = subPages.includes(page) ? 'none' : 'flex';
+        this._cur = page;
+        WebApp.MainButton.hide();
+        WebApp.HapticFeedback.impactOccurred('light');
+        // Reset history-tab state so it reloads fresh next time subs page is opened
+        if (page !== 'subs') {
+          _subsHistoryLoaded = false;
+          // Reset tab buttons back to Active when leaving the page
+          const ba = document.getElementById('subs-tab-active');
+          const bh = document.getElementById('subs-tab-history');
+          const sl = document.getElementById('subs-list');
+          const hl = document.getElementById('subs-history-list');
+          if (ba && bh && sl && hl) {
+            ba.style.background = 'var(--accent)'; ba.style.color = '#fff';
+            bh.style.background = 'var(--surface2)'; bh.style.color = 'rgba(255,255,255,.6)';
+            sl.style.display = 'block'; hl.style.display = 'none';
+          }
+        }
+      },
+
+      showTabs() { /* kept for compatibility */ }
+    };
+
+    // ════════════════════════════════════════════════════
+    // Confirm overlay
+    // ════════════════════════════════════════════════════
+    const Confirm = {
+      _res: null,
+      show(title, body) {
+        document.getElementById('confirm-title').textContent = title;
+        document.getElementById('confirm-body').textContent = body;
+        document.getElementById('confirm-overlay').classList.add('show');
+        return new Promise(r => { this._res = r; });
+      },
+      hide() { document.getElementById('confirm-overlay').classList.remove('show'); if (this._res) { this._res(false); this._res = null; } },
+      confirm() { document.getElementById('confirm-overlay').classList.remove('show'); if (this._res) { this._res(true); this._res = null; } },
+    };
+    document.getElementById('confirm-yes').onclick = () => Confirm.confirm();
+
+    // ════════════════════════════════════════════════════
+    // PAYMENT DETAIL SHEET
+    // ════════════════════════════════════════════════════
+    const PmtDetail = {
+      _groupId: null,
+
+      show(groupId, subId, txRow) {
+        this._groupId = groupId;
+        document.getElementById('pmt-detail-overlay').classList.add('show');
+        this._load(groupId, subId, txRow);
+        WebApp.HapticFeedback.impactOccurred('light');
+      },
+
+      hide() {
+        document.getElementById('pmt-detail-overlay').classList.remove('show');
+      },
+
+      async _load(groupId, subId, txRow) {
+        const body = document.getElementById('pmt-detail-body');
+        body.innerHTML = '<div class="loading">Loading…</div>';
+
+        try {
+          const r = await apiFetch(`${API}/groups/${groupId}/payments/${subId}`, { headers: H() });
+          if (!r.ok) throw new Error(await _errDetail(r));
+          const d = await r.json();
+          this._render(body, d);
+        } catch (e) {
+          // Fallback: render from the list row data we already have
+          this._renderFallback(body, txRow);
+        }
+      },
+
+      _render(body, d) {
+        const name  = esc(d.first_name || 'User');
+        const uname = d.username ? ` <span style="color:rgba(255,255,255,.5)">@${esc(d.username)}</span>` : '';
+        const uid   = d.telegram_user_id || '—';
+        const price = (d.price_locked_in != null && d.price_locked_in < 1000)
+          ? `$${Number(d.price_locked_in).toFixed(2)}`
+          : d.price_locked_in ? `${(d.price_locked_in / 1e9).toFixed(4)} TON` : '—';
+        const interval = d.billing_interval_days === 7 ? 'week' : 'month';
+        const vault  = d.vault_address || null;
+        const vaultS = vault ? `${vault.slice(0,10)}…${vault.slice(-6)}` : '—';
+        const tx     = d.last_payment_tx_hash || null;
+        const txS    = tx ? `${tx.slice(0,16)}…` : '—';
+        const tonReq = d.required_ton != null ? `${d.required_ton} TON` : '—';
+        const start  = d.start_date || '—';
+        const renew  = d.next_renewal_date || '—';
+        const created = (d.created_at || '').slice(0, 16);
+
+        const rows = [
+          ['Member',       `${name}${uname}`],
+          ['Telegram ID',  `<code>${uid}</code>`],
+          ['Status',       pill(d.status)],
+          ['Price Paid',   `<b>${price}</b> / ${interval}`],
+          ['TON Required', tonReq],
+          ...(d.admin_payout_ton != null ? [
+            ['Platform Fee',  `${(d.platform_fee_pct || 5.3).toFixed(2)}% (buyer ${(d.buyer_fee_pct||2).toFixed(2)}% + admin ${(d.admin_fee_pct||3.3).toFixed(2)}%)`],
+            ['Your Payout',   `<b style="color:var(--success)">${d.admin_payout_ton} TON</b>`],
+          ] : []),
+          ['Start Date',   start],
+          ['Next Renewal', renew],
+          ['Joined',       created],
+          ['Vault',        vault
+            ? `<code style="font-size:11px">${vaultS}</code>`
+            : '<span style="color:rgba(255,255,255,.4)">—</span>'],
+          ['TX Hash',      tx
+            ? `<code style="font-size:11px;color:var(--accent);cursor:pointer" onclick="WebApp.openLink('${d.tonviewer_url}')">${txS}</code>`
+            : '<span style="color:rgba(255,255,255,.4)">—</span>'],
+        ];
+
+        body.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:0">
+            ${rows.map(([label, val]) => `
+              <div style="display:flex;justify-content:space-between;align-items:center;
+                          padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.5);
+                             text-transform:uppercase;letter-spacing:.3px;flex-shrink:0">${label}</span>
+                <span style="font-size:13.5px;font-weight:600;color:#fff;text-align:right;
+                             max-width:62%;word-break:break-all">${val}</span>
+              </div>`).join('')}
+          </div>
+          ${tx ? `
+          <button class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px"
+            onclick="WebApp.openLink('${d.tonviewer_url}')">
+            ${ico('link', 15)} View on TonViewer
+          </button>` : ''}
+        `;
+      },
+
+      _renderFallback(body, tx) {
+        // Render from the summary data already in the list row (no network call)
+        const price = (tx.price_locked_in != null && tx.price_locked_in < 1000)
+          ? `$${Number(tx.price_locked_in).toFixed(2)}`
+          : tx.price_locked_in ? `${(tx.price_locked_in / 1e9).toFixed(4)} TON` : '—';
+        const txHash = tx.last_payment_tx_hash;
+        body.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:0">
+            ${[
+              ['Member',      esc(tx.first_name || 'User')],
+              ['Status',      pill(tx.status)],
+              ['Price Paid',  `<b>${price}</b>`],
+              ['Start Date',  esc(tx.start_date || '—')],
+              ['Next Renewal',esc(tx.next_renewal_date || '—')],
+              ['TX Hash',     txHash
+                ? `<code style="font-size:11px;color:var(--accent)">${txHash.slice(0,18)}…</code>`
+                : '—'],
+            ].map(([l,v]) => `
+              <div style="display:flex;justify-content:space-between;align-items:center;
+                          padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.5);
+                             text-transform:uppercase;letter-spacing:.3px">${l}</span>
+                <span style="font-size:13.5px;font-weight:600;color:#fff;text-align:right">${v}</span>
+              </div>`).join('')}
+          </div>
+          ${txHash ? `
+          <button class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px"
+            onclick="WebApp.openLink('https://tonviewer.com/${esc(txHash)}')">
+            ${ico('link', 15)} View on TonViewer
+          </button>` : ''}
+        `;
+      },
+    };
+
+    function _pmtDetailOverlayClick(e) {
+      // Close if user taps the dark backdrop (not the sheet itself)
+      if (e.target === document.getElementById('pmt-detail-overlay')) {
+        PmtDetail.hide();
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // Utility
+    // ════════════════════════════════════════════════════
+    function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    function pill(status) {
+      const labels = { active: 'Active', expired: 'Expired', comped: 'Comped', paused: 'Paused', pending: 'Pending' };
+      const dots = { active: '✓', expired: '✕', comped: '♦', paused: '⏸', pending: '…' };
+      return `<span class="pill pill-${status}">${dots[status] || '•'} ${labels[status] || status}</span>`;
+    }
+
+    function fmtUsd(cents) { return '$' + (cents / 100).toFixed(2); }
+
+    function copyInviteLink(link) {
+      const done = () => {
+        WebApp.HapticFeedback.notificationOccurred('success');
+        const badge = document.createElement('span');
+        badge.textContent = '✓ Copied!';
+        badge.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);' +
+          'background:var(--accent);color:#fff;padding:7px 20px;border-radius:40px;' +
+          'font-size:13px;font-weight:700;z-index:9999;pointer-events:none;' +
+          'box-shadow:0 4px 16px rgba(0,152,234,.4)';
+        document.body.appendChild(badge);
+        setTimeout(() => { badge.style.transition='opacity .3s'; badge.style.opacity='0'; }, 1300);
+        setTimeout(() => badge.remove(), 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(done).catch(() => WebApp.openTelegramLink(link));
+      } else {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = link; ta.style.cssText = 'position:fixed;opacity:0';
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); ta.remove(); done();
+        } catch { WebApp.openTelegramLink(link); }
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // Entity type helper — strict DB-driven, never defaults to "group"
+    // Rule: channel → CHANNEL badge; group/supergroup → GROUP badge
+    // ════════════════════════════════════════════════════
+    function entityTypeBadge(rawType) {
+      if (!rawType) return ''; // no data yet — render nothing
+      const t = String(rawType).toLowerCase().trim();
+      if (t === 'channel') {
+        return `<span class="type-badge channel">${ico('broadcast', 11)} Channel</span>`;
+      }
+      if (t === 'group' || t === 'supergroup') {
+        return `<span class="type-badge group">${ico('users', 11)} Group</span>`;
+      }
+      // Unknown type in DB — show raw value, don't assume
+      return `<span class="type-badge group" style="color:rgba(255,255,255,.7)">${esc(rawType)}</span>`;
+    }
+
+    // ════════════════════════════════════════════════════
+    // Alert helper
+    // ════════════════════════════════════════════════════
+    function alertHtml(msg, type = 'error') {
+      const iconMap = { error: 'alert', success: 'check', info: 'alert' };
+      return `<div class="alert alert-${type}">${ico(iconMap[type] || 'alert', 16)}<span>${esc(msg)}</span></div>`;
+    }
+  </script>
+
+  <script>
+    // ════════════════════════════════════════════════════
+    // SKELETON HELPER — renders N placeholder shimmer cards
+    // ════════════════════════════════════════════════════
+    function skeletonCards(n = 2) {
+      return Array.from({ length: n }, () => `<div class="skeleton-card"></div>`).join('');
+    }
+
+    // ════════════════════════════════════════════════════
+    // COUNT-UP — hero stat animation (runs only once per load)
+    // ════════════════════════════════════════════════════
+    function countUp(el, target, duration = 600, isDecimal = false) {
+      const start = performance.now();
+      function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        const current = target * eased;
+        el.textContent = isDecimal ? current.toFixed(2) : Math.round(current);
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    let _heroAnimated = false; // run count-up only on first load
+
+    // ════════════════════════════════════════════════════
+    // REVENUE UNIT TOGGLE — GRAM | USD
+    // Persists the admin's choice via Telegram CloudStorage.
+    // ════════════════════════════════════════════════════
+    const _REV_UNIT_KEY = 'rw_rev_unit'; // CloudStorage key
+    let _revUnit = 'USD'; // default; overwritten from CloudStorage on first load
+    let _revDataUsdCents = 0;    // cached from last loadNetworks() call
+    let _revDataNano     = 0;    // cached from last loadNetworks() call
+
+    // Format nanonano → human-readable GRAM string
+    function fmtGram(nano) {
+      if (!nano || nano <= 0) return '0 GRAM';
+      const gram = nano / 1e9; // 1 GRAM = 1,000,000,000 nanoGRAM
+      return gram < 0.001 ? gram.toExponential(2) + ' GRAM' : gram.toFixed(3) + ' GRAM';
+    }
+
+    // Render the hero number using whichever unit is active
+    function _renderHeroRevenue(animate) {
+      const revEl = document.getElementById('admin-total-revenue');
+      if (!revEl) return;
+      if (_revUnit === 'GRAM') {
+        // Show GRAM (stored on-chain required amount for active subs)
+        const gram = (_revDataNano || 0) / 1e9;
+        const gramStr = gram.toFixed(3);
+        const [whole, frac] = gramStr.split('.');
+        revEl.innerHTML = `<span id="hero-dollars">${whole}</span><span class="hero-cents">.<span id="hero-cents">${frac}</span> GRAM</span>`;
+        if (animate && !_heroAnimated) {
+          countUp(document.getElementById('hero-dollars'), Math.floor(gram), 600, false);
+        }
+      } else {
+        // Show USD
+        const totalUsd = (_revDataUsdCents || 0) / 100;
+        const totalStr = totalUsd.toFixed(2);
+        const [dollars, cents] = totalStr.split('.');
+        revEl.innerHTML = `<span class="hero-symbol">$</span><span id="hero-dollars">${dollars}</span><span class="hero-cents">.<span id="hero-cents">${cents}</span></span>`;
+        if (animate && !_heroAnimated) {
+          const dollarsEl = document.getElementById('hero-dollars');
+          const centsEl   = document.getElementById('hero-cents');
+          countUp(dollarsEl, Math.floor(totalUsd), 600, false);
+          const centsTarget = parseInt(cents, 10);
+          const centsStart  = performance.now();
+          (function tickCents(now) {
+            const p = Math.min((now - centsStart) / 600, 1);
+            const e = 1 - Math.pow(1 - p, 3);
+            centsEl.textContent = String(Math.round(centsTarget * e)).padStart(2, '0');
+            if (p < 1) requestAnimationFrame(tickCents);
+          })(performance.now());
+        }
+      }
+      // Keep toggle buttons and subtitle in sync
+      document.getElementById('rev-btn-usd') ?.classList.toggle('active', _revUnit === 'USD');
+      document.getElementById('rev-btn-gram')?.classList.toggle('active', _revUnit === 'GRAM');
+      const sub = document.getElementById('rev-unit-sub');
+      if (sub) sub.textContent = _revUnit === 'GRAM' ? 'Showing in GRAM' : 'Showing in USD';
+    }
+
+    // Called when admin taps a toggle button
+    function _setRevUnit(unit) {
+      if (unit === _revUnit) return;
+      _revUnit = unit;
+      _renderHeroRevenue(false);
+      // Update subtitle
+      const sub = document.getElementById('rev-unit-sub');
+      if (sub) sub.textContent = unit === 'GRAM' ? 'Showing in GRAM' : 'Showing in USD';
+      // Persist to CloudStorage — fire-and-forget, non-blocking
+      try {
+        WebApp.CloudStorage.setItem(_REV_UNIT_KEY, unit, () => {});
+      } catch(e) { /* CloudStorage not available in older Bot API — silent */ }
+    }
+
+    // ════════════════════════════════════════════════════
+    // NETWORKS — admin dashboard
+    // ════════════════════════════════════════════════════
+    async function loadNetworks() {
+      const el = document.getElementById('networks-list');
+      el.innerHTML = skeletonCards(2);
+
+      // Restore persisted unit preference from CloudStorage (once per session)
+      if (WebApp.CloudStorage && typeof WebApp.CloudStorage.getItem === 'function') {
+        WebApp.CloudStorage.getItem(_REV_UNIT_KEY, (err, val) => {
+          if (!err && (val === 'GRAM' || val === 'USD')) {
+            _revUnit = val;
+            // Sync button states (data may or may not be loaded yet)
+            document.getElementById('rev-btn-usd') ?.classList.toggle('active', _revUnit === 'USD');
+            document.getElementById('rev-btn-gram')?.classList.toggle('active', _revUnit === 'GRAM');
+          }
+        });
+      }
+
+      try {
+        const r = await apiFetch(`${API}/my-groups`, { headers: H() });
+        if (!r.ok) { el.innerHTML = `<div class="empty">${ico('users', 40)}<p>No admin account.</p></div>`; return; }
+        const { groups, total_subs, total_revenue, total_revenue_nano,
+                net_revenue, net_revenue_nano, admin_fee_pct } = await r.json();
+
+        if (total_subs !== undefined) {
+          const subsEl    = document.getElementById('admin-total-members');
+          const groupsEl  = document.getElementById('admin-total-groups');
+          const channelsEl = document.getElementById('admin-total-channels');
+          const toggleEl  = document.getElementById('rev-unit-row');
+
+          // Cache net (after-fee) amounts for the hero — this is what lands in
+          // the admin's wallet, matching what they see on-chain.
+          _revDataUsdCents = net_revenue  || 0;
+          _revDataNano     = net_revenue_nano || 0;
+
+          // Always show the Settings toggle row for admins
+          if (toggleEl) toggleEl.style.display = 'flex';
+
+          _renderHeroRevenue(true);
+
+          if (subsEl) {
+            if (!_heroAnimated) {
+              countUp(subsEl, total_subs || 0, 600, false);
+            } else {
+              subsEl.textContent = total_subs;
+            }
+          }
+          if (groupsEl && channelsEl) {
+            const channelsCount = groups.filter(g => g.chat_type === 'channel' || g.type === 'channel').length;
+            const groupsCount = groups.length - channelsCount;
+            if (!_heroAnimated) {
+              countUp(groupsEl, groupsCount, 600, false);
+              countUp(channelsEl, channelsCount, 600, false);
+            } else {
+              groupsEl.textContent = groupsCount;
+              channelsEl.textContent = channelsCount;
+            }
+          }
+          _heroAnimated = true;
+
+        }
+
+        if (!groups.length) {
+          el.innerHTML = `
+            <div class="glass" style="padding:28px 20px;text-align:center;margin-top:10px">
+              <div class="mgmt-ico" style="background:rgba(0,152,234,.15);width:64px;height:64px;margin:0 auto 18px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="width:32px;height:32px">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+              </div>
+              <h2 style="font-size:22px;font-weight:800;margin-bottom:10px;color:#fff;letter-spacing:-.2px">About Renewise</h2>
+              <p style="font-size:14.5px;color:rgba(255,255,255,.6);margin-bottom:24px;line-height:1.6">
+                Renewise makes it easy to monetize your Telegram Groups and Channels.<br><br>
+                Accept payments in TON (GRAM) and manage subscriptions automatically, right inside Telegram.
+              </p>
+              <button class="btn btn-primary" onclick="startWizard()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create Your First Paywall
+              </button>
+            </div>
+          `;
+          return false;
+        }
+
+        // Show admin elements since they have groups
+        const adminCard = document.getElementById('admin-hero-card');
+        if (adminCard) adminCard.style.display = 'block';
+        const dashHdr = document.getElementById('dashboard-hdr');
+        if (dashHdr) dashHdr.style.display = 'flex';
+
+        el.innerHTML = '';
+        groups.forEach(g => {
+          const status = (g.status || 'active').toLowerCase();
+          const typeBadge = entityTypeBadge(g.chat_type || g.type);
+          const usd = g.price_usd_cents
+            ? fmtUsd(g.price_usd_cents)
+            : (g.price ? '$' + Number(g.price).toFixed(2) : '—');
+          const interval = g.billing_interval_days === 7 ? 'week' : 'month';
+          const members = g.sub_count != null ? g.sub_count : 0;
+          const walletRaw = g.payout_wallet_address || '';
+          const wallet = walletRaw.length > 16
+            ? walletRaw.slice(0, 8) + '…' + walletRaw.slice(-5)
+            : (walletRaw || 'Not set');
+          const link = g.invite_link || '';
+
+          // ── Name: use chat_title if present, otherwise fetch live via detail endpoint ──
+          // We render a placeholder and then upgrade it asynchronously
+          const nameId = `net-name-${g.id}`;
+          const displayName = (g.chat_title && g.chat_title.trim())
+            ? esc(g.chat_title)
+            : `<span id="${nameId}" style="color:rgba(255,255,255,.4)">Loading…</span>`;
+
+          const card = document.createElement('div');
+          card.className = 'glass net-card';
+          card.innerHTML = `
+        <div class="net-hdr">
+          <span class="status-dot ${status}"></span>
+          <span class="net-name">${displayName}</span>
+          ${typeBadge}
+        </div>
+        <div class="net-rows">
+          <div class="data-row">
+            <div class="ico ico-price">${ico('dollar', 15)}</div>
+            <div class="content"><span class="label">Price</span><span class="value">${usd} USD / ${interval}</span></div>
+          </div>
+          <div class="data-row">
+            <div class="ico ico-members">${ico('users', 15)}</div>
+            <div class="content"><span class="label">Members</span><span class="value">${members} active member${members !== 1 ? 's' : ''}</span></div>
+          </div>
+          <div class="data-row">
+            <div class="ico ico-wallet">${ico('wallet', 15)}</div>
+            <div class="content"><span class="label">Payout Wallet</span><span class="value mono">${esc(wallet)}</span></div>
+          </div>
+          ${link ? `<div class="data-row">
+            <div class="ico ico-link">${ico('link', 15)}</div>
+            <div class="content"><span class="label">Invite Link</span><span class="value">
+              <a href="#" onclick="copyInviteLink('${esc(link)}', this);return false;"
+                style="display:inline-flex;align-items:center;gap:5px">
+                ${esc(link.length > 34 ? link.slice(0, 32) + '…' : link)}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  style="width:13px;height:13px;flex-shrink:0;opacity:.6">
+                  <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+              </a>
+            </span></div>
+          </div>` : ''}
+        </div>
+        <div class="net-divider"></div>
+        <div class="net-actions">
+          <button class="act-btn primary" style="width:100%"
+            onclick="openManage(${g.id})">
+            ${ico('hash', 14)} Manage
+          </button>
+        </div>
+      `;
+          el.appendChild(card);
+
+          // Async title resolution for NULL chat_title rows
+          if (!g.chat_title || !g.chat_title.trim()) {
+            fetch(`${API}/groups/${g.id}/detail`, { headers: H() })
+              .then(r => r.ok ? r.json() : null)
+              .then(data => {
+                if (data && data.chat_title) {
+                  const span = document.getElementById(nameId);
+                  if (span) span.outerHTML = esc(data.chat_title);
+                }
+              })
+              .catch(() => { });
+          }
+        });
+
+        const addBtn = document.createElement('button');
+        addBtn.className = 'btn btn-add-network';
+        addBtn.innerHTML = `${ico('plus', 17)} Add Another Network`;
+        addBtn.style.marginTop = '8px';
+        addBtn.onclick = () => startWizard();
+        el.appendChild(addBtn);
+        return true; // Return true on success
+      } catch (e) {
+        el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load networks.</p></div>`;
+        return false;
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // MANAGE PAGE
+    // ════════════════════════════════════════════════════
+    let _manageGroupId = null;
+    let _manageGroupData = null;
+
+    async function openManage(groupId) {
+      _manageGroupId = groupId;
+      _manageGroupData = null;
+      document.getElementById('manage-detail-card').innerHTML = `<div class="loading">Loading…</div>`;
+      document.getElementById('ms-members').textContent = '—';
+      document.getElementById('ms-revenue').textContent = '—';
+      document.getElementById('ms-price').textContent = '—';
+
+      // Inject icons into manage grid buttons (once)
+      const icoMap = {
+        'ico-payments': ['credit', 20],
+        'ico-members-btn': ['users', 20],
+        'ico-price-btn': ['dollar', 20],
+        'ico-wallet-btn': ['wallet', 20],
+        'ico-comp-btn': ['check', 20],
+      };
+      Object.entries(icoMap).forEach(([id, [name, size]]) => {
+        const el = document.getElementById(id);
+        if (el && !el.innerHTML.trim()) el.innerHTML = ico(name, size);
+      });
+
+      App.nav('manage');
+
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/detail`, { headers: H() });
+        if (!r.ok) throw new Error(r.status);
+        const g = await r.json();
+        _manageGroupData = g;
+
+        // ── Stats banner ──
+        document.getElementById('ms-members').textContent = g.active_members ?? '—';
+        // Earnings banner: respect the same GRAM/USD toggle preference.
+        // revenue_usd_cents is the sum of price_locked_in for active/comped subs (USD cents).
+        // revenue_nano is 0 (deprecated field from /groups/{id}/detail) — not available here;
+        // for the per-group manage view we only have USD, so we show USD always.
+        // The toggle only affects the dashboard hero; per-group stats stay in USD.
+        const revUsd = (g.revenue_usd_cents != null && g.revenue_usd_cents > 0)
+          ? fmtUsd(g.revenue_usd_cents)
+          : '$0.00';
+        document.getElementById('ms-revenue').textContent = revUsd;
+        document.getElementById('ms-price').textContent = g.price_usd_cents ? fmtUsd(g.price_usd_cents) : '—';
+
+        // ── Detail card ──
+        const status = (g.status || 'active').toLowerCase();
+        const typeBadge = entityTypeBadge(g.chat_type);
+        const walletRaw = g.payout_wallet_address || '';
+        const wallet = walletRaw.length > 16 ? walletRaw.slice(0, 8) + '…' + walletRaw.slice(-5) : (walletRaw || 'Not set');
+        const link = g.invite_link || '';
+        const interval = g.billing_interval_days === 7 ? 'week' : 'month';
+        document.getElementById('manage-detail-card').innerHTML = `
+      <div class="net-hdr">
+        <span class="status-dot ${status}"></span>
+        <span class="net-name">${esc(g.chat_title || 'Network')}</span>
+        ${typeBadge}
+      </div>
+      <div class="net-rows">
+        <div class="data-row"><div class="ico ico-price">${ico('dollar', 15)}</div>
+          <div class="content"><span class="label">Price</span><span class="value">${g.price_usd_cents ? fmtUsd(g.price_usd_cents) : '—'} / ${interval}</span></div></div>
+        <div class="data-row"><div class="ico ico-wallet">${ico('wallet', 15)}</div>
+          <div class="content"><span class="label">Payout Wallet</span><span class="value mono">${esc(wallet)}</span></div></div>
+        ${link ? `<div class="data-row"><div class="ico ico-link">${ico('link', 15)}</div>
+          <div class="content"><span class="label">Invite Link</span><span class="value">
+            <a href="#" onclick="copyInviteLink('${esc(link)}', this);return false;"
+              style="display:inline-flex;align-items:center;gap:5px">
+              ${esc(link.length > 34 ? link.slice(0, 32) + '…' : link)}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="width:13px;height:13px;flex-shrink:0;opacity:.6">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </a>
+          </span></div></div>` : ''}
+      </div>
+    `;
+
+        // ── Pause button state ──
+        const isPaused = status === 'paused';
+        document.getElementById('mgmt-pause-ico').innerHTML = ico(isPaused ? 'play' : 'pause', 20);
+        document.getElementById('mgmt-pause-label').textContent = isPaused ? 'Resume' : 'Pause';
+        document.getElementById('mgmt-pause').style.background = isPaused ? 'rgba(74,222,128,.2)' : 'var(--surface)';
+
+        // ── Wire each grid button to its own dedicated page ──
+        document.getElementById('mgmt-payments').onclick = () => loadHistory(groupId, g.chat_title || 'Network');
+        document.getElementById('mgmt-members').onclick = () => openMembers(groupId);
+        document.getElementById('mgmt-price').onclick = () => openPricePage(groupId, g.price_usd_cents);
+        document.getElementById('mgmt-wallet').onclick = () => openWalletPage(groupId, g.payout_wallet_address);
+        document.getElementById('mgmt-comp').onclick = () => openCompPage(groupId);
+        document.getElementById('mgmt-pause').onclick = () => doPauseResume(groupId, _manageGroupData ? _manageGroupData.status : status, g.chat_title);
+        document.getElementById('mgmt-delete').onclick = () => openDeletePage(groupId, g.chat_title || 'Network');
+
+      } catch (e) {
+        document.getElementById('manage-detail-card').innerHTML =
+          `<div class="empty">${ico('alert', 40)}<p>Failed to load details.</p></div>`;
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // PAYMENT HISTORY
+    // ════════════════════════════════════════════════════
+    document.getElementById('history-back-btn').onclick = () => App.nav('manage');
+
+    async function loadHistory(groupId, groupTitle) {
+      document.getElementById('history-title').textContent = groupTitle || 'Payment History';
+      App.nav('history');
+      const el = document.getElementById('history-list');
+      el.innerHTML = skeletonCards(3);
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/payment-history?limit=30`, { headers: H() });
+        if (!r.ok) throw new Error(r.status);
+        const { payment_history: rows } = await r.json();
+        if (!rows.length) { el.innerHTML = `<div class="empty" style="padding:32px 0">${ico('credit', 40)}<p>No payments yet.</p></div>`; return; }
+        el.innerHTML = '';
+        rows.forEach(tx => {
+          const price = tx.price_locked_in > 10000
+            ? (tx.price_locked_in / 1e9).toFixed(4) + ' TON'
+            : '$' + (tx.price_locked_in).toFixed(2);
+          const item = document.createElement('div');
+          item.className = 'hist-item';
+          item.style.cssText = 'cursor:pointer;-webkit-tap-highlight-color:transparent';
+          item.onclick = () => PmtDetail.show(groupId, tx.id, tx);
+          item.innerHTML = `
+        <div class="hist-left">
+          <span class="hist-name">${esc(tx.first_name || 'User')}</span>
+          <span class="hist-date">${esc(tx.start_date || 'N/A')}</span>
+          <span class="hist-hash" title="View on TonViewer"
+            onclick="event.stopPropagation();WebApp.openLink('https://tonviewer.com/${esc(tx.last_payment_tx_hash || '')}')">
+            ${tx.last_payment_tx_hash ? tx.last_payment_tx_hash.slice(0, 14) + '…' : '—'}
+          </span>
+        </div>
+        <div class="hist-right">
+          <span class="hist-price">${price}</span>
+          ${pill(tx.status)}
+        </div>
+      `;
+          el.appendChild(item);
+        });
+      } catch (e) {
+        el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load payments.</p></div>`;
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // VIEW MEMBERS PAGE
+    // ════════════════════════════════════════════════════
+    async function openMembers(groupId) {
+      App.nav('members');
+      document.getElementById('members-title').textContent = (_manageGroupData && _manageGroupData.chat_title) || 'Members';
+      document.getElementById('members-count').textContent = '';
+      document.getElementById('members-list').innerHTML = skeletonCards(3);
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/members?limit=50`, { headers: H() });
+        if (!r.ok) throw new Error(r.status);
+        const { members, total } = await r.json();
+        document.getElementById('members-count').textContent = `${total} active member${total !== 1 ? 's' : ''}`;
+        const el = document.getElementById('members-list');
+        if (!members.length) {
+          el.innerHTML = `<div class="empty">${ico('users', 40)}<p>No active members yet.</p></div>`;
+          return;
+        }
+        el.innerHTML = '';
+        members.forEach(m => {
+          const row = document.createElement('div');
+          row.className = 'glass';
+          row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:10px;border-radius:var(--r-sm)';
+          row.innerHTML = `
+        <div class="member-info">
+          <span class="member-name">${esc(m.first_name || 'User')}${m.username ? ` <span style="color:rgba(255,255,255,.5);font-weight:500">@${esc(m.username)}</span>` : ''}</span>
+          <span class="member-sub">${pill(m.status)} · ${m.start_date || 'N/A'}</span>
+        </div>
+        <button class="member-comp-btn" onclick="compMember(${groupId}, ${m.telegram_user_id}, '${esc(m.first_name || 'User')}')">Comp</button>
+      `;
+          el.appendChild(row);
+        });
+      } catch (e) {
+        document.getElementById('members-list').innerHTML =
+          `<div class="empty">${ico('alert', 40)}<p>Failed to load members.</p></div>`;
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // UPDATE PRICE PAGE
+    // ════════════════════════════════════════════════════
+    function openPricePage(groupId, currentCents) {
+      document.getElementById('price-current-label').textContent =
+        `Current price: ${currentCents ? fmtUsd(currentCents) + ' USD' : 'Not set'}`;
+      document.getElementById('price-input').value = currentCents ? (currentCents / 100).toFixed(2) : '';
+      document.getElementById('price-err').textContent = '';
+      document.getElementById('price-result').innerHTML = '';
+      document.getElementById('price-submit-btn').disabled = false;
+      document.getElementById('price-submit-btn').innerHTML =
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Price`;
+      // Store groupId for submit
+      document.getElementById('price-submit-btn').setAttribute('data-gid', groupId);
+      App.nav('price');
+    }
+
+    async function submitPrice() {
+      const groupId = parseInt(document.getElementById('price-submit-btn').getAttribute('data-gid'), 10);
+      const raw = document.getElementById('price-input').value.replace('$', '').trim();
+      const usd = parseFloat(raw);
+      if (isNaN(usd) || usd < 1) { document.getElementById('price-err').textContent = 'Minimum $1.00'; return; }
+      const cents = Math.round(usd * 100);
+      const confirmed = await Confirm.show('Update Price?',
+        `Set new price to $${usd.toFixed(2)} USD? Existing subscribers keep their current rate until renewal.`);
+      if (!confirmed) return;
+      const btn = document.getElementById('price-submit-btn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/price`, {
+          method: 'PUT', headers: H(), body: JSON.stringify({ price_usd_cents: cents })
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        document.getElementById('price-result').innerHTML = alertHtml(`Price updated to $${usd.toFixed(2)} USD.`, 'success');
+        document.getElementById('price-current-label').textContent = `Current price: $${usd.toFixed(2)} USD`;
+        document.getElementById('ms-price').textContent = fmtUsd(cents);
+        if (_manageGroupData) {
+          _manageGroupData.price_usd_cents = cents;
+          // Refresh the detail card price row without reloading the full page
+          const priceVal = document.querySelector('#manage-detail-card .ico-price')?.closest('.data-row')?.querySelector('.value');
+          if (priceVal) {
+            const interval = (_manageGroupData.billing_interval_days === 7) ? 'week' : 'month';
+            priceVal.textContent = `${fmtUsd(cents)} / ${interval}`;
+          }
+        }
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Price`;
+      } catch (e) {
+        document.getElementById('price-err').textContent = String(e.message || e);
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Price`;
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // UPDATE WALLET PAGE
+    // ════════════════════════════════════════════════════
+    function openWalletPage(groupId, currentWallet) {
+      document.getElementById('wallet-current-label').textContent =
+        currentWallet ? `Current: ${currentWallet.slice(0, 10)}…${currentWallet.slice(-6)}` : 'No wallet set yet';
+      document.getElementById('wallet-input').value = currentWallet || '';
+      document.getElementById('wallet-err').textContent = '';
+      document.getElementById('wallet-result').innerHTML = '';
+      document.getElementById('wallet-submit-btn').disabled = false;
+      document.getElementById('wallet-submit-btn').innerHTML =
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
+      document.getElementById('wallet-submit-btn').setAttribute('data-gid', groupId);
+      App.nav('wallet');
+    }
+
+    async function submitWallet() {
+      const groupId = parseInt(document.getElementById('wallet-submit-btn').getAttribute('data-gid'), 10);
+      const addr = document.getElementById('wallet-input').value.trim();
+      if (!addr) { document.getElementById('wallet-err').textContent = 'Enter a wallet address'; return; }
+      const confirmed = await Confirm.show('Update Payout Wallet?',
+        'Future payouts will go to the new address. Double-check it is correct before confirming.');
+      if (!confirmed) return;
+      const btn = document.getElementById('wallet-submit-btn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/wallet`, {
+          method: 'PUT', headers: H(), body: JSON.stringify({ wallet_address: addr })
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        document.getElementById('wallet-result').innerHTML = alertHtml('Wallet updated successfully.', 'success');
+        document.getElementById('wallet-current-label').textContent = `Current: ${addr.slice(0, 10)}…${addr.slice(-6)}`;
+        if (_manageGroupData) {
+          _manageGroupData.payout_wallet_address = addr;
+          // Refresh the detail card wallet row without reloading the full page
+          const walletVal = document.querySelector('#manage-detail-card .ico-wallet')?.closest('.data-row')?.querySelector('.value');
+          if (walletVal) {
+            const short = addr.length > 16 ? addr.slice(0, 8) + '\u2026' + addr.slice(-5) : addr;
+            walletVal.textContent = short;
+          }
+        }
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
+      } catch (e) {
+        document.getElementById('wallet-err').textContent = String(e.message || e);
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // COMP A MEMBER PAGE
+    // ════════════════════════════════════════════════════
+    function openCompPage(groupId) {
+      document.getElementById('comp-input').value = '';
+      document.getElementById('comp-err').textContent = '';
+      document.getElementById('comp-result').innerHTML = '';
+      document.getElementById('comp-submit-btn').disabled = false;
+      document.getElementById('comp-submit-btn').innerHTML =
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Grant Free Access`;
+      document.getElementById('comp-submit-btn').setAttribute('data-gid', groupId);
+      App.nav('comp');
+    }
+
+    async function submitComp() {
+      const groupId = parseInt(document.getElementById('comp-submit-btn').getAttribute('data-gid'), 10);
+      const uid = parseInt(document.getElementById('comp-input').value.trim(), 10);
+      if (!uid || isNaN(uid)) { document.getElementById('comp-err').textContent = 'Enter a valid Telegram user ID'; return; }
+      const btn = document.getElementById('comp-submit-btn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/comp`, {
+          method: 'POST', headers: H(), body: JSON.stringify({ telegram_user_id: uid })
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        document.getElementById('comp-result').innerHTML = alertHtml(`User ${uid} has been comped — free access granted.`, 'success');
+        document.getElementById('comp-input').value = '';
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Grant Free Access`;
+      } catch (e) {
+        document.getElementById('comp-err').textContent = String(e.message || e);
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Grant Free Access`;
+      }
+    }
+
+    // Comp from member list row (members page)
+    async function compMember(groupId, userId, name) {
+      const confirmed = await Confirm.show(`Comp ${name}?`, 'This will grant them free access.');
+      if (!confirmed) return;
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/comp`, {
+          method: 'POST', headers: H(), body: JSON.stringify({ telegram_user_id: userId })
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        openMembers(groupId); // refresh the members page
+      } catch (e) {
+        WebApp.showAlert('Comp failed: ' + (e.message || e));
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // DELETE NETWORK — two-step confirmation
+    // ════════════════════════════════════════════════════
+    let _deleteGroupId = null;
+    let _deleteGroupTitle = '';
+
+    function openDeletePage(groupId, groupTitle) {
+      _deleteGroupId = groupId;
+      _deleteGroupTitle = groupTitle;
+      // Reset to step 1
+      document.getElementById('delete-step1').style.display = 'block';
+      document.getElementById('delete-step2').style.display = 'none';
+      document.getElementById('delete-name-input').value = '';
+      document.getElementById('delete-name-err').textContent = '';
+      document.getElementById('delete-result').innerHTML = '';
+      document.getElementById('delete-confirm-btn').disabled = false;
+      document.getElementById('delete-confirm-btn').textContent = '\uD83D\uDDD1\uFE0F Delete This Network';
+      App.nav('delete');
+    }
+
+    function deleteStep2() {
+      document.getElementById('delete-step1').style.display = 'none';
+      document.getElementById('delete-step2').style.display = 'block';
+      // Populate only the inner <span> so the parent label's text-transform:uppercase
+      // does NOT visually mangle the exact name the user must type.
+      document.getElementById('delete-name-label').textContent = _deleteGroupTitle;
+    }
+
+    async function submitDelete() {
+      const typed = document.getElementById('delete-name-input').value.trim();
+      if (typed !== _deleteGroupTitle) {
+        document.getElementById('delete-name-err').textContent =
+          `Name doesn't match. Type exactly: ${_deleteGroupTitle}`;
+        return;
+      }
+      const btn = document.getElementById('delete-confirm-btn');
+      btn.disabled = true;
+      btn.textContent = 'Deleting…';
+      document.getElementById('delete-name-err').textContent = '';
+      try {
+        const r = await apiFetch(`${API}/groups/${_deleteGroupId}`, {
+          method: 'DELETE', headers: H()
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        document.getElementById('delete-result').innerHTML =
+          alertHtml(`${esc(_deleteGroupTitle)} has been deleted. All subscriber records removed.`, 'success');
+        btn.textContent = '\u2705 Deleted';
+        // Return to dashboard after a short delay
+        setTimeout(() => {
+          loadNetworks();
+          App.nav('dashboard');
+        }, 1800);
+      } catch (e) {
+        document.getElementById('delete-result').innerHTML = alertHtml(String(e.message || e), 'error');
+        btn.disabled = false;
+        btn.textContent = '\uD83D\uDDD1\uFE0F Delete This Network';
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // PAUSE / RESUME (confirm overlay → stay on manage page)
+    // ════════════════════════════════════════════════════
+    async function doPauseResume(groupId, currentStatus, name) {
+      const isPaused = currentStatus === 'paused';
+      const endpoint = isPaused ? 'resume' : 'pause';
+      const confirmed = await Confirm.show(
+        isPaused ? `Resume ${name || 'network'}?` : `Pause ${name || 'network'}?`,
+        isPaused
+          ? 'New join requests will be processed normally again.'
+          : 'No new members will be approved until you resume.'
+      );
+      if (!confirmed) return;
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/${endpoint}`, { method: 'POST', headers: H() });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        const newStatus = isPaused ? 'active' : 'paused';
+        if (_manageGroupData) _manageGroupData.status = newStatus;
+        // Update pause button on manage page
+        document.getElementById('mgmt-pause-ico').innerHTML = ico(isPaused ? 'pause' : 'play', 20);
+        document.getElementById('mgmt-pause-label').textContent = isPaused ? 'Pause' : 'Resume';
+        document.getElementById('mgmt-pause').style.background = isPaused ? 'var(--surface)' : 'rgba(74,222,128,.2)';
+        // Update status dot in detail card
+        const dot = document.querySelector('#manage-detail-card .status-dot');
+        if (dot) dot.className = `status-dot ${newStatus}`;
+        // Show toast-style feedback without leaving the page
+        WebApp.showAlert(isPaused ? `${name || 'Network'} resumed.` : `${name || 'Network'} paused.`);
+        loadNetworks(); // refresh dashboard in background
+      } catch (e) {
+        WebApp.showAlert('Error: ' + (e.message || e));
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // SUBSCRIPTIONS — member view
+    // ════════════════════════════════════════════════════
+    async function loadSubs() {
+      const el = document.getElementById('subs-list');
+      el.innerHTML = skeletonCards(2);
+      try {
+        const r = await apiFetch(`${API}/my-subscriptions`, { headers: H() });
+        if (!r.ok) throw new Error(r.status);
+        const { subscriptions: subs } = await r.json();
+        if (!subs.length) {
+          el.innerHTML = `<div class="empty">${ico('hash', 40)}<p>No subscriptions yet.</p></div>`;
+          return;
+        }
+        el.innerHTML = '';
+        subs.forEach(s => {
+          const usd = s.price_usd_cents ? fmtUsd(s.price_usd_cents)
+            : (s.group_price ? '$' + Number(s.group_price).toFixed(2) : 'N/A');
+          const interval = s.billing_interval_days === 7 ? '/week' : '/month';
+          const card = document.createElement('div');
+          card.className = 'glass sub-card';
+          card.innerHTML = `
+        <div class="sub-hdr">
+          <span class="sub-name">${esc(s.chat_title || 'Group')}</span>
+          ${pill(s.subscription_status)}
+        </div>
+        <div class="sub-price">${usd} <span>USD${interval}</span></div>
+        <div class="sub-meta">
+          ${ico('bell', 13)}
+          Renews ${s.next_renewal_date || 'N/A'}
+        </div>
+      `;
+          if (['active', 'expired'].includes(s.subscription_status) && BOT_USERNAME) {
+            // Only show Renew during the reminder window (3 days before expiry) or if expired.
+            // Prevents members from renewing too early and complaining the counter resets.
+            let showRenew = s.subscription_status === 'expired';
+            if (!showRenew && s.next_renewal_date) {
+              const renewalMs = new Date(s.next_renewal_date).getTime();
+              const nowMs = Date.now();
+              const daysLeft = (renewalMs - nowMs) / 86400000;
+              showRenew = daysLeft <= 3; // match REMINDER_WINDOW_DAYS
+            }
+            if (showRenew) {
+              const btn = document.createElement('button');
+              btn.className = 'btn btn-renew';
+              btn.innerHTML = `${ico('credit', 17)} Renew via Bot`;
+              btn.style.marginTop = '12px';
+              btn.onclick = () => {
+                WebApp.HapticFeedback.impactOccurred('medium');
+                WebApp.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=renew_${s.group_id}`);
+              };
+              card.appendChild(btn);
+            }
+          }
+          el.appendChild(card);
+        });
+      } catch (e) {
+        el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load subscriptions.</p></div>`;
+      }
+    }
+
+    // ── Subscriptions tab toggle ──────────────────────────────────────────────
+    let _subsHistoryLoaded = false;
+
+    function showSubsTab(tab) {
+      const activeList   = document.getElementById('subs-list');
+      const historyList  = document.getElementById('subs-history-list');
+      const btnActive    = document.getElementById('subs-tab-active');
+      const btnHistory   = document.getElementById('subs-tab-history');
+      const isHistory    = tab === 'history';
+
+      activeList.style.display  = isHistory ? 'none' : 'block';
+      historyList.style.display = isHistory ? 'block' : 'none';
+
+      btnActive.style.background  = isHistory ? 'var(--surface2)' : 'var(--accent)';
+      btnActive.style.color       = isHistory ? 'rgba(255,255,255,.6)' : '#fff';
+      btnHistory.style.background = isHistory ? 'var(--accent)' : 'var(--surface2)';
+      btnHistory.style.color      = isHistory ? '#fff' : 'rgba(255,255,255,.6)';
+
+      if (isHistory && !_subsHistoryLoaded) {
+        _subsHistoryLoaded = true;
+        loadPaymentHistory();
+      }
+    }
+
+    // ── Member payment history ────────────────────────────────────────────────
+    async function loadPaymentHistory() {
+      const el = document.getElementById('subs-history-list');
+      el.innerHTML = skeletonCards(3);
+      try {
+        const r = await apiFetch(`${API}/my-payment-history?limit=50`, { headers: H() });
+        if (!r.ok) throw new Error(r.status);
+        const { history } = await r.json();
+
+        if (!history.length) {
+          el.innerHTML = `<div class="empty">${ico('hash', 40)}<p>No payment history yet.</p></div>`;
+          return;
+        }
+
+        el.innerHTML = '';
+        history.forEach(p => {
+          const groupName  = esc(p.chat_title || 'Unknown Group');
+          const interval   = p.billing_interval_days === 7 ? '/week' : '/month';
+          const priceUsd   = p.price_usd_cents ? fmtUsd(p.price_usd_cents) : '—';
+          const date       = p.start_date ? p.start_date.slice(0, 16).replace('T', ' ') : '—';
+          const statusIcon = p.subscription_status === 'active'    ? '✅'
+                           : p.subscription_status === 'expired'   ? '⏰'
+                           : p.subscription_status === 'cancelled' ? '❌'
+                           : p.subscription_status === 'comped'    ? '🎁' : '•';
+
+          const card = document.createElement('div');
+          card.className = 'glass sub-card';
+          card.style.marginBottom = '10px';
+          card.innerHTML = `
+            <div class="sub-hdr" style="margin-bottom:6px">
+              <span class="sub-name" style="font-size:15px">${groupName}</span>
+              <span style="font-size:18px">${statusIcon}</span>
+            </div>
+            <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px">
+              ${priceUsd}<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.5)">${interval}</span>
+            </div>
+            <div style="font-size:12px;color:rgba(255,255,255,.45);display:flex;gap:12px;flex-wrap:wrap">
+              <span>📅 ${date}</span>
+              ${p.amount_ton != null ? `<span>💎 ${p.amount_ton} TON</span>` : ''}
+            </div>
+          `;
+          el.appendChild(card);
+        });
+      } catch (e) {
+        el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load history.</p></div>`;
+      }
+    }
+
+  </script>
+
+  <script>
+    // ════════════════════════════════════════════════════
+    // WIZARD — Add Network
+    // ════════════════════════════════════════════════════
+    const Wiz = (() => {
+      let _step = 0;
+      const TOTAL = 5;
+      let _state = { chat: null, priceUsdCents: null, intervalDays: 30, wallet: '', feePreview: null };
+
+      function _go(n) {
+        for (let i = 0; i < TOTAL; i++) {
+          document.getElementById(`wiz-step-${i}`).classList.toggle('show', i === n);
+          const d = document.getElementById(`dot-${i}`);
+          d.className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+        }
+        _step = n;
+        const bb = document.getElementById('wiz-back-btn');
+        const lbl = document.getElementById('wiz-back-label');
+        // Step 0: show as "Cancel" (exits to dashboard); steps 1+: show as "← Back"
+        bb.style.visibility = 'visible';
+        if (lbl) lbl.textContent = n === 0 ? 'Cancel' : 'Back';
+      }
+
+      function _err(id, msg) {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = msg ? alertHtml(msg, 'error') : '';
+      }
+
+      return {
+        init() {
+          _step = 0;
+          _state = { chat: null, priceUsdCents: null, intervalDays: 30, wallet: '', feePreview: null };
+          _go(0); _err('wiz-0-error', '');
+        },
+
+        back() { _step > 0 ? _go(_step - 1) : App.nav('dashboard'); },
+        goStep(n) { _go(n); },
+
+        // ── Step 0 → 1: detect ──
+        async detect() {
+          _err('wiz-0-error', '');
+          const btn = document.getElementById('wiz-detect-btn');
+          btn.disabled = true; btn.innerHTML = `${ico('hash', 17)} Checking…`;
+          try {
+            const r = await apiFetch(`${API}/groups/detect`, { method: 'POST', headers: H() });
+            const data = await r.json();
+            if (!r.ok) { _err('wiz-0-error', typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)); return; }
+            const chats = data.detected_chats || [];
+            if (!chats.length) { _err('wiz-0-error', 'No recent admin grant found. Add me as admin first, then tap Check Now within 15 minutes.'); return; }
+            const list = document.getElementById('wiz-chat-list');
+            list.innerHTML = '';
+            chats.forEach(c => {
+              const item = document.createElement('div');
+              const typeIcon = c.chat_type === 'channel' ? ico('broadcast', 16) : ico('users', 16);
+              item.className = 'chat-item' + (c.permissions_ok ? ' selectable' : ' disabled');
+              item.innerHTML = `
+            <div class="ci-name">${typeIcon} ${esc(c.chat_title)}</div>
+            ${!c.permissions_ok ? `<div class="ci-warn">${ico('alert', 12)} Missing: ${c.missing_permissions.join(', ')}</div>` : ''}
+          `;
+              if (c.permissions_ok) {
+                item.onclick = () => { _state.chat = c; WebApp.HapticFeedback.impactOccurred('light'); _go(2); };
+              }
+              list.appendChild(item);
+            });
+            _go(1);
+          } catch (e) {
+            _err('wiz-0-error', 'Network error. Please try again.');
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Done — Check Now`;
+          }
+        },
+
+        // ── Step 2: price ──
+        submitPrice() {
+          const raw = document.getElementById('wiz-price').value.replace('$', '').trim();
+          const usd = parseFloat(raw);
+          if (isNaN(usd) || usd < 1) { document.getElementById('wiz-price-err').textContent = 'Minimum price is $1.00'; return; }
+          document.getElementById('wiz-price-err').textContent = '';
+          _state.priceUsdCents = Math.round(usd * 100);
+          _state.intervalDays = parseInt(document.getElementById('wiz-interval').value, 10);
+          const buyer = usd * 0.02, admin = usd * 0.033;
+          document.getElementById('wiz-fee-box').innerHTML = `
+        <div class="fee-box-title">Estimated fee breakdown at $${usd.toFixed(2)}</div>
+        <div class="fee-row"><span class="fl">Member pays</span><span class="fv">$${(usd + buyer).toFixed(2)}</span></div>
+        <div class="fee-row"><span class="fl">You receive</span><span class="fv">$${(usd - admin).toFixed(2)}</span></div>
+        <div class="fee-row"><span class="fl">Platform fee</span><span class="fv">$${(buyer + admin).toFixed(2)}</span></div>
+      `;
+          _go(3);
+        },
+
+        // ── Step 3: wallet ──
+        submitWallet() {
+          const addr = document.getElementById('wiz-wallet').value.trim();
+          document.getElementById('wiz-wallet-err').textContent = '';
+          if (!addr) { document.getElementById('wiz-wallet-err').textContent = 'Please enter your TON (GRAM) wallet address.'; return; }
+          _state.wallet = addr;
+          const usd = (_state.priceUsdCents / 100).toFixed(2);
+          const interval = _state.intervalDays === 7 ? 'Weekly' : 'Monthly';
+          const short = addr.length > 18 ? addr.slice(0, 9) + '…' + addr.slice(-6) : addr;
+          // Strict type badge on summary too
+          document.getElementById('wiz-summary').innerHTML = `
+        <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.3px;margin-bottom:14px">Summary</div>
+        <div class="data-row" style="margin-bottom:10px"><div class="ico">${ico('hash', 15)}</div><div class="content"><span class="label">Network</span><span class="value">${esc(_state.chat.chat_title)}</span></div></div>
+        <div class="data-row" style="margin-bottom:10px"><div class="ico">${ico('broadcast', 15)}</div><div class="content"><span class="label">Type</span><span class="value">${entityTypeBadge(_state.chat.chat_type)}</span></div></div>
+        <div class="data-row" style="margin-bottom:10px"><div class="ico">${ico('dollar', 15)}</div><div class="content"><span class="label">Price</span><span class="value">$${usd} ${interval}</span></div></div>
+        <div class="data-row"><div class="ico">${ico('wallet', 15)}</div><div class="content"><span class="label">Wallet</span><span class="value mono">${esc(short)}</span></div></div>
+      `;
+          _err('wiz-final-error', '');
+          _go(4);
+        },
+
+        // ── Step 4: activate ──
+        async activate() {
+          const btn = document.getElementById('wiz-activate-btn');
+          btn.disabled = true; btn.innerHTML = `${ico('hash', 17)} Activating…`;
+          _err('wiz-final-error', '');
+          try {
+            const payload = {
+              telegram_chat_id: _state.chat.telegram_chat_id,
+              price_usd_cents: _state.priceUsdCents,
+              billing_interval_days: _state.intervalDays,
+              wallet_address: _state.wallet,
+            };
+            const r = await apiFetch(`${API}/groups/create`, { method: 'POST', headers: H(), body: JSON.stringify(payload) });
+            const data = await r.json();
+            if (!r.ok) {
+              const msg = data.detail;
+              _err('wiz-final-error', typeof msg === 'string' ? msg : (msg?.error ? msg.error + ': ' + (msg.missing || []).join(', ') : JSON.stringify(msg)));
+              return;
+            }
+            WebApp.HapticFeedback.notificationOccurred('success');
+            const fp = data.fee_preview;
+            document.getElementById('wiz-summary').innerHTML = `
+          ${alertHtml(`Paywall activated! ${data.chat_title} is now live.`, 'success')}
+          <div class="fee-row"><span class="fl">Member pays</span><span class="fv">$${fp.member_pays_usd.toFixed(2)}</span></div>
+          <div class="fee-row"><span class="fl">You receive</span><span class="fv">$${fp.admin_receives_usd.toFixed(2)}</span></div>
+          <div class="fee-row"><span class="fl">Platform fee</span><span class="fv">$${fp.platform_keeps_usd.toFixed(2)}</span></div>
+          <p style="margin-top:12px;font-size:12.5px">${esc(data.invite_link_note)}</p>
+        `;
+            btn.innerHTML = `${ico('check', 17)} Done`;
+            btn.disabled = false;
+            btn.onclick = () => { loadNetworks(); App.nav('dashboard'); };
+            loadNetworks();
+          } catch (e) {
+            _err('wiz-final-error', 'Network error. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Activate Paywall`;
+          }
+        },
+      };
+    })();
+
+    // ════════════════════════════════════════════════════
+    // TERMS OF SERVICE GATE
+    // ════════════════════════════════════════════════════
+    async function checkAndShowTos() {
+      try {
+        const r = await apiFetch(`${API}/terms-status`, { headers: H() });
+        if (!r.ok) {
+          // If auth fails (e.g. opened outside Telegram), the gate will
+          // block and the agree button will show the real error.
+          showTosGate();
+          return false;
+        }
+        const { accepted } = await r.json();
+        if (!accepted) {
+          showTosGate();
+          return false;
+        }
+        return true; // already accepted — skip gate
+      } catch (_) {
+        // Network error: show gate so user can retry via agree button
+        showTosGate();
+        return false;
+      }
+    }
+
+    function showTosGate() {
+      document.getElementById('tos-gate').style.display = 'block';
+    }
+
+    function hideTosGate() {
+      const gate = document.getElementById('tos-gate');
+      gate.style.opacity = '0';
+      gate.style.transition = 'opacity .3s';
+      setTimeout(() => gate.remove(), 300);
+    }
+
+    // Pending navigation target after ToS acceptance (e.g. 'wizard')
+    let _pendingNav = null;
+
+    // Call instead of App.nav('wizard') — ensures ToS is accepted first.
+    async function startWizard() {
+      const accepted = await checkAndShowTos();
+      if (accepted) {
+        App.nav('wizard');
+        Wiz.init();
+      } else {
+        // Gate is now showing; after agree, _pendingNav drives the redirect
+        _pendingNav = 'wizard';
+      }
+    }
+
+    async function tosAgree() {
+      const btn = document.getElementById('tos-agree-btn');
+      const errEl = document.getElementById('tos-err');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      errEl.style.display = 'none';
+      try {
+        const r = await fetch(`${API}/terms-accept`, { method: 'POST', headers: H() });
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          const msg = r.status === 401
+            ? 'Authentication failed. Please open this app through Telegram.'
+            : (d.detail || 'Could not save your acceptance. Please try again.');
+          errEl.textContent = msg;
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> I Agree — Continue`;
+          return;
+        }
+        WebApp.HapticFeedback.notificationOccurred('success');
+        hideTosGate();
+        // Run normal app init, then navigate to any pending destination
+        await appInit();
+        if (_pendingNav) {
+          const dest = _pendingNav;
+          _pendingNav = null;
+          App.nav(dest);
+          if (dest === 'wizard') Wiz.init();
+        }
+      } catch (e) {
+        errEl.textContent = 'Network error. Check your connection and try again.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> I Agree — Continue`;
+      }
+    }
+
+    function tosDecline() {
+      WebApp.close();
+    }
+
+    // ════════════════════════════════════════════════════
+    // MAIN APP INIT — called only after ToS is confirmed
+    // ════════════════════════════════════════════════════
+    async function appInit() {
+      // 1. Fetch bot username for deep-links
+      try {
+        const r = await apiFetch(`${API}/config`);
+        if (r.ok) { const d = await r.json(); BOT_USERNAME = d.bot_username || ''; }
+      } catch (_) { }
+
+      // 2. Initialise icons
+      document.getElementById('sr-ico-bell').innerHTML = ico('bell', 18);
+      document.getElementById('sr-ico-msg').innerHTML = ico('message', 18);
+      // Terms icon is already inline SVG — no injection needed
+
+      // 2b. Populate the accepted-on badge in the Terms accordion
+      try {
+        const tr = await apiFetch(`${API}/terms-status`, { headers: H() });
+        if (tr.ok) {
+          const { accepted, accepted_at } = await tr.json();
+          if (accepted) {
+            const badge = document.getElementById('tos-accepted-badge');
+            const dateEl = document.getElementById('tos-accepted-date');
+            if (badge && dateEl) {
+              const d = accepted_at ? new Date(accepted_at + 'Z') : null;
+              dateEl.textContent = d && !isNaN(d)
+                ? d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+                : 'date unavailable';
+              badge.style.display = 'block';
+            }
+            // Update the sub-label to show acceptance date
+            const subLabel = document.querySelector('#settings-accordion-group .accordion-trigger:last-of-type .sr-sub');
+            if (subLabel && accepted_at) {
+              const d2 = new Date(accepted_at + 'Z');
+              if (!isNaN(d2)) {
+                subLabel.textContent = `Accepted ${d2.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+              }
+            }
+          }
+        }
+      } catch (_) { }
+
+      // 3. Set welcome name from Telegram user data
+      try {
+        const tgUser = WebApp.initDataUnsafe?.user;
+        if (tgUser && tgUser.first_name) {
+          const titleEl = document.getElementById('admin-welcome-title');
+          if (titleEl) titleEl.textContent = `Welcome back, ${tgUser.first_name}!`;
+        }
+      } catch (_) { }
+
+      // 4. Load page data and route
+      const isAdmin = await loadNetworks();
+      if (isAdmin) {
+        App.nav('dashboard');
+      } else {
+        App.nav('subs');
+      }
+      hidePreloader();
+
+      loadSubs();
+      Wiz.init();
+    }
+
+    // ════════════════════════════════════════════════════
+    // ENTRY POINT
+    // ════════════════════════════════════════════════════
+    (async function init() {
+      const accepted = await checkAndShowTos();
+      if (accepted) {
+        await appInit();
+      } else {
+        // ToS gate is now visible; appInit() will be called by tosAgree()
+        hidePreloader();
+      }
+    })();
+  </script>
+</body>
+
+</html>

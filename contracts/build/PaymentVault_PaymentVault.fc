@@ -1,0 +1,510 @@
+#pragma version =0.4.6;
+#pragma allow-post-modification;
+#pragma compute-asm-ltr;
+
+;; PaymentVault_PaymentVault.headers.fc
+;;
+;; Header files for PaymentVault
+;; NOTE: declarations are sorted for optimal order
+;;
+
+;; __tact_context_get
+(int, slice, int, slice) __tact_context_get() inline;
+
+;; __tact_context_get_sender
+slice __tact_context_get_sender() inline;
+
+;; $PaymentLog$_store
+builder $PaymentLog$_store(builder build_0, (int, int, int, int, int, int) v) inline;
+
+;; $PaymentLog$_store_cell
+cell $PaymentLog$_store_cell((int, int, int, int, int, int) v, builder b) inline;
+
+;; $PaymentVault$_store
+builder $PaymentVault$_store(builder build_0, (slice, slice, slice, slice, int, int, int, int, int, int) v) inline;
+
+;; $PaymentVault$_load
+(slice, ((slice, slice, slice, slice, int, int, int, int, int, int))) $PaymentVault$_load(slice sc_0) inline;
+
+;; $Context$_get_value
+_ $Context$_get_value((int, slice, int, slice) v) inline;
+
+;; $VaultConfig$_to_external
+(slice, slice, slice, slice, int, int, int, int) $VaultConfig$_to_external(((slice, slice, slice, slice, int, int, int, int)) v) inline;
+
+;; $PaymentVault$init$_load
+(slice, ((slice, slice, slice, slice, int, int, int, int))) $PaymentVault$init$_load(slice sc_0) inline;
+
+;; $PaymentVault$_contract_init
+(slice, slice, slice, slice, int, int, int, int, int, int) $PaymentVault$_contract_init(slice $admin_wallet, slice $platform_wallet, slice $log_address, slice $trigger_wallet, int $price, int $buyer_fee_bps, int $admin_fee_bps, int $subscription_id) impure inline;
+
+;; $PaymentVault$_contract_load
+(slice, slice, slice, slice, int, int, int, int, int, int) $PaymentVault$_contract_load() impure inline;
+
+;; $PaymentVault$_contract_store
+() $PaymentVault$_contract_store((slice, slice, slice, slice, int, int, int, int, int, int) v) impure inline;
+
+;; $VaultConfig$_constructor_admin_wallet_platform_wallet_log_address_trigger_wallet_price_buyer_fee_bps_admin_fee_bps_subscription_id
+((slice, slice, slice, slice, int, int, int, int)) $VaultConfig$_constructor_admin_wallet_platform_wallet_log_address_trigger_wallet_price_buyer_fee_bps_admin_fee_bps_subscription_id(slice $admin_wallet, slice $platform_wallet, slice $log_address, slice $trigger_wallet, int $price, int $buyer_fee_bps, int $admin_fee_bps, int $subscription_id) inline;
+
+;; $PaymentVault$_fun_config
+((slice, slice, slice, slice, int, int, int, int, int, int), (slice, slice, slice, slice, int, int, int, int)) $PaymentVault$_fun_config((slice, slice, slice, slice, int, int, int, int, int, int) $self) impure inline_ref;
+
+;; $PaymentVault$_fun_overage
+((slice, slice, slice, slice, int, int, int, int, int, int), int) $PaymentVault$_fun_overage((slice, slice, slice, slice, int, int, int, int, int, int) $self) impure inline_ref;
+
+;; $PaymentVault$_fun_required_payment
+((slice, slice, slice, slice, int, int, int, int, int, int), int) $PaymentVault$_fun_required_payment((slice, slice, slice, slice, int, int, int, int, int, int) $self) impure inline_ref;
+
+;; $SendParameters$_constructor_to_value_mode_body
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_body(slice $to, int $value, int $mode, cell $body) inline;
+
+;; $PaymentLog$_constructor_subscription_id_amount_paid_admin_amount_platform_amount_overage_timestamp
+((int, int, int, int, int, int)) $PaymentLog$_constructor_subscription_id_amount_paid_admin_amount_platform_amount_overage_timestamp(int $subscription_id, int $amount_paid, int $admin_amount, int $platform_amount, int $overage, int $timestamp) inline;
+
+;; $SendParameters$_constructor_to_value_bounce_mode_body
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_bounce_mode_body(slice $to, int $value, int $bounce, int $mode, cell $body) inline;
+
+
+;; PaymentVault_PaymentVault.stdlib.fc
+global (int, slice, int, slice) __tact_context;
+global slice __tact_context_sender;
+global cell __tact_child_contract_codes;
+global int __tact_randomized;
+
+(int, slice, int, slice) __tact_context_get() inline {
+    return __tact_context;
+}
+
+slice __tact_context_get_sender() inline {
+    return __tact_context_sender;
+}
+
+cell $global_emptyCell() impure asm """
+    <b b> PUSHREF // Pure Fift: "<b" creates a builder, "b>" turns it into a cell at compile time
+""";
+
+() $global_send((int, cell, cell, cell, int, slice, int) $params) impure asm """
+    NEWC
+    b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+    1 STI               // store `bounce`
+    b{000} STSLICECONST // store bounced = false and src = addr_none
+    STSLICE             // store `to`
+    SWAP
+    STGRAMS             // store `value`
+    105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+    STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+    // → Stack state
+    // s0: Builder
+    // s1: `data`
+    // s2: `code`
+    // s3: `body`
+    // s4: `mode`
+
+    // Group 2: Placing the Builder after code and data, then checking those for nullability
+    s2 XCHG0
+    DUP2
+    ISNULL
+    SWAP
+    ISNULL
+    AND
+    // → Stack state
+    // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+    // s1: `code`
+    // s2: `data`
+    // s3: Builder
+    // s4: `body`
+    // s5: `mode`
+
+    // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+    <{
+        DROP2 // drop `data` and `code`, since either of those is null
+        b{0} STSLICECONST
+    }> PUSHCONT
+
+    // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+    <{
+        // _ split_depth:(Maybe (## 5))
+        //   special:(Maybe TickTock)
+        //   code:(Maybe ^Cell)
+        //   data:(Maybe ^Cell)
+        //   library:(Maybe ^Cell)
+        // = StateInit;
+        ROT                // place message Builder on top
+        b{10} STSLICECONST // store Maybe = true, Either = false
+        // Start composing inlined StateInit
+        b{00} STSLICECONST // store split_depth and special first
+        STDICT             // store code
+        STDICT             // store data
+        b{0} STSLICECONST  // store library
+    }> PUSHCONT
+
+    // Group 3: IFELSE that does the branching shown above
+    IFELSE
+    // → Stack state
+    // s0: Builder
+    // s1: null or StateInit
+    // s2: `body`
+    // s3: `mode`
+
+    // Group 4: Finalizing the message
+    STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+    ENDC
+    // → Stack state
+    // s0: Cell
+    // s1: `mode`
+
+    // Group 5: Sending the message, with `mode` on top
+    SWAP
+    SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+""";
+
+int $global_now() impure asm """
+    NOW
+""";
+
+;; PaymentVault_PaymentVault.storage.fc
+;;
+;; Type: Context
+;; TLB: _ bounceable:bool sender:address value:int257 raw:^slice = Context
+;;
+
+_ $Context$_get_value((int, slice, int, slice) v) inline {
+    var (v'bounceable, v'sender, v'value, v'raw) = v;
+    return v'value;
+}
+
+;;
+;; Type: SendParameters
+;; TLB: _ mode:int257 body:Maybe ^cell code:Maybe ^cell data:Maybe ^cell value:int257 to:address bounce:bool = SendParameters
+;;
+
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_body(slice $to, int $value, int $mode, cell $body) inline {
+    return ($mode, $body, null(), null(), $value, $to, true);
+}
+
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_bounce_mode_body(slice $to, int $value, int $bounce, int $mode, cell $body) inline {
+    return ($mode, $body, null(), null(), $value, $to, $bounce);
+}
+
+;;
+;; Type: PaymentLog
+;; Header: 0x3cf20b7a
+;; TLB: payment_log#3cf20b7a subscription_id:uint64 amount_paid:coins admin_amount:coins platform_amount:coins overage:coins timestamp:uint32 = PaymentLog
+;;
+
+builder $PaymentLog$_store(builder build_0, (int, int, int, int, int, int) v) inline {
+    var (v'subscription_id, v'amount_paid, v'admin_amount, v'platform_amount, v'overage, v'timestamp) = v;
+    build_0 = store_uint(build_0, 1022495610, 32);
+    build_0 = build_0.store_uint(v'subscription_id, 64);
+    build_0 = build_0.store_varuint16(v'amount_paid);
+    build_0 = build_0.store_varuint16(v'admin_amount);
+    build_0 = build_0.store_varuint16(v'platform_amount);
+    build_0 = build_0.store_varuint16(v'overage);
+    build_0 = build_0.store_uint(v'timestamp, 32);
+    return build_0;
+}
+
+cell $PaymentLog$_store_cell((int, int, int, int, int, int) v, builder b) inline {
+    return $PaymentLog$_store(b, v).end_cell();
+}
+
+((int, int, int, int, int, int)) $PaymentLog$_constructor_subscription_id_amount_paid_admin_amount_platform_amount_overage_timestamp(int $subscription_id, int $amount_paid, int $admin_amount, int $platform_amount, int $overage, int $timestamp) inline {
+    return ($subscription_id, $amount_paid, $admin_amount, $platform_amount, $overage, $timestamp);
+}
+
+;;
+;; Type: VaultConfig
+;; TLB: _ admin_wallet:address platform_wallet:address log_address:address trigger_wallet:address price:coins buyer_fee_bps:uint16 admin_fee_bps:uint16 subscription_id:uint64 = VaultConfig
+;;
+
+(slice, slice, slice, slice, int, int, int, int) $VaultConfig$_to_external(((slice, slice, slice, slice, int, int, int, int)) v) inline {
+    var (v'admin_wallet, v'platform_wallet, v'log_address, v'trigger_wallet, v'price, v'buyer_fee_bps, v'admin_fee_bps, v'subscription_id) = v; 
+    return (v'admin_wallet, v'platform_wallet, v'log_address, v'trigger_wallet, v'price, v'buyer_fee_bps, v'admin_fee_bps, v'subscription_id);
+}
+
+((slice, slice, slice, slice, int, int, int, int)) $VaultConfig$_constructor_admin_wallet_platform_wallet_log_address_trigger_wallet_price_buyer_fee_bps_admin_fee_bps_subscription_id(slice $admin_wallet, slice $platform_wallet, slice $log_address, slice $trigger_wallet, int $price, int $buyer_fee_bps, int $admin_fee_bps, int $subscription_id) inline {
+    return ($admin_wallet, $platform_wallet, $log_address, $trigger_wallet, $price, $buyer_fee_bps, $admin_fee_bps, $subscription_id);
+}
+
+;;
+;; Type: PaymentVault
+;; TLB: _ admin_wallet:address platform_wallet:address log_address:address trigger_wallet:address price:coins buyer_fee_bps:uint16 admin_fee_bps:uint16 subscription_id:uint64 overage_held:coins accumulated_paid:coins = PaymentVault
+;;
+
+builder $PaymentVault$_store(builder build_0, (slice, slice, slice, slice, int, int, int, int, int, int) v) inline {
+    var (v'admin_wallet, v'platform_wallet, v'log_address, v'trigger_wallet, v'price, v'buyer_fee_bps, v'admin_fee_bps, v'subscription_id, v'overage_held, v'accumulated_paid) = v;
+    build_0 = build_0.store_slice(v'admin_wallet);
+    build_0 = build_0.store_slice(v'platform_wallet);
+    build_0 = build_0.store_slice(v'log_address);
+    var build_1 = begin_cell();
+    build_1 = build_1.store_slice(v'trigger_wallet);
+    build_1 = build_1.store_varuint16(v'price);
+    build_1 = build_1.store_uint(v'buyer_fee_bps, 16);
+    build_1 = build_1.store_uint(v'admin_fee_bps, 16);
+    build_1 = build_1.store_uint(v'subscription_id, 64);
+    build_1 = build_1.store_varuint16(v'overage_held);
+    build_1 = build_1.store_varuint16(v'accumulated_paid);
+    build_0 = store_builder_ref(build_0, build_1);
+    return build_0;
+}
+
+(slice, ((slice, slice, slice, slice, int, int, int, int, int, int))) $PaymentVault$_load(slice sc_0) inline {
+    var v'admin_wallet = sc_0~load_msg_addr();
+    var v'platform_wallet = sc_0~load_msg_addr();
+    var v'log_address = sc_0~load_msg_addr();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'trigger_wallet = sc_1~load_msg_addr();
+    var v'price = sc_1~load_varuint16();
+    var v'buyer_fee_bps = sc_1~load_uint(16);
+    var v'admin_fee_bps = sc_1~load_uint(16);
+    var v'subscription_id = sc_1~load_uint(64);
+    var v'overage_held = sc_1~load_varuint16();
+    var v'accumulated_paid = sc_1~load_varuint16();
+    return (sc_0, (v'admin_wallet, v'platform_wallet, v'log_address, v'trigger_wallet, v'price, v'buyer_fee_bps, v'admin_fee_bps, v'subscription_id, v'overage_held, v'accumulated_paid));
+}
+
+(slice, ((slice, slice, slice, slice, int, int, int, int))) $PaymentVault$init$_load(slice sc_0) inline {
+    var v'admin_wallet = sc_0~load_msg_addr();
+    var v'platform_wallet = sc_0~load_msg_addr();
+    var v'log_address = sc_0~load_msg_addr();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'trigger_wallet = sc_1~load_msg_addr();
+    var v'price = sc_1~load_int(257);
+    var v'buyer_fee_bps = sc_1~load_int(257);
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'admin_fee_bps = sc_2~load_int(257);
+    var v'subscription_id = sc_2~load_int(257);
+    return (sc_0, (v'admin_wallet, v'platform_wallet, v'log_address, v'trigger_wallet, v'price, v'buyer_fee_bps, v'admin_fee_bps, v'subscription_id));
+}
+
+(slice, slice, slice, slice, int, int, int, int, int, int) $PaymentVault$_contract_load() impure inline {
+    slice $sc = get_data().begin_parse();
+    int $loaded = $sc~load_int(1);
+    if ($loaded) {
+        return $sc~$PaymentVault$_load();
+    }
+    else {
+        (slice $admin_wallet, slice $platform_wallet, slice $log_address, slice $trigger_wallet, int $price, int $buyer_fee_bps, int $admin_fee_bps, int $subscription_id) = $sc~$PaymentVault$init$_load();
+        $sc.end_parse();
+        return $PaymentVault$_contract_init($admin_wallet, $platform_wallet, $log_address, $trigger_wallet, $price, $buyer_fee_bps, $admin_fee_bps, $subscription_id);
+    }
+}
+
+() $PaymentVault$_contract_store((slice, slice, slice, slice, int, int, int, int, int, int) v) impure inline {
+    builder b = begin_cell();
+    b = b.store_int(true, 1);
+    b = $PaymentVault$_store(b, v);
+    set_data(b.end_cell());
+}
+
+;;
+;; Contract PaymentVault functions
+;;
+
+(slice, slice, slice, slice, int, int, int, int, int, int) $PaymentVault$_contract_init(slice $admin_wallet, slice $platform_wallet, slice $log_address, slice $trigger_wallet, int $price, int $buyer_fee_bps, int $admin_fee_bps, int $subscription_id) impure inline {
+    var (($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid)) = (null(), null(), null(), null(), null(), null(), null(), null(), null(), null());
+    $self'admin_wallet = $admin_wallet;
+    $self'platform_wallet = $platform_wallet;
+    $self'log_address = $log_address;
+    $self'trigger_wallet = $trigger_wallet;
+    $self'price = $price;
+    $self'buyer_fee_bps = $buyer_fee_bps;
+    $self'admin_fee_bps = $admin_fee_bps;
+    $self'subscription_id = $subscription_id;
+    $self'overage_held = 0;
+    $self'accumulated_paid = 0;
+    return ($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid);
+}
+
+((slice, slice, slice, slice, int, int, int, int, int, int), (slice, slice, slice, slice, int, int, int, int)) $PaymentVault$_fun_config((slice, slice, slice, slice, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid)) = $self;
+    var $fresh$ret_0 = $VaultConfig$_constructor_admin_wallet_platform_wallet_log_address_trigger_wallet_price_buyer_fee_bps_admin_fee_bps_subscription_id($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id);
+    return (($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid), $fresh$ret_0);
+}
+
+((slice, slice, slice, slice, int, int, int, int, int, int), int) $PaymentVault$_fun_overage((slice, slice, slice, slice, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid)) = $self;
+    var $fresh$ret_1 = $self'overage_held;
+    return (($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid), $fresh$ret_1);
+}
+
+((slice, slice, slice, slice, int, int, int, int, int, int), int) $PaymentVault$_fun_required_payment((slice, slice, slice, slice, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid)) = $self;
+    var $fresh$ret_2 = ($self'price + (($self'price * $self'buyer_fee_bps) / 10000));
+    return (($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid), $fresh$ret_2);
+}
+
+;;
+;; Get methods of a Contract PaymentVault
+;;
+
+_ %config() method_id(103021) {
+    var self = $PaymentVault$_contract_load();
+    var res = self~$PaymentVault$_fun_config();
+    return $VaultConfig$_to_external(res);
+}
+
+_ %overage() method_id(91901) {
+    var self = $PaymentVault$_contract_load();
+    var res = self~$PaymentVault$_fun_overage();
+    return res;
+}
+
+_ %required_payment() method_id(91109) {
+    var self = $PaymentVault$_contract_load();
+    var res = self~$PaymentVault$_fun_required_payment();
+    return res;
+}
+
+;;
+;; Routing of a Contract PaymentVault
+;;
+
+;; message opcode reader utility: only binary receivers
+;; Returns 32 bit message opcode, otherwise throws the "Invalid incoming message" exit code
+(slice, int) ~load_opcode_internal(slice s) asm( -> 1 0) "32 LDUQ 130 THROWIFNOT";
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+    
+    ;; Context
+    var cs = in_msg_cell.begin_parse();
+    cs~skip_bits(2);
+    var msg_bounceable = cs~load_int(1);
+    var msg_bounced = cs~load_int(1);
+    slice msg_sender_addr = cs~load_msg_addr();
+    __tact_context = (msg_bounceable, msg_sender_addr, msg_value, cs);
+    __tact_context_sender = msg_sender_addr;
+    
+    ;; Load contract data
+    var ($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid) = $PaymentVault$_contract_load();
+    
+    ;; Handle bounced messages
+    if (msg_bounced) { return (); }
+    var op = in_msg~load_opcode_internal();
+    ;; Receive Pay message
+    if (op == 3108783413) {
+        var $msg = empty_tuple();
+        int $buyer_fee = (($self'price * $self'buyer_fee_bps) / 10000);
+        int $required = (($self'price + $buyer_fee) + 50000000);
+        $self'accumulated_paid = ($self'accumulated_paid + $Context$_get_value(__tact_context_get()));
+        if (($self'accumulated_paid < $required)) {
+            $global_send($SendParameters$_constructor_to_value_mode_body($self'log_address, 1000000, 2, $PaymentLog$_store_cell($PaymentLog$_constructor_subscription_id_amount_paid_admin_amount_platform_amount_overage_timestamp($self'subscription_id, $self'accumulated_paid, 0, 0, 0, $global_now()), begin_cell())));
+            $PaymentVault$_contract_store(($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid));
+            return ();
+        }
+        int $admin_fee = (($self'price * $self'admin_fee_bps) / 10000);
+        int $admin_amount = ($self'price - $admin_fee);
+        int $platform_amount = ($admin_fee + $buyer_fee);
+        int $overage = ($self'accumulated_paid - $required);
+        $self'overage_held = ($self'overage_held + $overage);
+        int $total_paid_for_log = $self'accumulated_paid;
+        $self'accumulated_paid = 0;
+        $global_send($SendParameters$_constructor_to_value_bounce_mode_body($self'admin_wallet, $admin_amount, false, 2, $global_emptyCell()));
+        $global_send($SendParameters$_constructor_to_value_bounce_mode_body($self'platform_wallet, $platform_amount, false, 2, $global_emptyCell()));
+        $global_send($SendParameters$_constructor_to_value_mode_body($self'log_address, 1000000, 2, $PaymentLog$_store_cell($PaymentLog$_constructor_subscription_id_amount_paid_admin_amount_platform_amount_overage_timestamp($self'subscription_id, $total_paid_for_log, $admin_amount, $platform_amount, $overage, $global_now()), begin_cell())));
+        $PaymentVault$_contract_store(($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid));
+        return ();
+    }
+    
+    ;; Receive Refund message
+    if (op == 2132218047) {
+        var $msg'recipient = in_msg~load_msg_addr();
+        throw_unless(39849, ( equal_slices_bits(__tact_context_get_sender(), $self'trigger_wallet) ));
+        int $amount = $self'overage_held;
+        throw_unless(60127, ($amount > 0));
+        int $gas_fee = 5000000;
+        int $refund_amount = ($amount - $gas_fee);
+        throw_unless(36509, ($refund_amount > 0));
+        $self'overage_held = 0;
+        $global_send($SendParameters$_constructor_to_value_bounce_mode_body($msg'recipient, $refund_amount, false, 2, $global_emptyCell()));
+        $PaymentVault$_contract_store(($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid));
+        return ();
+    }
+    
+    ;; Throw if not handled
+    throw(130);
+}
+
+
+() __tact_selector_hack_asm() impure asm """
+@atend @ 1 {
+        execute current@ context@ current!
+        {
+            // The core idea of this function is to save gas by avoiding unnecessary dict jump, when recv_internal/recv_external is called
+            // We want to extract recv_internal/recv_external from the dict and select needed function
+            // not by jumping to the needed function by it's index, but by using usual IF statements.
+
+            }END> b> // Close previous builder, now we have a cell of previous code on top of the stack
+
+            <{ // Start of the new code builder
+                SETCP0
+                // Swap the new code builder with the previous code, now we have previous code on top of the stack
+                swap
+                // Transform cell to slice and load first ref from the previous code, now we have the dict on top of the stack
+                <s ref@
+
+                // Extract the recv_internal from the dict
+                dup 0 swap @procdictkeylen idict@ { "internal shortcut error" abort } ifnot
+                swap
+
+                // Delete the recv_internal from the dict
+                0 swap @procdictkeylen idict- drop
+                // Delete the recv_external from the dict (it's okay if it's not there)
+                -1 swap @procdictkeylen idict- drop
+                // Delete the __tact_selector_hack from the dict
+                65535 swap @procdictkeylen idict- drop
+
+                // Bring the code builder from the bottom of the stack
+                // because if recv_external extraction is optional, and the number of elements on the stack is not fixed
+                depth 1- roll
+                // Swap with the dict from which we extracted recv_internal and (maybe) recv_external
+                swap
+
+                // Check if the dict is empty
+                dup null?
+                // Store a copy of this flag in the bottom of the stack
+                dup depth 1- -roll
+                {
+                    // If the dict is empty, just drop it (it will be null if it's empty)
+                    drop
+                }
+                {
+                    // If the dict is not empty, prepare continuation to be stored in c3
+                    <{
+                        // Save this dict as first ref in this continuation, it will be pushed in runtime by DICTPUSHCONST
+                        swap @procdictkeylen DICTPUSHCONST
+                        // Jump to the needed function by it's index
+                        DICTIGETJMPZ
+                        // If such key is not found, throw 11 along with the key as an argument
+                        11 THROWARG
+                    }> PUSHCONT
+                    // Store the continuation in c3
+                    c3 POP
+                } cond
+
+                // Function id is on top of the (runtime) stack
+                DUP IFNOTJMP:<{
+                    // place recv_internal here
+                    DROP swap @addop
+                }>
+
+                // Bring back the flag, indicating if the dict is empty or not from the bottom of the stack
+                depth 1- roll
+                {
+                    // If the dict is empty, throw 11
+                    11 THROWARG
+                }
+                {
+                    // If the dict is not empty, jump to continuation from c3
+                    c3 PUSH JMPX
+                } cond
+            }> b>
+        } : }END>c
+        current@ context! current!
+    } does @atend !
+""";
+
+() __tact_selector_hack() method_id(65535) {
+    return __tact_selector_hack_asm();
+}

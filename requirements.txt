@@ -1,0 +1,24 @@
+python-telegram-bot==21.3
+python-dotenv==1.0.1
+aiosqlite==0.20.0
+asyncpg==0.29.0
+
+# TON off-chain tooling (Phase 2)
+pytoniq==0.1.39
+pytoniq-core==0.1.36
+
+# Phase 3: chain-watcher and job queue
+rq==1.16.2
+redis==5.0.7
+aiohttp==3.9.5
+APScheduler==3.10.4
+
+# Mini App Dashboard
+fastapi>=0.100.0
+uvicorn>=0.23.0
+slowapi==0.1.9
+
+# Testing
+pytest==8.3.5
+pytest-asyncio==0.24.0
+httpx>=0.24.0

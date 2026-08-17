@@ -1,0 +1,27 @@
+[Unit]
+Description=Renewise — Mini App FastAPI server
+After=network.target renewise-bot.service
+
+[Service]
+# ── adjust these three lines for your server ──
+User=renewise
+WorkingDirectory=/opt/renewise
+EnvironmentFile=/opt/renewise/.env
+
+ExecStart=/opt/renewise/.venv/bin/uvicorn renewise.miniapp.server:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 1
+
+# Health-check: systemd will restart the service if the process exits
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=renewise-api
+
+[Install]
+WantedBy=multi-user.target
