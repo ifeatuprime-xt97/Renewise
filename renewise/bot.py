@@ -159,19 +159,33 @@ async def post_init(app: Application) -> None:
     except Exception:
         log.info("Redis not available — bot listener skipped (in-process watcher handles payments).")
 
+    # Standalone `python -m renewise.bot` on Render: bind $PORT + self-ping.
+    # No-op when run.py already started keep-alive, or when PORT / URLs are unset.
+    try:
+        from renewise.keepalive import start_keepalive_background
+        ka_task = await start_keepalive_background()
+        if ka_task is not None:
+            app.bot_data["keepalive_task"] = ka_task
+    except Exception as exc:
+        log.warning("Keep-alive failed to start: %s", exc)
+
     log.info("Database initialised.")
 
 
 async def post_shutdown(app: Application) -> None:
     """Cancel background tasks that were started in post_init."""
-    listener_task: asyncio.Task | None = app.bot_data.get("listener_task")
-    if listener_task and not listener_task.done():
-        listener_task.cancel()
-        try:
-            await listener_task
-        except (asyncio.CancelledError, Exception):
-            pass
-        log.info("Bot listener task cancelled.")
+    for task_key, label in (
+        ("listener_task", "Bot listener"),
+        ("keepalive_task", "Keep-alive"),
+    ):
+        task: asyncio.Task | None = app.bot_data.get(task_key)
+        if task and not task.done():
+            task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):
+                pass
+            log.info("%s task cancelled.", label)
 
 
 # ── /start ────────────────────────────────────────────────────────────────────
@@ -391,12 +405,12 @@ async def _send_payment_details(
         f"<b>Amount to send:</b>\n"
         f"<code>{exact_ton:.9f} TON</code>\n\n"
         f"Choose how to pay:\n"
-        f"• <b>Telegram Wallet</b> — tap the button below, instant.\n"
-        f"• <b>Other TON Wallet</b> — tap the button below, opens your installed TON wallet app with everything pre-filled.\n"
-        f"• <b>Scan QR code</b> — use a TON wallet on a second device.\n\n"
+        f"• <b>Telegram Wallet</b> - tap the button below, instant.\n"
+        f"• <b>Other TON Wallet</b> - tap the button below, opens your installed TON wallet app with everything pre-filled.\n"
+        f"• <b>Scan QR code</b> - use a TON wallet on a second device.\n\n"
         f"⚠️ <b>A TON wallet is required to pay.</b> Plain bank transfers or crypto "
         f"exchanges will not activate your subscription.\n\n"
-        f"Send the <b>exact amount shown</b> — sending less won't activate your subscription, "
+        f"Send the <b>exact amount shown</b> - sending less won't activate your subscription, "
         f"sending more triggers an automatic partial refund."
     )
 

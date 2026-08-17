@@ -9,6 +9,9 @@ Three coroutines run concurrently via asyncio.gather:
   2. Superadmin bot  (SUPERADMIN_BOT_TOKEN)
   3. Payment watcher (polls TonCenter every POLL_INTERVAL_SECONDS)
 
+On Render, a keep-alive HTTP server also binds $PORT and self-pings so
+the free-tier web service does not spin down after 15 minutes idle.
+
 No Redis, no RQ, no extra terminals required.
 For production horizontal scaling, swap the watcher for the separate
 watcher.py + worker.py + Redis stack instead.
@@ -148,6 +151,11 @@ async def run_superadmin_bot() -> None:
 
 
 async def main() -> None:
+    # Bind $PORT immediately so Render's deploy health check succeeds
+    # before DB init / Telegram getMe finish.
+    from renewise.keepalive import start_keepalive_background
+
+    ka_task = await start_keepalive_background()
     try:
         await asyncio.gather(
             run_main_bot(),
@@ -160,6 +168,13 @@ async def main() -> None:
         # than cancelled and awaited, which causes "Task was destroyed but it is
         # pending!" warnings on exit.
         raise
+    finally:
+        if ka_task is not None and not ka_task.done():
+            ka_task.cancel()
+            try:
+                await ka_task
+            except (asyncio.CancelledError, Exception):
+                pass
 
 
 if __name__ == "__main__":

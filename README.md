@@ -334,6 +334,18 @@ Returns `503 {"status":"error","detail":"..."}` if the DB connectivity check fai
 
 Wire this into any uptime monitor (UptimeRobot, Better Uptime, Grafana, etc.) to get alerted if the API goes down.
 
+### Render (free web service)
+
+Render spins down free web services after 15 minutes with no inbound HTTP. Telegram polling does not count, so `python run.py` now binds `$PORT` and self-pings `RENDER_EXTERNAL_URL/health` every 10 minutes.
+
+```bash
+# Bot process liveness (auto-started on Render)
+curl -sf https://YOUR-SERVICE.onrender.com/health
+# → {"status":"ok","service":"renewise-bot"}
+```
+
+`PORT` and `RENDER_EXTERNAL_URL` are set by Render — no extra config needed. To also keep the Mini App awake, set `KEEP_ALIVE_URLS` to its `/healthz` URL. Set `KEEP_ALIVE=false` to disable self-ping (the `/health` server still binds `$PORT`).
+
 ### SQLite concurrency note
 
 See the note in `config.py` — WAL mode is enabled, but SQLite has a single-writer ceiling. Monitor your logs for `database is locked` errors under load; if they appear, migrating to PostgreSQL is the next step.

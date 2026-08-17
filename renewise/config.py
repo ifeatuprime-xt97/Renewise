@@ -69,6 +69,20 @@ REMINDER_WINDOW_DAYS: int = int(os.getenv("REMINDER_WINDOW_DAYS", "3"))
 WEBHOOK_SECRET: str = os.getenv("WEBHOOK_SECRET", "")
 SUPPORT_USERNAME: str = os.getenv("SUPPORT_USERNAME", "")  # e.g. "ReneWiseSupport"
 
+# ── Render keep-alive ─────────────────────────────────────────────────────────
+# Free Render web services sleep after 15 minutes with no inbound HTTP.
+# Telegram polling does not count. When PORT or RENDER_EXTERNAL_URL is set
+# (Render sets both automatically), run.py binds a /health server and pings
+# the public URL on this interval so the process stays awake.
+# KEEP_ALIVE=false disables it. KEEP_ALIVE_URLS pings extra services (miniapp).
+KEEP_ALIVE: bool = os.getenv("KEEP_ALIVE", "true").lower() not in ("0", "false", "no", "off")
+KEEP_ALIVE_URL: str = os.getenv("KEEP_ALIVE_URL", "")
+KEEP_ALIVE_URLS: list[str] = [
+    u.strip() for u in os.getenv("KEEP_ALIVE_URLS", "").split(",") if u.strip()
+]
+KEEP_ALIVE_INTERVAL: int = int(os.getenv("KEEP_ALIVE_INTERVAL", "600"))
+KEEP_ALIVE_PORT: int = int(os.getenv("KEEP_ALIVE_PORT") or os.getenv("PORT") or "0")
+
 # ── Wallet change protection ──────────────────────────────────────────────────
 # How long (in hours) a submitted wallet change sits in "pending" before it
 # applies automatically.  The admin receives an immediate DM and can cancel

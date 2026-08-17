@@ -1,0 +1,88 @@
+services:
+  - type: web
+    name: renewise-bot
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: KEEP_ALIVE
+        value: "true"
+      - key: KEEP_ALIVE_INTERVAL
+        value: 600
+      - key: PORT
+        generateValue: true
+      - key: BOT_TOKEN
+        sync: false
+      - key: SUPERADMIN_BOT_TOKEN
+        sync: false
+      - key: ALLOWED_SUPERADMIN_IDS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_PATH
+        value: /tmp/renewise.db
+      - key: PLATFORM_WALLET
+        sync: false
+      - key: LOG_ADDRESS
+        sync: false
+      - key: TRIGGER_WALLET
+        sync: false
+      - key: TRIGGER_MNEMONIC
+        sync: false
+      - key: TONCENTER_API_KEYS
+        sync: false
+      - key: TONCENTER_TESTNET
+        value: "false"
+      - key: MIN_CONFIRMATIONS
+        value: 1
+      - key: POLL_INTERVAL_SECONDS
+        value: 15
+      - key: WEBHOOK_SECRET
+        sync: false
+      - key: SUPPORT_USERNAME
+        sync: false
+      - key: GRACE_PERIOD_DAYS
+        value: 3
+      - key: REMINDER_WINDOW_DAYS
+        value: 3
+      - key: WALLET_CHANGE_DELAY_HOURS
+        value: 24
+      - key: BUYER_FEE_BPS
+        value: 200
+      - key: ADMIN_FEE_BPS
+        value: 330
+      - key: OVERPAYMENT_REFUND_THRESHOLD_USD
+        value: 1.00
+      - key: CMC_API_KEY
+        sync: false
+
+  - type: web
+    name: renewise-miniapp
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn renewise.miniapp.server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        generateValue: true
+      - key: BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_PATH
+        value: /tmp/renewise.db
+      - key: SUPPORT_USERNAME
+        sync: false
+      - key: KEEP_ALIVE
+        value: "false"
