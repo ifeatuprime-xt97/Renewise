@@ -36,6 +36,7 @@ from renewise.superadmin.queries import (
     get_groups_by_admin,
     get_active_admins_page, get_total_active_admins_count,
     get_banned_admins_page, get_total_banned_admins_count,
+    get_pending_send_refund_count, get_trigger_wallet_balance,
 )
 from renewise.watcher.toncenter import fetch_single_transaction, extract_in_msg_value
 from renewise.watcher.db import is_tx_processed
@@ -52,13 +53,50 @@ async def access_control(update: Update, context):
 
 # ── Main menu ─────────────────────────────────────────────────────────────────
 
+# ── Trigger wallet health helpers ─────────────────────────────────────────────
+
+_TW_LOW_TON      = 0.10   # warn below this
+_TW_CRITICAL_TON = 0.02   # critical below this
+_GAS_PER_REFUND  = 0.01   # TON attached per Refund{} message
+
+
+def _trigger_health(balance: float | None, configured: bool) -> tuple[str, str]:
+    """
+    Returns (icon, label) for the trigger wallet.
+    balance is in TON, or None if fetch failed.
+    configured=False when TRIGGER_WALLET/TRIGGER_MNEMONIC are absent.
+    """
+    if not configured:
+        return "⚫", "Not configured"
+    if balance is None:
+        return "❓", "Balance unavailable (TonCenter error)"
+    if balance < _TW_CRITICAL_TON:
+        return "🔴", f"CRITICAL — {balance:.4f} TON"
+    if balance < _TW_LOW_TON:
+        return "🟡", f"Low — {balance:.4f} TON"
+    return "🟢", f"Healthy — {balance:.4f} TON"
+
+
 async def show_main_menu(update: Update, context):
     from renewise.db.queries import is_payments_paused
-    paused = await is_payments_paused()
-    status = "🔴 PAUSED" if paused else "🟢 Live"
+    from renewise.config import TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+    paused   = await is_payments_paused()
+    status   = "🔴 PAUSED" if paused else "🟢 Live"
+
+    # Quick trigger health badge for the menu header
+    tw_configured = bool(TRIGGER_WALLET)
+    tw_balance    = await get_trigger_wallet_balance(
+        TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+    ) if tw_configured else None
+    tw_icon, _    = _trigger_health(tw_balance, tw_configured)
+
+    pending_refunds = await get_pending_send_refund_count()
+    refund_badge    = f" ⚠️ {pending_refunds} pending" if pending_refunds else ""
+
     text = (
         f"🛡 <b>renewise Super-Admin</b>\n\n"
-        f"Platform status: <b>{status}</b>\n\n"
+        f"Platform: <b>{status}</b>\n"
+        f"Trigger wallet: <b>{tw_icon}</b>{refund_badge}\n\n"
         "Choose an action:"
     )
     keyboard = [
@@ -79,6 +117,7 @@ async def show_main_menu(update: Update, context):
             InlineKeyboardButton("🚨 Kill Switch",       callback_data="sa_ks_status"),
         ],
         [
+            InlineKeyboardButton("⚡ Trigger Wallet",   callback_data="sa_trigger_status"),
             InlineKeyboardButton("⚙️ Settings",          callback_data="sa_settings_menu"),
         ],
     ]
@@ -114,19 +153,48 @@ async def help_cmd(update: Update, context):
 # ── Platform overview ─────────────────────────────────────────────────────────
 
 async def show_overview(update: Update, context):
-    from renewise.db.queries import get_global_fees
-    stats = await get_platform_overview()
+    from renewise.db.queries import get_global_fees, is_payments_paused
+    from renewise.config import TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+    stats            = await get_platform_overview()
     buyer_bps, admin_bps = await get_global_fees()
-    fee_pct = (buyer_bps + admin_bps) / 10000.0
-    fee_rev = stats["monthly_gmv"] * fee_pct
+    fee_pct          = (buyer_bps + admin_bps) / 10000.0
+    fee_rev          = stats["monthly_gmv"] * fee_pct
+    paused           = await is_payments_paused()
+    ks_status        = "🔴 PAUSED" if paused else "🟢 Live"
+
+    # Trigger wallet health
+    tw_configured    = bool(TRIGGER_WALLET)
+    tw_balance       = await get_trigger_wallet_balance(
+        TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+    ) if tw_configured else None
+    tw_icon, tw_label = _trigger_health(tw_balance, tw_configured)
+    pending_refunds  = await get_pending_send_refund_count()
+    refund_warn      = f" ⚠️ <b>{pending_refunds} pending send</b>" if pending_refunds else " ✅ None pending"
+
+    # Estimate how many more refunds the trigger can cover
+    if tw_balance is not None and tw_balance > 0:
+        can_cover = int(tw_balance / _GAS_PER_REFUND)
+        gas_note  = f"Can cover ~{can_cover} more refund{'s' if can_cover != 1 else ''} at 0.01 TON/each"
+    elif tw_configured:
+        gas_note = "⚠️ Cannot cover any refunds — top up required!"
+    else:
+        gas_note = "Manual refunds only (TRIGGER_WALLET not set)"
+
     msg = (
         "📊 <b>Platform Overview — This Month</b>\n\n"
-        f"<b>GMV:</b>         ${stats['monthly_gmv']:.2f} USD\n"
-        f"<b>Fee Revenue:</b> ${fee_rev:.2f} USD\n"
-        f"<b>Active Admins:</b> {stats['active_admins']}\n"
-        f"<b>Active Subs:</b>   {stats['active_subs']}"
+        f"<b>Kill Switch:</b>    {ks_status}\n"
+        f"<b>GMV:</b>            ${stats['monthly_gmv']:.2f} USD\n"
+        f"<b>Fee Revenue:</b>    ${fee_rev:.2f} USD\n"
+        f"<b>Active Admins:</b>  {stats['active_admins']}\n"
+        f"<b>Active Subs:</b>    {stats['active_subs']}\n\n"
+        f"⚡ <b>Trigger Wallet:</b> {tw_icon} {tw_label}\n"
+        f"   {gas_note}\n"
+        f"💸 <b>Pending Refunds:</b>{refund_warn}"
     )
-    kb = [[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]
+    kb = [
+        [InlineKeyboardButton("⚡ Trigger Wallet", callback_data="sa_trigger_status")],
+        [InlineKeyboardButton("◀️ Main Menu",      callback_data="sa_home_main")],
+    ]
     markup = InlineKeyboardMarkup(kb)
     if update.callback_query:
         await update.callback_query.edit_message_text(msg, parse_mode="HTML", reply_markup=markup)
@@ -322,6 +390,66 @@ async def show_killswitch_status(update: Update, context):
 
 async def killswitch_cmd(update: Update, context):
     await show_killswitch_status(update, context)
+
+# ── Trigger Wallet Status ─────────────────────────────────────────────────────
+
+async def show_trigger_status(update: Update, context):
+    """Live trigger wallet health screen with balance, gas estimate, and refund count."""
+    from renewise.config import (
+        TRIGGER_WALLET, TRIGGER_MNEMONIC, TONCENTER_API_KEY, TONCENTER_TESTNET
+    )
+
+    tw_configured = bool(TRIGGER_WALLET and TRIGGER_MNEMONIC)
+    tw_balance    = await get_trigger_wallet_balance(
+        TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+    ) if tw_configured else None
+
+    tw_icon, tw_label = _trigger_health(tw_balance, tw_configured)
+    pending_refunds   = await get_pending_send_refund_count()
+    refund_warn       = (
+        f"⚠️ <b>{pending_refunds} refund(s) stuck in pending_send</b>\n"
+        "These will process automatically once the wallet is topped up."
+        if pending_refunds
+        else "✅ No refunds are pending."
+    )
+
+    if tw_balance is not None and tw_balance > 0:
+        can_cover = int(tw_balance / _GAS_PER_REFUND)
+        gas_note  = (
+            f"At 0.01 TON/refund, this covers <b>~{can_cover} more refund"
+            f"{'s' if can_cover != 1 else ''}</b>."
+        )
+    elif tw_configured:
+        gas_note  = "⚠️ <b>Cannot cover any refunds — please top up immediately!</b>"
+    else:
+        gas_note  = "Automatic refunds are <b>disabled</b>. Set TRIGGER_WALLET and TRIGGER_MNEMONIC."
+
+    # Truncated address for display
+    addr_display = (
+        f"<code>{TRIGGER_WALLET[:10]}…{TRIGGER_WALLET[-6:]}</code>"
+        if tw_configured and len(TRIGGER_WALLET) > 18
+        else (f"<code>{TRIGGER_WALLET}</code>" if tw_configured else "—")
+    )
+    network_label = "Testnet" if TONCENTER_TESTNET else "Mainnet"
+
+    text = (
+        f"⚡ <b>Trigger Wallet Status</b> ({network_label})\n\n"
+        f"<b>Health:</b>    {tw_icon} {tw_label}\n"
+        f"<b>Address:</b>   {addr_display}\n\n"
+        f"{gas_note}\n\n"
+        f"💸 <b>Pending Refunds:</b>\n{refund_warn}"
+    )
+
+    kb = [
+        [InlineKeyboardButton("🔄 Refresh Balance", callback_data="sa_trigger_refresh")],
+        [InlineKeyboardButton("💸 View Refund Queue", callback_data="sa_refunds_0")],
+        [InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
+    ]
+    markup = InlineKeyboardMarkup(kb)
+    if update.callback_query:
+        await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=markup)
 
 # ── Overpayment refunds ───────────────────────────────────────────────────────
 
@@ -598,13 +726,13 @@ async def show_unban_admin_page(update: Update, context, page: int):
     await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb))
 
 async def show_ban_reason_prompt(update: Update, context, target_id: int):
-    text = f"🚫 <b>Ban Reason for Admin <code>{target_id}</code></b>"
+    text = f"🚫 <b>Ban Reason for Admin <code>{target_id}</code></b>\n\nSelect a reason:"
     kb = [
         [InlineKeyboardButton("Spamming",      callback_data=f"sa_settings_ban_confirm_{target_id}_spam")],
         [InlineKeyboardButton("Fraud/Scam",    callback_data=f"sa_settings_ban_confirm_{target_id}_scam")],
         [InlineKeyboardButton("TOS Violation", callback_data=f"sa_settings_ban_confirm_{target_id}_tos")],
         [InlineKeyboardButton("Other",         callback_data=f"sa_settings_ban_confirm_{target_id}_other")],
-        [InlineKeyboardButton("❌ Cancel",     callback_data="sa_ban_page_0")],
+        [InlineKeyboardButton("◀️ Back", callback_data="sa_ban_page_0"), InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
     ]
     await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb))
 
@@ -953,6 +1081,10 @@ async def sa_callback_handler(update: Update, context):
         await show_killswitch_status(update, context)
         await query.answer()
 
+    elif data in ("sa_trigger_status", "sa_trigger_refresh"):
+        await show_trigger_status(update, context)
+        await query.answer("Fetching live balance…" if data == "sa_trigger_refresh" else "")
+
     elif data == "sa_wc_pending":
         await show_pending_wallet_changes(update, context)
         await query.answer()
@@ -1063,14 +1195,18 @@ async def sa_callback_handler(update: Update, context):
         else:
             await query.message.reply_text(f"❌ Recheck <code>{html.escape(tx_hash[:16])}…</code>: <b>error</b> during processing.", parse_mode="HTML")
 
-    # ── reply to admin (cross-bot) ────────────────────────────────────────────
+    # ── reply to support ticket (from support ticket button) ─────────────────
     elif data.startswith("sa_reply_"):
-        target = int(data.split("_")[2])
-        context.user_data["msg_admin_target"] = target
+        target_user_id = int(data.split("_")[2])
+        context.user_data["reply_target"] = target_user_id
         await query.edit_message_text(
-            f"💬 Type your reply to user <code>{target}</code>. Delivered via main bot.",
+            f"💬 <b>Reply to User <code>{target_user_id}</code></b>\n\n"
+            "Type your reply below. It will be delivered to the user via the main bot.",
             parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data="sa_cancelmsg")]]),
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("❌ Cancel", callback_data="sa_cancelreply"),
+                InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main"),
+            ]]),
         )
         await query.answer()
 
@@ -1081,20 +1217,9 @@ async def sa_callback_handler(update: Update, context):
         await query.edit_message_text(
             f"✉️ <b>Message Admin {admin_tg_id}</b>\n\nType your message. Delivered via main bot.",
             parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data="sa_cancelmsg")]]),
-        )
-        await query.answer()
-
-    # ── reply to support ticket ───────────────────────────────────────────────
-    elif data.startswith("sa_reply_"):
-        target_user_id = int(data.split("_")[2])
-        context.user_data["reply_target"] = target_user_id
-        await query.edit_message_text(
-            f"💬 <b>Reply to User <code>{target_user_id}</code></b>\n\n"
-            "Type your reply below. It will be delivered to the user via the main bot.",
-            parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("❌ Cancel", callback_data="sa_cancelreply"),
+                InlineKeyboardButton("❌ Cancel", callback_data="sa_cancelmsg"),
+                InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main"),
             ]]),
         )
         await query.answer()
@@ -1120,18 +1245,22 @@ async def sa_callback_handler(update: Update, context):
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("Yes, pause",  callback_data="sa_ks_pause_confirm")],
-                    [InlineKeyboardButton("Cancel",      callback_data="sa_ks_cancel")],
+                    [InlineKeyboardButton("◀️ Cancel",   callback_data="sa_ks_cancel"),
+                     InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
                 ]),
             )
+            await query.answer()
         elif data == "sa_ks_resume_prompt":
             await query.edit_message_text(
-                "⚠️ <b>Confirm Resume</b>",
+                "⚠️ <b>Confirm Resume</b>\n\nResume normal payment processing platform-wide.",
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("Yes, resume", callback_data="sa_ks_resume_confirm")],
-                    [InlineKeyboardButton("Cancel",      callback_data="sa_ks_cancel")],
+                    [InlineKeyboardButton("◀️ Cancel",   callback_data="sa_ks_cancel"),
+                     InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
                 ]),
             )
+            await query.answer()
         elif data == "sa_ks_pause_confirm":
             await set_payments_paused(True, user_id)
             await audit(None, "pause_payments", user_id)
@@ -1144,33 +1273,43 @@ async def sa_callback_handler(update: Update, context):
             await show_killswitch_status(update, context)
         elif data == "sa_ks_cancel":
             await show_killswitch_status(update, context)
-        await query.answer()
+            await query.answer()
+        else:
+            await query.answer()
 
     # ── settings ──────────────────────────────────────────────────────────────
-    elif data.startswith("sa_settings_"):
+    elif data.startswith("sa_settings_") or data.startswith("sa_ban_") or data.startswith("sa_unban_"):
         if data == "sa_settings_menu":
             await show_settings_menu(update, context)
+            await query.answer()
 
         elif data == "sa_settings_globalfee":
             await show_global_fee_prompt(update, context)
+            await query.answer()
 
         elif data == "sa_settings_ratefeed":
             await show_rate_feed_status(update, context)
+            await query.answer()
 
         elif data == "sa_settings_ban_prompt":
             await show_ban_admin_page(update, context, 0)
+            await query.answer()
 
         elif data.startswith("sa_ban_page_"):
             await show_ban_admin_page(update, context, int(data.split("_")[3]))
+            await query.answer()
 
         elif data.startswith("sa_ban_select_"):
             await show_ban_reason_prompt(update, context, int(data.split("_")[3]))
+            await query.answer()
 
         elif data == "sa_settings_unban_prompt":
             await show_unban_admin_page(update, context, 0)
+            await query.answer()
 
         elif data.startswith("sa_unban_page_"):
             await show_unban_admin_page(update, context, int(data.split("_")[3]))
+            await query.answer()
 
         elif data.startswith("sa_unban_select_"):
             target = int(data.split("_")[3])
@@ -1178,11 +1317,15 @@ async def sa_callback_handler(update: Update, context):
                 f"⚠️ <b>Confirm Unban Admin <code>{target}</code>?</b>\n"
                 "Groups stay suspended until manually unsuspended.",
                 parse_mode="HTML",
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("✅ Confirm", callback_data=f"sa_settings_unban_confirm_{target}"),
-                    InlineKeyboardButton("❌ Cancel",  callback_data="sa_settings_menu"),
-                ]]),
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("✅ Confirm", callback_data=f"sa_settings_unban_confirm_{target}"),
+                        InlineKeyboardButton("❌ Cancel",  callback_data="sa_unban_page_0"),
+                    ],
+                    [InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
+                ]),
             )
+            await query.answer()
 
         elif data.startswith("sa_settings_ban_confirm_"):
             parts      = data.split("_", 5)
@@ -1209,11 +1352,15 @@ async def sa_callback_handler(update: Update, context):
                 f"⚠️ Reset global fees to .env defaults?\n"
                 f"Buyer: <b>{BUYER_FEE_BPS} bps</b> | Admin: <b>{ADMIN_FEE_BPS} bps</b>",
                 parse_mode="HTML",
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("✅ Confirm", callback_data="sa_settings_globalfee_reset_confirm"),
-                    InlineKeyboardButton("❌ Cancel",  callback_data="sa_settings_menu"),
-                ]]),
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("✅ Confirm", callback_data="sa_settings_globalfee_reset_confirm"),
+                        InlineKeyboardButton("❌ Cancel",  callback_data="sa_settings_menu"),
+                    ],
+                    [InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
+                ]),
             )
+            await query.answer()
 
         elif data == "sa_settings_globalfee_reset_confirm":
             from renewise.db.queries import set_global_fees, audit
@@ -1234,7 +1381,8 @@ async def sa_callback_handler(update: Update, context):
             await query.answer("Global fees updated.", show_alert=True)
             await show_settings_menu(update, context)
 
-        await query.answer()
+        else:
+            await query.answer()
 
     # ── fee override ──────────────────────────────────────────────────────────
     elif data.startswith("sa_fees_"):
@@ -1255,9 +1403,13 @@ async def sa_callback_handler(update: Update, context):
             await query.edit_message_text(
                 f"⚙️ <b>Fee Override Group {gid}</b>\n\n"
                 f"Current: buyer <b>{cur_buyer} bps</b> | admin <b>{cur_admin} bps</b>\n\n"
-                "Reply: <code>buyer_bps admin_bps</code>  e.g. <code>150 280</code>",
+                "Reply with two integers: <code>buyer_bps admin_bps</code>  e.g. <code>150 280</code>"
+                "\nRange: 0–2000 each.",
                 parse_mode="HTML",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data=f"sa_cancelfees_{gid}")]]),
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("❌ Cancel", callback_data=f"sa_cancelfees_{gid}"),
+                     InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
+                ]),
             )
         await query.answer()
 
@@ -1283,7 +1435,10 @@ async def sa_callback_handler(update: Update, context):
                 f"Current: <b>${(cur or 0) / 100:.2f} USD</b>\n\n"
                 "Send new USD price, e.g. <code>9.99</code>",
                 parse_mode="HTML",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data=f"sa_cancelprice_{gid}")]]),
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("❌ Cancel", callback_data=f"sa_cancelprice_{gid}"),
+                     InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
+                ]),
             )
         await query.answer()
 

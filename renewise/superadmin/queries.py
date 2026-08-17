@@ -232,6 +232,47 @@ async def get_total_banned_admins_count() -> int:
         return int(await db.fetchval("SELECT COUNT(*) FROM banned_admins") or 0)
 
 
+async def get_pending_send_refund_count() -> int:
+    """Count refunds stuck in pending_send (trigger wallet needed but not sent yet)."""
+    async with _db() as db:
+        return int(await db.fetchval(
+            "SELECT COUNT(*) FROM overpayment_refunds WHERE status='pending_send'"
+        ) or 0)
+
+
+async def get_trigger_wallet_balance(
+    address: str,
+    api_key: str = "",
+    testnet: bool = False,
+) -> float | None:
+    """
+    Fetch the live TON balance of the trigger wallet via TonCenter v2 API.
+
+    Returns balance in TON (float), or None on any error / unconfigured state.
+    Does NOT raise — designed to fail gracefully in a UI context.
+    """
+    if not address:
+        return None
+    import aiohttp
+    base = "https://testnet.toncenter.com/api/v2" if testnet else "https://toncenter.com/api/v2"
+    headers = {"X-API-Key": api_key} if api_key else {}
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{base}/getAddressBalance",
+                params={"address": address},
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+                # result is nanotons (string)
+                nano = int(data.get("result", 0) or 0)
+                return nano / 1_000_000_000
+    except Exception:
+        return None
+
+
 async def get_admin_detail(admin_telegram_id: int) -> dict:
     async with _db() as db:
         rows = await db.fetch(

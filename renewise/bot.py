@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 # ── Terms of Service text (condensed for Telegram) ────────────────────────────
 _TERMS_TEXT = (
-    "📋 <b>Renewise — Terms of Service &amp; Privacy Policy</b>\n\n"
+    "📋 <b>Renewise Terms of Service & Privacy Policy</b>\n\n"
 
     "<b>What Renewise does</b>\n"
     "Renewise lets Telegram group and channel admins charge for membership. "
@@ -130,18 +130,79 @@ async def post_init(app: Application) -> None:
     except Exception as exc:
         log.warning("Watcher DB migration skipped: %s", exc)
 
-    # ── TRIGGER_MNEMONIC startup check ────────────────────────────────────────
-    # Warn loudly so this is never a silent gap in production.
-    from renewise.config import TRIGGER_MNEMONIC as _TM
-    if not _TM:
+    # ── Trigger wallet startup health check ───────────────────────────────────
+    # Fetch live balance and DM superadmins if the wallet is unconfigured,
+    # critical (<0.02 TON), or low (<0.10 TON).
+    # This fires ONCE at startup only — no recurring spam.
+    from renewise.config import (
+        TRIGGER_MNEMONIC as _TM,
+        TRIGGER_WALLET as _TW,
+        TONCENTER_API_KEY as _TK,
+        TONCENTER_TESTNET as _TN,
+        SUPERADMIN_BOT_TOKEN as _SA_TOKEN,
+        ALLOWED_SUPERADMIN_IDS as _SA_IDS,
+    )
+    _TW_LOW      = 0.10
+    _TW_CRITICAL = 0.02
+
+    async def _send_sa_alert(msg: str) -> None:
+        """DM all superadmins via the superadmin bot token, silently on error."""
+        if not (_SA_TOKEN and _SA_IDS):
+            return
+        try:
+            from telegram import Bot as _Bot
+            _sa = _Bot(_SA_TOKEN)
+            for _sa_id in _SA_IDS:
+                try:
+                    await _sa.send_message(chat_id=_sa_id, text=msg, parse_mode="HTML")
+                except Exception as _e:
+                    log.warning("Startup SA alert failed for %d: %s", _sa_id, _e)
+        except Exception as _e:
+            log.warning("Could not initialise SA bot for startup alert: %s", _e)
+
+    if not _TM or not _TW:
         log.warning(
-            "⚠️  TRIGGER_MNEMONIC is not set — refund auto-trigger DISABLED. "
-            "Overpayments will be queued in overpayment_refunds (status=pending_send) "
-            "and require manual superadmin processing. "
-            "Set TRIGGER_MNEMONIC in .env to enable trustless on-chain refunds."
+            "⚠️  TRIGGER_MNEMONIC/TRIGGER_WALLET not set — refund auto-trigger DISABLED. "
+            "Overpayments will queue as pending_send and need manual superadmin processing."
+        )
+        await _send_sa_alert(
+            "⚫ <b>Trigger Wallet Not Configured</b>\n\n"
+            "TRIGGER_WALLET or TRIGGER_MNEMONIC is missing from .env.\n"
+            "Overpayment refunds will queue as <code>pending_send</code> "
+            "until configured. Use /start → ⚡ Trigger Wallet for details."
         )
     else:
-        log.info("Refund trigger wallet configured — on-chain auto-refunds enabled.")
+        log.info("Refund trigger wallet configured — checking live balance…")
+        try:
+            from renewise.superadmin.queries import get_trigger_wallet_balance as _tw_bal
+            _balance = await _tw_bal(_TW, _TK, _TN)
+            if _balance is None:
+                log.warning("Could not fetch trigger wallet balance at startup (TonCenter error).")
+            elif _balance < _TW_CRITICAL:
+                log.error(
+                    "🔴 TRIGGER WALLET CRITICAL: %.6f TON — refunds will fail immediately!", _balance
+                )
+                await _send_sa_alert(
+                    f"🔴 <b>Trigger Wallet CRITICAL</b>\n\n"
+                    f"Balance: <b>{_balance:.6f} TON</b> (need ≥ 0.10 TON)\n"
+                    f"Automatic refunds will fail until the wallet is topped up.\n\n"
+                    f"Top up address: <code>{_TW}</code>\n\n"
+                    f"Use /start → ⚡ Trigger Wallet for real-time status."
+                )
+            elif _balance < _TW_LOW:
+                log.warning(
+                    "🟡 TRIGGER WALLET LOW: %.6f TON — consider topping up soon.", _balance
+                )
+                await _send_sa_alert(
+                    f"🟡 <b>Trigger Wallet Low</b>\n\n"
+                    f"Balance: <b>{_balance:.6f} TON</b> (recommended ≥ 0.10 TON)\n"
+                    f"Consider topping up soon to avoid refund delays.\n\n"
+                    f"Address: <code>{_TW}</code>"
+                )
+            else:
+                log.info("🟢 Trigger wallet healthy: %.6f TON", _balance)
+        except Exception as _exc:
+            log.warning("Trigger wallet startup check failed: %s", _exc)
 
     # Start the Redis pub/sub listener for watcher → bot actions.
     # Only attempt if Redis is reachable — skip silently when running without Redis
