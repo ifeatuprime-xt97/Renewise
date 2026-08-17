@@ -11,7 +11,7 @@ from telegram.ext import (
     CallbackQueryHandler, CommandHandler, ContextTypes,
 )
 
-from renewise.config import BOT_TOKEN
+from renewise.config import BOT_TOKEN, OVERPAYMENT_REFUND_THRESHOLD_USD
 from renewise.db.schema import init_db
 from renewise.handlers.chat_member import handle_my_chat_member
 from renewise.handlers.join_request import handle_join_request, cb_pay_now, cb_ive_paid, cb_cancel_payment
@@ -411,7 +411,7 @@ async def _send_payment_details(
         f"⚠️ <b>A TON wallet is required to pay.</b> Plain bank transfers or crypto "
         f"exchanges will not activate your subscription.\n\n"
         f"Send the <b>exact amount shown</b> - sending less won't activate your subscription, "
-        f"sending more triggers an automatic partial refund."
+        f"sending more triggers an automatic partial refund if more than {OVERPAYMENT_REFUND_THRESHOLD_USD:.2f}."
     )
 
     kb = payment_details_kb(payment.payment_url, _support_url())

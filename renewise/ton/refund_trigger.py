@@ -59,9 +59,9 @@ class RefundTriggerResult:
 
 def _mnemonic_words() -> list[str]:
     words = TRIGGER_MNEMONIC.strip().split()
-    if len(words) != 24:
+    if len(words) not in (12, 24):
         raise ValueError(
-            f"TRIGGER_MNEMONIC must be exactly 24 words, got {len(words)}. "
+            f"TRIGGER_MNEMONIC must be exactly 12 or 24 words, got {len(words)}. "
             "Check your .env file."
         )
     return words
