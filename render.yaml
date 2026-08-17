@@ -15,8 +15,6 @@ services:
         value: "true"
       - key: KEEP_ALIVE_INTERVAL
         value: 600
-      - key: PORT
-        generateValue: true
       - key: BOT_TOKEN
         sync: false
       - key: SUPERADMIN_BOT_TOKEN
@@ -68,14 +66,12 @@ services:
     plan: free
     region: oregon
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn renewise.miniapp.server:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn renewise.miniapp.server:app --host 0.0.0.0 --port ${PORT:-8000}
     healthCheckPath: /healthz
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
-      - key: PORT
-        generateValue: true
       - key: BOT_TOKEN
         sync: false
       - key: DATABASE_URL
