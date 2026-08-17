@@ -3,6 +3,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _safe_int(value: str | None, default: int = 0) -> int:
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 BOT_TOKEN: str     = os.environ["BOT_TOKEN"]
 DATABASE_PATH: str = os.getenv("DATABASE_PATH", "./data/renewise.db")
 # Neon / PostgreSQL connection string.
@@ -80,8 +90,8 @@ KEEP_ALIVE_URL: str = os.getenv("KEEP_ALIVE_URL", "")
 KEEP_ALIVE_URLS: list[str] = [
     u.strip() for u in os.getenv("KEEP_ALIVE_URLS", "").split(",") if u.strip()
 ]
-KEEP_ALIVE_INTERVAL: int = int(os.getenv("KEEP_ALIVE_INTERVAL", "600"))
-KEEP_ALIVE_PORT: int = int(os.getenv("KEEP_ALIVE_PORT") or os.getenv("PORT") or "0")
+KEEP_ALIVE_INTERVAL: int = _safe_int(os.getenv("KEEP_ALIVE_INTERVAL", "600"), 600)
+KEEP_ALIVE_PORT: int = _safe_int(os.getenv("KEEP_ALIVE_PORT") or os.getenv("PORT") or "0")
 
 # ── Wallet change protection ──────────────────────────────────────────────────
 # How long (in hours) a submitted wallet change sits in "pending" before it

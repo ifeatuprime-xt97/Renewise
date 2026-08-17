@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "renewise/miniapp/server.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/renewise/miniapp/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/renewise/miniapp/server.py"
+    }
+  ]
+}

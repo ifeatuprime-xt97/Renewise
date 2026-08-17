@@ -8,6 +8,8 @@ Unit tests for Render keep-alive settings, health handler, and ping loop.
 from __future__ import annotations
 
 import asyncio
+import importlib
+import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -100,6 +102,17 @@ def test_load_settings_invalid_port_and_interval():
     })
     assert settings.port == 0
     assert settings.interval == 600
+
+
+def test_config_ignores_invalid_port_values(monkeypatch):
+    monkeypatch.setenv("BOT_TOKEN", "test-token")
+    monkeypatch.setenv("PORT", "6acAo+LSknqqOJSQAToyKqumKc66koXH2Dx83kPcYTw=")
+    monkeypatch.delenv("KEEP_ALIVE_PORT", raising=False)
+    sys.modules.pop("renewise.config", None)
+
+    config = importlib.import_module("renewise.config")
+
+    assert config.KEEP_ALIVE_PORT == 0
 
 
 @pytest.mark.asyncio

@@ -92,29 +92,19 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def _lifespan(application: FastAPI):
-    """Run DB migrations and resolve bot username once at startup."""
+    """Run DB migrations and resolve bot username once at startup.
+
+    Note: The hourly stale-subscription cleanup is handled by the bot's
+    in-process watcher (inprocess_watcher.py) and scheduler (scheduler.py).
+    We only run it once here on startup as a safety net.
+    """
     from renewise.db.schema import init_db
     from renewise.db.queries import delete_stale_pending_subscriptions
     await init_db()
     await _resolve_bot_username()
-    # Run once immediately on startup, then every hour in the background.
+    # Run once on startup as a safety net; recurring cleanup is owned by the bot.
     await delete_stale_pending_subscriptions(older_than_hours=12)
-    cleanup_task = asyncio.create_task(_stale_pending_cleanup_loop())
     yield
-    cleanup_task.cancel()
-
-
-async def _stale_pending_cleanup_loop() -> None:
-    """Hourly background task: delete pending subscriptions older than 12 hours."""
-    while True:
-        await asyncio.sleep(3600)
-        try:
-            from renewise.db.queries import delete_stale_pending_subscriptions
-            deleted = await delete_stale_pending_subscriptions(older_than_hours=12)
-            if deleted:
-                log.info("miniapp: deleted %d stale pending subscription(s)", deleted)
-        except Exception as exc:  # broad catch intentional — background loop must not crash
-            log.warning("miniapp: stale pending cleanup error: %s", type(exc).__name__)
 
 
 app = FastAPI(title="Renewise Mini App API", lifespan=_lifespan)
