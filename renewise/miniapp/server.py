@@ -148,6 +148,11 @@ async def root() -> FileResponse:
     return FileResponse("renewise/miniapp/static/index.html")
 
 
+@app.get("/logo")
+async def logo() -> FileResponse:
+    return FileResponse("renewise/miniapp/static/public/logo.jpeg")
+
+
 @app.get("/favicon.ico")
 async def favicon() -> FileResponse:
     return FileResponse("renewise/miniapp/static/public/logo.jpeg")
