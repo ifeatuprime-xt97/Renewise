@@ -77,6 +77,41 @@ def _trigger_health(balance: float | None, configured: bool) -> tuple[str, str]:
     return "🟢", f"Healthy — {balance:.4f} TON"
 
 
+async def _guard_group_exists(update: Update, group_id: int) -> bool:
+    """Return False and close stale super-admin flows when the target group is gone."""
+    from renewise.db.queries import get_group_by_id
+    group = await get_group_by_id(group_id)
+    if group is not None:
+        return True
+
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            "⚠️ This group no longer exists or was deleted.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
+        )
+    else:
+        await update.message.reply_text("⚠️ This group no longer exists or was deleted.")
+    return False
+
+
+async def _guard_refund_exists(update: Update, refund_id: int) -> bool:
+    """Return False if the refund row was already cancelled or removed."""
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        row = await db.fetchrow("SELECT id FROM overpayment_refunds WHERE id=$1", refund_id)
+    if row is not None:
+        return True
+
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            "⚠️ This refund is no longer available.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
+        )
+    else:
+        await update.message.reply_text("⚠️ This refund is no longer available.")
+    return False
+
+
 async def show_main_menu(update: Update, context):
     from renewise.db.queries import is_payments_paused
     from renewise.config import TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
@@ -1120,23 +1155,33 @@ async def sa_callback_handler(update: Update, context):
         await query.answer()
 
     elif data.startswith("sa_group_"):
-        await show_group_details(update, context, int(data.split("_")[2]))
+        gid = int(data.split("_")[2])
+        if not await _guard_group_exists(update, gid):
+            return
+        await show_group_details(update, context, gid)
         await query.answer()
 
     elif data.startswith("sa_pmthist_"):
         parts = data.split("_")
-        await show_sa_payment_history(update, context, int(parts[2]), int(parts[3]) if len(parts) > 3 else 0)
+        gid = int(parts[2])
+        if not await _guard_group_exists(update, gid):
+            return
+        await show_sa_payment_history(update, context, gid, int(parts[3]) if len(parts) > 3 else 0)
         await query.answer()
 
     # ── suspend / unsuspend ───────────────────────────────────────────────────
     elif data.startswith("sa_suspend_"):
         gid = int(data.split("_")[2])
+        if not await _guard_group_exists(update, gid):
+            return
         await set_group_status(gid, "suspended", user_id)
         await show_group_details(update, context, gid)
         await query.answer("Group suspended.", show_alert=True)
 
     elif data.startswith("sa_unsuspend_"):
         gid = int(data.split("_")[2])
+        if not await _guard_group_exists(update, gid):
+            return
         await set_group_status(gid, "active", user_id)
         await show_group_details(update, context, gid)
         await query.answer("Group unsuspended.", show_alert=True)
@@ -1157,6 +1202,8 @@ async def sa_callback_handler(update: Update, context):
 
     elif data.startswith("sa_refund_cancel_"):
         refund_id = int(data.split("_")[3])
+        if not await _guard_refund_exists(update, refund_id):
+            return
         from renewise.db.queries import mark_refund_cancelled, audit
         await mark_refund_cancelled(refund_id)
         await audit(None, "refund_cancelled_by_superadmin", user_id, {"refund_id": refund_id})
@@ -1387,6 +1434,9 @@ async def sa_callback_handler(update: Update, context):
     # ── fee override ──────────────────────────────────────────────────────────
     elif data.startswith("sa_fees_"):
         parts = data.split("_")
+        gid = int(parts[2]) if parts[2].isdigit() else 0
+        if gid and not await _guard_group_exists(update, gid):
+            return
         if parts[2] == "confirm":
             gid       = int(parts[3])
             buyer_bps = int(parts[4])
@@ -1416,6 +1466,10 @@ async def sa_callback_handler(update: Update, context):
     # ── update price ──────────────────────────────────────────────────────────
     elif data.startswith("sa_price_"):
         parts = data.split("_")
+        if len(parts) >= 3 and parts[2].isdigit():
+            gid = int(parts[2])
+            if not await _guard_group_exists(update, gid):
+                return
         if len(parts) == 5 and parts[2] == "confirm":
             gid       = int(parts[3])
             new_cents = int(parts[4])

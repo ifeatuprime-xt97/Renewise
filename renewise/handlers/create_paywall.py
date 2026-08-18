@@ -117,6 +117,43 @@ def _no_match_kb() -> InlineKeyboardMarkup:
     ])
 
 
+async def _close_if_group_already_active(
+    update: Update,
+    ctx: ContextTypes.DEFAULT_TYPE,
+    telegram_chat_id: int | None,
+    chat_title: str | None = None,
+) -> bool:
+    """End a stale wizard when the paywall was already activated in the Mini App."""
+    if telegram_chat_id is None:
+        return False
+
+    group = await queries.get_group_by_chat_id(telegram_chat_id)
+    if not group or group.get("status") != "active":
+        return False
+
+    title = html.escape(chat_title or group.get("chat_title") or "your group")
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("📋 Main Menu", callback_data="start:my_groups")],
+    ])
+
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            f"✅ This group is already active. Your paywall for <b>{title}</b> is already live.\n\n"
+            "You can manage it from the menu below.",
+            parse_mode="HTML",
+            reply_markup=kb,
+        )
+    else:
+        await update.message.reply_text(
+            f"✅ This group is already active. Your paywall for <b>{title}</b> is already live.",
+            parse_mode="HTML",
+            reply_markup=kb,
+        )
+
+    ctx.user_data.pop(_W, None)
+    return True
+
+
 # ── entry: "Set Up a Paywall" (from /start or /createpaywall) ─────────────────
 
 async def cmd_create_paywall(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
@@ -209,6 +246,10 @@ async def cb_check_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return STEP_INSTRUCTIONS
 
+    for grant in grants:
+        if await _close_if_group_already_active(update, ctx, grant["telegram_chat_id"], grant["chat_title"]):
+            return ConversationHandler.END
+
     if len(grants) == 1:
         return await _present_single_grant(query, ctx, grants[0])
 
@@ -299,6 +340,9 @@ async def cb_grant_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
         await query.edit_message_text(
             "This confirmation has expired. Please use /createpaywall to start again."
         )
+        return ConversationHandler.END
+
+    if await _close_if_group_already_active(update, ctx, grant["telegram_chat_id"], grant["chat_title"]):
         return ConversationHandler.END
 
     missing = _grant_has_perms(grant, grant["chat_type"])
