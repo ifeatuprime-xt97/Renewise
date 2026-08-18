@@ -255,6 +255,49 @@ async def verify_admin_or_403(telegram_user_id: int, group_id: int) -> dict:
     return dict(group)
 
 
+async def _refresh_group_meta_from_telegram(group_row: dict) -> dict:
+    """Refresh stale chat_title/chat_type from Telegram for a single group."""
+    telegram_chat_id = group_row.get("telegram_chat_id")
+    if not telegram_chat_id:
+        return group_row
+
+    current_title = (group_row.get("chat_title") or "").strip()
+    current_type = (group_row.get("chat_type") or "").strip()
+    if current_title and current_type:
+        return group_row
+
+    try:
+        import aiohttp as _aiohttp
+        async with _aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://api.telegram.org/bot{BOT_TOKEN}/getChat",
+                params={"chat_id": telegram_chat_id},
+                timeout=_aiohttp.ClientTimeout(total=5),
+            ) as resp:
+                data = await resp.json()
+                if not data.get("ok"):
+                    return group_row
+                result = data.get("result") or {}
+                new_title = result.get("title") or result.get("first_name") or str(telegram_chat_id)
+                new_type = result.get("type") or "group"
+                if current_title != new_title or current_type != new_type:
+                    await queries.activate_paywall(
+                        group_id=group_row["id"],
+                        price=group_row.get("price") or 0,
+                        billing_interval_days=group_row.get("billing_interval_days") or 30,
+                        payout_wallet_address=group_row.get("payout_wallet_address") or "",
+                        chat_title=new_title,
+                        invite_link=group_row.get("invite_link"),
+                        chat_type=new_type,
+                    )
+                    group_row["chat_title"] = new_title
+                    group_row["chat_type"] = new_type
+                return group_row
+    except OSError as exc:
+        log.warning("Could not refresh metadata for group %s: %s", telegram_chat_id, type(exc).__name__)
+        return group_row
+
+
 # ---------------------------------------------------------------------------
 # Request / response models
 # ---------------------------------------------------------------------------
@@ -333,6 +376,11 @@ async def api_my_groups(
     telegram_user_id = user["id"]
     from renewise.superadmin.queries import get_admin_detail
     detail = await get_admin_detail(telegram_user_id)
+
+    refreshed_groups = []
+    for g in detail["groups"]:
+        refreshed_groups.append(await _refresh_group_meta_from_telegram(dict(g)))
+    detail["groups"] = refreshed_groups
 
     # ── Total GRAM (nanonano) — real stored on-chain required amount ──────────
     # Sum of required_nano_amount across all active/comped subscriptions owned

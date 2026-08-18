@@ -54,6 +54,7 @@ FAKE_TOKEN = "123456:AAFakeTokenForTestingOnlyDoNotUse"
 os.environ["BOT_TOKEN"] = FAKE_TOKEN
 
 import renewise.config as _cfg
+import renewise.db.connection as _conn
 import renewise.db.schema as _schema
 import renewise.db.queries as _queries
 from renewise.db.schema import init_db
@@ -99,24 +100,20 @@ async def setup_test_db(monkeypatch, tmp_path):
     db_file = tmp_path / "renewise_test.db"
     _TEST_DB_PATH = str(db_file)
 
-    # Patch all three locations where DATABASE_PATH was captured at import time
+    # The project intentionally uses the configured DB path and mode.
+    # Do not override the DB layer with a raw sqlite connection; that bypasses
+    # the connection adapter and breaks calls that expect the unified _db() API.
     monkeypatch.setattr(_cfg,    "DATABASE_PATH", _TEST_DB_PATH)
+    monkeypatch.setattr(_cfg,    "DATABASE_URL", "")
+    monkeypatch.setattr(_cfg,    "USE_POSTGRES", False)
+    monkeypatch.setattr(_conn,   "DATABASE_PATH", _TEST_DB_PATH)
+    monkeypatch.setattr(_conn,   "DATABASE_URL", "")
+    monkeypatch.setattr(_conn,   "USE_POSTGRES", False)
     monkeypatch.setattr(_schema, "DATABASE_PATH", _TEST_DB_PATH)
-    monkeypatch.setattr(_queries, "DATABASE_PATH", _TEST_DB_PATH)
+    monkeypatch.setattr(_conn,   "_pg_pool", None)
 
-    # Also patch _db() so it always opens _TEST_DB_PATH, not whatever was
-    # bound at module load time.
-    @asynccontextmanager
-    async def _test_db_cm():
-        async with aiosqlite.connect(_TEST_DB_PATH) as conn:
-            conn.row_factory = aiosqlite.Row
-            await conn.execute("PRAGMA foreign_keys=ON")
-            yield conn
-
-    monkeypatch.setattr(_queries, "_db", _test_db_cm)
-
-    # init_db reads DATABASE_PATH from _schema (now patched), so this
-    # creates all tables in the test file.
+    # init_db reads the configured database settings and opens the SQLite DB
+    # through the real connection wrapper, which is the behavior we want to test.
     await init_db()
 
     yield
@@ -182,6 +179,53 @@ async def _seed_grant(
         can_manage_chat   = can_manage,
         can_post_messages = can_post,
     )
+
+
+@pytest.mark.asyncio
+async def test_api_my_groups_refreshes_stale_group_title(monkeypatch, http):
+    """If Telegram has a newer title than the DB cache, /api/my-groups should refresh it."""
+    group_id = await _queries.upsert_group(CHAT_ID, OWNER_ID, "group")
+    await _queries.activate_paywall(
+        group_id=group_id,
+        price=0,
+        billing_interval_days=30,
+        payout_wallet_address="EQD2NmD_lH5f5u1Kj3KfGyTvhZSX0Eg6qp2a5IQUKXxOG",
+        chat_title="Old Group Title",
+        invite_link=None,
+        chat_type="group",
+    )
+
+    class FakeResponse:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def json(self):
+            return {"ok": True, "result": {"title": "Fresh Group Title", "type": "supergroup"}}
+
+    class FakeSession:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        def get(self, *args, **kwargs):
+            return FakeResponse()
+
+    monkeypatch.setattr("aiohttp.ClientSession", FakeSession)
+
+    resp = await http.get("/api/my-groups", headers=_auth(OWNER_ID))
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["groups"][0]["chat_title"] == "Fresh Group Title"
+    assert body["groups"][0]["chat_type"] == "supergroup"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
