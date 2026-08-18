@@ -23,8 +23,6 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
-      - key: DATABASE_PATH
-        value: /tmp/renewise.db
       - key: PLATFORM_WALLET
         sync: false
       - key: LOG_ADDRESS
@@ -76,8 +74,6 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
-      - key: DATABASE_PATH
-        value: /tmp/renewise.db
       - key: SUPPORT_USERNAME
         sync: false
       - key: KEEP_ALIVE
