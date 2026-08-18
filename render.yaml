@@ -81,4 +81,4 @@ services:
       - key: SUPPORT_USERNAME
         sync: false
       - key: KEEP_ALIVE
-        value: "false"
+        value: "true"
