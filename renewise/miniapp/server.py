@@ -32,6 +32,7 @@ belonging to the requesting user."
 import asyncio
 import json
 import logging
+from pathlib import Path
 from typing import Annotated
 
 from contextlib import asynccontextmanager
@@ -61,6 +62,7 @@ def _make_bot_cache() -> dict:
 
 
 _bot_cache = _make_bot_cache()
+_STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
 async def _resolve_bot_username() -> str | None:
@@ -136,7 +138,7 @@ async def _unhandled_exception_handler(_request: _Request, exc: Exception) -> _J
         content={"detail": f"Internal server error: {type(exc).__name__}"},
     )
 
-app.mount("/static", StaticFiles(directory="renewise/miniapp/static"), name="static")
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 
 # ---------------------------------------------------------------------------
@@ -145,17 +147,17 @@ app.mount("/static", StaticFiles(directory="renewise/miniapp/static"), name="sta
 
 @app.get("/")
 async def root() -> FileResponse:
-    return FileResponse("renewise/miniapp/static/index.html")
+    return FileResponse(_STATIC_DIR / "index.html")
 
 
 @app.get("/logo")
 async def logo() -> FileResponse:
-    return FileResponse("renewise/miniapp/static/public/logo.jpeg")
+    return FileResponse(_STATIC_DIR / "public" / "logo.jpeg")
 
 
 @app.get("/favicon.ico")
 async def favicon() -> FileResponse:
-    return FileResponse("renewise/miniapp/static/public/logo.jpeg")
+    return FileResponse(_STATIC_DIR / "public" / "logo.jpeg")
 
 
 @app.get("/healthz")
