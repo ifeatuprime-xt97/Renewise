@@ -2,14 +2,23 @@
   "version": 2,
   "builds": [
     {
+      "src": "renewise/miniapp/static/**",
+      "use": "@vercel/static"
+    },
+    {
       "src": "renewise/miniapp/server.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": ["renewise/miniapp/static/**"]
-      }
+      "use": "@vercel/python"
     }
   ],
   "routes": [
+    {
+      "src": "/logo",
+      "dest": "/renewise/miniapp/static/public/logo.jpeg"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/renewise/miniapp/static/public/logo.jpeg"
+    },
     {
       "src": "/static/(.*)",
       "dest": "/renewise/miniapp/static/$1"
