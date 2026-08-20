@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "renewise/miniapp/server.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "renewise/miniapp/static/**"
+      }
     }
   ],
   "routes": [
