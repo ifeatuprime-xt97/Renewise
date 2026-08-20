@@ -1,0 +1,13 @@
+name: AgentRouter Configuration
+version: 1.0.0
+schema: 1.0.0
+
+models:
+  - name: AgentRouter Claude
+    provider: openai
+    model: anthropic/claude-sonnet-4.5
+    apiKey: sk-xXvJl3FOJk4GEvJOVMzbBpTPA1uRTP4u2M7apN7LszPhwOu7
+    apiBase: https://agentrouter.org/v1
+    requestOptions:
+      headers:
+        Authorization: Bearer sk-xXvJl3FOJk4GEvJOVMzbBpTPA1uRTP4u2M7apN7LszPhwOu7

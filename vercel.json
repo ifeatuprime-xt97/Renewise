@@ -5,7 +5,7 @@
       "src": "renewise/miniapp/server.py",
       "use": "@vercel/python",
       "config": {
-        "includeFiles": "renewise/miniapp/static/**"
+        "includeFiles": ["renewise/miniapp/static/**"]
       }
     }
   ],
