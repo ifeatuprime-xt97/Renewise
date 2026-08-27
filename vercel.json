@@ -6,7 +6,7 @@
       "use": "@vercel/static"
     },
     {
-      "src": "renewise/miniapp/server.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
@@ -25,7 +25,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/renewise/miniapp/server.py"
+      "dest": "/api/index.py"
     }
   ]
 }

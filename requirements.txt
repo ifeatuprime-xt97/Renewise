@@ -20,6 +20,7 @@ slowapi==0.1.9
 
 # Developer Platform — passcode hashing (Phase 2 / Platforms)
 bcrypt>=4.0.0
+cachetools==5.3.3
 
 # Testing
 pytest==8.3.5
