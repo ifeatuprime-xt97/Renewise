@@ -137,6 +137,9 @@ async def show_main_menu(update: Update, context):
     keyboard = [
         [
             InlineKeyboardButton("📊 Platform Stats",    callback_data="sa_home_stats"),
+            InlineKeyboardButton("📡 Platforms",         callback_data="sa_platformpage_0"),
+        ],
+        [
             InlineKeyboardButton("📂 Groups",            callback_data="sa_page_0"),
         ],
         [
@@ -238,6 +241,79 @@ async def show_overview(update: Update, context):
 
 async def overview_cmd(update: Update, context):
     await show_overview(update, context)
+
+# ── Platforms directory ───────────────────────────────────────────────────────
+
+async def show_platforms_page(update: Update, context, page: int):
+    from renewise.superadmin.queries import get_platforms_page, get_total_platforms_count
+    LIMIT = 5
+    offset = page * LIMIT
+    platforms = await get_platforms_page(limit=LIMIT, offset=offset)
+    total  = await get_total_platforms_count()
+
+    if not platforms and page == 0:
+        msg = "No platforms found."
+        if update.callback_query:
+            await update.callback_query.edit_message_text(msg)
+        else:
+            await update.message.reply_text(msg)
+        return
+
+    text = f"📡 <b>Platforms Directory</b> (Page {page + 1})\n\n"
+    keyboard = []
+    for p in platforms:
+        dot = "🟢" if p["status"] == "active" else "🔴"
+        name = html.escape(p["platform_name"])
+        text += (
+            f"{dot} ID:<b>{p['id']}</b> <i>{name}</i>\n"
+            f"   Owner: <code>{p['owner_telegram_id']}</code>\n\n"
+        )
+        keyboard.append([InlineKeyboardButton(f"Manage #{p['id']} {name[:20]}", callback_data=f"sa_platform_{p['id']}")])
+
+    nav = []
+    if page > 0:
+        nav.append(InlineKeyboardButton("⬅️ Prev", callback_data=f"sa_platformpage_{page - 1}"))
+    if offset + LIMIT < total:
+        nav.append(InlineKeyboardButton("Next ➡️", callback_data=f"sa_platformpage_{page + 1}"))
+    if nav:
+        keyboard.append(nav)
+    keyboard.append([InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")])
+
+    markup = InlineKeyboardMarkup(keyboard)
+    if update.callback_query:
+        await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=markup)
+
+async def show_platform_details(update: Update, context, platform_id: int):
+    from renewise.superadmin.queries import get_platform_details
+    p = await get_platform_details(platform_id)
+    if not p:
+        await update.callback_query.edit_message_text("Platform not found.")
+        return
+
+    name = html.escape(p["platform_name"])
+    pk_test = p.get('publishable_key_test', 'N/A')
+    pk_live = p.get('publishable_key_live') or 'Not generated'
+    text = (
+        f"📡 <b>Platform #{p['id']} — {name}</b>\n\n"
+        f"<b>Owner ID:</b>  <code>{p['owner_telegram_id']}</code>\n"
+        f"<b>Test Key:</b>   <code>{pk_test}</code>\n"
+        f"<b>Live Key:</b>   <code>{pk_live}</code>\n"
+        f"<b>Status:</b>    {p['status'].upper()}\n\n"
+        f"🔌 <b>Total Charges:</b> {p.get('total_charges', 0)}\n"
+        f"💰 <b>Total Revenue:</b>  ${p.get('revenue_usd', 0):.2f} USD\n"
+    )
+    keyboard = []
+    if p["status"] != "revoked":
+        keyboard.append([InlineKeyboardButton("🚫 Revoke Keys", callback_data=f"sa_revoke_{p['id']}")])
+
+    keyboard.append([InlineKeyboardButton("🔙 Back to List",    callback_data="sa_platformpage_0")])
+    keyboard.append([InlineKeyboardButton("◀️ Main Menu",       callback_data="sa_home_main")])
+
+    await update.callback_query.edit_message_text(
+        text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
 # ── Groups directory ──────────────────────────────────────────────────────────
 
@@ -1148,6 +1224,23 @@ async def sa_callback_handler(update: Update, context):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
         )
         await query.answer()
+
+    # ── platforms paging ──────────────────────────────────────────────────────
+    elif data.startswith("sa_platformpage_"):
+        await show_platforms_page(update, context, int(data.split("_")[2]))
+        await query.answer()
+
+    elif data.startswith("sa_platform_"):
+        pid = int(data.split("_")[2])
+        await show_platform_details(update, context, pid)
+        await query.answer()
+
+    elif data.startswith("sa_revoke_"):
+        pid = int(data.split("_")[2])
+        from renewise.services.platform import revoke_platform
+        await revoke_platform(pid, user_id)
+        await show_platform_details(update, context, pid)
+        await query.answer("Platform keys revoked.", show_alert=True)
 
     # ── groups paging ─────────────────────────────────────────────────────────
     elif data.startswith("sa_page_"):

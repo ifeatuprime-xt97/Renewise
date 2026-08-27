@@ -186,6 +186,78 @@ CREATE TABLE IF NOT EXISTS overpayment_refunds (
 )
 """
 
+CREATE_PLATFORMS = """
+CREATE TABLE IF NOT EXISTS platforms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_telegram_id INTEGER NOT NULL,
+    platform_name TEXT NOT NULL,
+    publishable_key_live TEXT UNIQUE,
+    secret_key_live_hash TEXT,
+    publishable_key_test TEXT UNIQUE NOT NULL,
+    secret_key_test TEXT NOT NULL,
+    wallet_address TEXT,
+    wallet_passcode_hash TEXT,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','revoked')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+"""
+
+CREATE_PLATFORM_CHARGES = """
+CREATE TABLE IF NOT EXISTS platform_charges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    platform_id INTEGER NOT NULL REFERENCES platforms(id),
+    external_reference TEXT NOT NULL,
+    mode TEXT NOT NULL CHECK(mode IN ('test','live')),
+    amount_usd_cents INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','completed','expired','failed')),
+    vault_address TEXT,
+    buyer_fee_bps INTEGER,
+    platform_fee_bps INTEGER,
+    tx_hash TEXT,
+    required_nano_amount INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME,
+    UNIQUE(platform_id, external_reference)
+)
+"""
+
+CREATE_WEBHOOK_ENDPOINTS = """
+CREATE TABLE IF NOT EXISTS webhook_endpoints (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    platform_id INTEGER NOT NULL REFERENCES platforms(id),
+    url TEXT NOT NULL,
+    secret TEXT NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+"""
+
+CREATE_WEBHOOK_DELIVERIES = """
+CREATE TABLE IF NOT EXISTS webhook_deliveries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    webhook_endpoint_id INTEGER NOT NULL REFERENCES webhook_endpoints(id),
+    charge_id INTEGER NOT NULL REFERENCES platform_charges(id),
+    status TEXT NOT NULL CHECK(status IN ('success','failed','retrying')),
+    response_status_code INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+"""
+
+CREATE_PLATFORM_AUDIT_LOG = """
+CREATE TABLE IF NOT EXISTS platform_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    platform_id INTEGER REFERENCES platforms(id),
+    action TEXT NOT NULL,
+    actor_telegram_id INTEGER NOT NULL,
+    details TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+"""
+
+CREATE_IDX_PLATFORM_AUDIT = """
+CREATE INDEX IF NOT EXISTS idx_pal_platform ON platform_audit_log(platform_id)
+"""
+
 async def init_db() -> None:
     from renewise.config import USE_POSTGRES, DATABASE_URL
     import os
@@ -359,9 +431,75 @@ async def init_db() -> None:
                 resolved_at      TIMESTAMPTZ
             )
             """,
+            """
+            CREATE TABLE IF NOT EXISTS platforms (
+                id                   SERIAL PRIMARY KEY,
+                owner_telegram_id    BIGINT NOT NULL,
+                platform_name        TEXT NOT NULL,
+                publishable_key_live TEXT UNIQUE,
+                secret_key_live_hash TEXT,
+                publishable_key_test TEXT UNIQUE NOT NULL,
+                secret_key_test      TEXT NOT NULL,
+                wallet_address       TEXT,
+                wallet_passcode_hash TEXT,
+                status               TEXT NOT NULL DEFAULT 'active'
+                                     CHECK(status IN ('active','revoked')),
+                created_at           TIMESTAMPTZ DEFAULT NOW()
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS platform_charges (
+                id                   SERIAL PRIMARY KEY,
+                platform_id          INTEGER NOT NULL REFERENCES platforms(id),
+                external_reference   TEXT NOT NULL,
+                mode                 TEXT NOT NULL CHECK(mode IN ('test','live')),
+                amount_usd_cents     INTEGER NOT NULL,
+                status               TEXT NOT NULL DEFAULT 'pending'
+                                     CHECK(status IN ('pending','completed','expired','failed')),
+                vault_address        TEXT,
+                buyer_fee_bps        INTEGER,
+                platform_fee_bps     INTEGER,
+                tx_hash              TEXT,
+                required_nano_amount BIGINT,
+                created_at           TIMESTAMPTZ DEFAULT NOW(),
+                completed_at         TIMESTAMPTZ,
+                UNIQUE(platform_id, external_reference)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS webhook_endpoints (
+                id                   SERIAL PRIMARY KEY,
+                platform_id          INTEGER NOT NULL REFERENCES platforms(id),
+                url                  TEXT NOT NULL,
+                secret               TEXT NOT NULL,
+                active               BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at           TIMESTAMPTZ DEFAULT NOW()
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS webhook_deliveries (
+                id                   SERIAL PRIMARY KEY,
+                webhook_endpoint_id  INTEGER NOT NULL REFERENCES webhook_endpoints(id),
+                charge_id            INTEGER NOT NULL REFERENCES platform_charges(id),
+                status               TEXT NOT NULL CHECK(status IN ('success','failed','retrying')),
+                response_status_code INTEGER,
+                created_at           TIMESTAMPTZ DEFAULT NOW()
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS platform_audit_log (
+                id                INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                platform_id       INTEGER REFERENCES platforms(id),
+                action            TEXT NOT NULL,
+                actor_telegram_id BIGINT NOT NULL,
+                details           TEXT,
+                created_at        TIMESTAMPTZ DEFAULT NOW()
+            )
+            """,
             "CREATE INDEX IF NOT EXISTS idx_vault_registry_address ON vault_registry(vault_address)",
             "CREATE INDEX IF NOT EXISTS idx_sub_renewal ON subscriptions(next_renewal_date, status)",
             "CREATE INDEX IF NOT EXISTS idx_pending_wallet_changes_group_status ON pending_wallet_changes(group_id, status)",
+            "CREATE INDEX IF NOT EXISTS idx_pal_platform ON platform_audit_log(platform_id)",
         ]
 
         async with _db() as db:
@@ -382,6 +520,32 @@ async def init_db() -> None:
                 "WHERE id = 1",
                 buyer_bps_default, admin_bps_default,
             )
+
+            # ── Postgres migrations (idempotent) ──────────────────────────────
+            # Each statement is wrapped in a DO-EXCEPTION block so re-running on
+            # a database that has already been migrated is completely safe.
+            pg_migrations = [
+                # Make live key columns nullable (opt-in live key generation)
+                """
+                DO $$ BEGIN
+                    ALTER TABLE platforms ALTER COLUMN publishable_key_live DROP NOT NULL;
+                EXCEPTION WHEN others THEN NULL; END; $$;
+                """,
+                """
+                DO $$ BEGIN
+                    ALTER TABLE platforms ALTER COLUMN secret_key_live_hash DROP NOT NULL;
+                EXCEPTION WHEN others THEN NULL; END; $$;
+                """,
+                # Rename secret_key_test_hash → secret_key_test (stores raw plaintext)
+                """
+                DO $$ BEGIN
+                    ALTER TABLE platforms RENAME COLUMN secret_key_test_hash TO secret_key_test;
+                EXCEPTION WHEN others THEN NULL; END; $$;
+                """,
+            ]
+            for mig in pg_migrations:
+                await db.execute(mig)
+
         return
 
     # ── SQLite path (unchanged) ───────────────────────────────────────────────
@@ -396,9 +560,10 @@ async def init_db() -> None:
             CREATE_RECENT_ADMIN_GRANTS, CREATE_BANNED_ADMINS, CREATE_OVERPAYMENT_REFUNDS,
             # Wallet change protection table (delay-and-notify)
             CREATE_PENDING_WALLET_CHANGES,
+            CREATE_PLATFORMS, CREATE_PLATFORM_CHARGES, CREATE_WEBHOOK_ENDPOINTS, CREATE_WEBHOOK_DELIVERIES, CREATE_PLATFORM_AUDIT_LOG,
             # Watcher tables — must come after CREATE_SUBSCRIPTIONS (FK dependency)
             CREATE_VAULT_REGISTRY, CREATE_REMINDER_LOG,
-            CREATE_IDX_VAULT, CREATE_IDX_SUB_RENEWAL, CREATE_IDX_PENDING_WALLET,
+            CREATE_IDX_VAULT, CREATE_IDX_SUB_RENEWAL, CREATE_IDX_PENDING_WALLET, CREATE_IDX_PLATFORM_AUDIT,
         ):
             await db.execute(stmt)
         await db.execute(

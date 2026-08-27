@@ -138,6 +138,9 @@ async def _unhandled_exception_handler(_request: _Request, exc: Exception) -> _J
         content={"detail": f"Internal server error: {type(exc).__name__}"},
     )
 
+from renewise.api.platform import platform_router
+app.include_router(platform_router, tags=["platform"])
+
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 
@@ -795,6 +798,198 @@ async def api_groups_create(
         ),
         "fee_preview": fee_preview,
     }
+
+
+# ---------------------------------------------------------------------------
+# Developer Tab / Platform Endpoints
+# ---------------------------------------------------------------------------
+from renewise.services import platform as platform_svc
+
+class PlatformCreateRequest(BaseModel):
+    platform_name: str
+
+    @field_validator("platform_name")
+    @classmethod
+    def platform_name_must_not_be_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Platform name is required")
+        return v.strip()
+
+class PlatformWalletRequest(BaseModel):
+    wallet_address: str
+    passcode: str | None = None
+
+class PlatformPasscodeRequest(BaseModel):
+    new_passcode: str
+    current_passcode: str | None = None
+
+    @field_validator("new_passcode")
+    @classmethod
+    def passcode_must_be_4_digits(cls, v: str) -> str:
+        if not v.isdigit() or len(v) != 4:
+            raise ValueError("Passcode must be a 4-digit number")
+        return v
+
+@app.get("/api/developer/platforms")
+@limiter.limit("60/minute")
+async def api_developer_platforms_get(
+    request: Request,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """Returns all active platforms owned by the authenticated user."""
+    platforms = await platform_svc.get_user_platforms(user["id"])
+    return {"platforms": platforms}
+
+@app.post("/api/developer/platforms")
+@limiter.limit("10/minute")
+async def api_developer_platforms_create(
+    request: Request,
+    body: PlatformCreateRequest,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """Creates a new platform and returns the raw secret key exactly once."""
+    telegram_user_id = user["id"]
+    
+    # Simple check on max platforms (e.g. limit to 3 per user for now)
+    existing = await platform_svc.get_user_platforms(telegram_user_id)
+    if len(existing) >= 3:
+        raise HTTPException(status_code=400, detail="Maximum of 3 platforms allowed per user.")
+
+    platform, raw_secret_key_test = await platform_svc.create_platform(
+        owner_telegram_id=telegram_user_id,
+        platform_name=body.platform_name,
+    )
+    return {
+        "platform": platform,
+        "raw_secret_key_test": raw_secret_key_test
+    }
+
+@app.post("/api/developer/platforms/{platform_id}/live-keys")
+@limiter.limit("5/minute")
+async def api_developer_generate_live_keys(
+    request: Request,
+    platform_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """Generates live keys for a platform for the first time."""
+    telegram_user_id = user["id"]
+    await verify_platform_ownership(platform_id, telegram_user_id)
+    
+    try:
+        pk_live, sk_live = await platform_svc.generate_live_keys(platform_id, telegram_user_id)
+        return {
+            "ok": True,
+            "publishable_key_live": pk_live,
+            "raw_secret_key_live": sk_live
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/developer/platforms/{platform_id}/charges")
+@limiter.limit("60/minute")
+async def api_developer_platform_charges(
+    request: Request,
+    platform_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0
+) -> dict:
+    """Retrieves paginated charges for a platform and basic aggregate stats."""
+    telegram_user_id = user["id"]
+    await verify_platform_ownership(platform_id, telegram_user_id)
+    
+    charges = await platform_svc.get_platform_charges(platform_id, status=status, limit=limit, offset=offset)
+    stats = await platform_svc.get_platform_stats(platform_id)
+    webhook = await platform_svc.get_platform_webhook(platform_id)
+    
+    return {
+        "charges": charges, 
+        "stats": stats,
+        "webhook": webhook
+    }
+
+class RegenerateKeyRequest(BaseModel):
+    mode: str
+
+@app.post("/api/developer/platforms/{platform_id}/keys/regenerate")
+@limiter.limit("5/minute")
+async def api_developer_regenerate_keys(
+    request: Request,
+    platform_id: int,
+    body: RegenerateKeyRequest,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """Regenerates the secret key for a specific mode."""
+    telegram_user_id = user["id"]
+    await verify_platform_ownership(platform_id, telegram_user_id)
+    
+    if body.mode not in ("live", "test"):
+        raise HTTPException(status_code=400, detail="Invalid mode")
+        
+    new_secret = await platform_svc.regenerate_platform_keys(platform_id, body.mode, telegram_user_id)
+    
+    # Immediately invalidate any cached auth entries for this platform's old keys
+    # so the rotated secret stops working without waiting for the 60s TTL
+    from renewise.api.platform import auth_cache
+    stale = [k for k, v in list(auth_cache.items()) if isinstance(v, dict) and v.get('id') == platform_id and v.get('auth_mode') == body.mode]
+    for k in stale:
+        auth_cache.pop(k, None)
+    
+    return {"ok": True, "new_secret_key": new_secret}
+
+class WebhookRequest(BaseModel):
+    url: str
+
+@app.post("/api/developer/platforms/{platform_id}/webhook")
+@limiter.limit("10/minute")
+async def api_developer_set_webhook(
+    request: Request,
+    platform_id: int,
+    body: WebhookRequest,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Sets or updates the webhook URL.
+    - First setup: returns a one-time webhook_secret that must be saved immediately.
+    - URL update: returns webhook_secret=null — the existing secret is preserved.
+    """
+    telegram_user_id = user["id"]
+    await verify_platform_ownership(platform_id, telegram_user_id)
+
+    if not body.url.startswith("https://") and not body.url.startswith("http://"):
+        raise HTTPException(status_code=400, detail="Invalid URL format")
+
+    result = await platform_svc.set_platform_webhook(platform_id, body.url, telegram_user_id)
+    return {"ok": True, "webhook_secret": result["secret"], "is_new": result["is_new"]}
+
+@app.post("/api/developer/platforms/{platform_id}/webhook/rotate-secret")
+@limiter.limit("5/minute")
+async def api_developer_rotate_webhook_secret(
+    request: Request,
+    platform_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """Explicitly rotates the webhook signing secret without changing the URL."""
+    telegram_user_id = user["id"]
+    await verify_platform_ownership(platform_id, telegram_user_id)
+
+    try:
+        new_secret = await platform_svc.rotate_webhook_secret(platform_id, telegram_user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    return {"ok": True, "webhook_secret": new_secret}
+
+
+async def verify_platform_ownership(platform_id: int, telegram_user_id: int) -> dict:
+    """Helper to ensure the platform belongs to the requester."""
+    platforms = await platform_svc.get_user_platforms(telegram_user_id)
+    matching = [p for p in platforms if p["id"] == platform_id]
+    if not matching:
+        raise HTTPException(status_code=403, detail="Unauthorized access to platform data")
+    return matching[0]
+
 
 # ---------------------------------------------------------------------------
 # GROUP MANAGEMENT ENDPOINTS

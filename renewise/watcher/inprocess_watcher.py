@@ -163,6 +163,42 @@ async def _notify_overpayment(
     except Exception as exc:
         log.warning("Could not DM user %d about overpayment: %s", tg_user_id, exc)
 
+async def _process_platform_charge_inprocess(
+    app: "Application",
+    charge: dict,
+    tx_hash: str,
+    amount_nano: int,
+) -> None:
+    """Process a completed platform API charge."""
+    log.info("inprocess_platform: tx=%s charge_id=%d amount=%d", tx_hash, charge["id"], amount_nano)
+    
+    # Claim idempotency
+    claimed = await mark_tx_processed(tx_hash, charge["id"])
+    if not claimed:
+        log.info("inprocess_platform: lost race on idempotency claim tx=%s", tx_hash)
+        return
+        
+    required = charge["required_nano_amount"]
+    
+    if required is not None and amount_nano < required:
+        log.warning("inprocess_platform: insufficient amount %d < %d for charge %d", amount_nano, required, charge["id"])
+        # For now, mark as failed, or wait for top-up? API doesn't support top-up yet. 
+        # But we still record it so we don't re-process. We won't dispatch webhook for partial payment.
+        return
+        
+    # Mark as completed
+    from renewise.db.connection import _db
+    async with _db() as db:
+        await db.execute(
+            "UPDATE platform_charges SET status = 'completed', completed_at = NOW(), tx_hash = $1 WHERE id = $2",
+            tx_hash, charge["id"]
+        )
+        
+    from renewise.services.webhooks import dispatch_webhook
+    asyncio.create_task(dispatch_webhook(charge["id"]))
+    
+    log.info("inprocess_platform: charge %d completed successfully", charge["id"])
+
 async def _process_payment_inprocess(
     app: "Application",
     vault_address: str,
@@ -187,6 +223,11 @@ async def _process_payment_inprocess(
     # Step 2 — resolve vault → subscription context
     reg = await get_vault_registration(vault_address)
     if not reg:
+        from renewise.db.queries import get_platform_charge_by_vault
+        charge = await get_platform_charge_by_vault(vault_address)
+        if charge:
+            return await _process_platform_charge_inprocess(app, charge, tx_hash, amount_nano)
+            
         log.warning("inprocess: unknown vault %s — no registry entry", vault_address)
         return
 

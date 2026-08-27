@@ -185,6 +185,77 @@ async def generate_payment_request(
     )
 
 
+async def generate_platform_payment_request(
+    platform: dict,
+    charge_id: int,
+    price_usd_cents: int,
+) -> PaymentRequest:
+    """
+    Variant of generate_payment_request for Developer API platform charges.
+    Generates a TON payment link for an API charge.
+    """
+    admin_wallet_str = platform.get("wallet_address")
+    if not admin_wallet_str:
+        raise ValueError(f"Platform {platform['id']} has no payout wallet configured")
+
+    price_usd: float = price_usd_cents / 100.0
+    ton_usd_rate: float = await get_ton_usd_price()
+    price_gram: float = price_usd / ton_usd_rate
+    price_nano: int = round(price_gram * 1_000_000_000)
+
+    log.info(
+        "generate_platform_payment_request: platform=%s charge_id=%s price_usd=%.2f ton_rate=%.4f "
+        "price_gram=%.6f price_nano=%d",
+        platform["id"], charge_id, price_usd, ton_usd_rate, price_gram, price_nano,
+    )
+
+    # For now, platforms use global default fees
+    global_buyer_bps, global_admin_bps = await get_global_fees()
+
+    # We use charge_id in place of subscription_id to uniquely salt the vault contract
+    params = VaultParams(
+        admin_wallet=Address(admin_wallet_str),
+        platform_wallet=Address(PLATFORM_WALLET),
+        log_address=Address(LOG_ADDRESS),
+        trigger_wallet=Address(TRIGGER_WALLET),
+        price=price_nano,
+        buyer_fee_bps=global_buyer_bps,
+        admin_fee_bps=global_admin_bps,
+        subscription_id=charge_id,
+    )
+
+    try:
+        link = build_payment_link(params, code_cell=_get_code_cell())
+    except Exception as exc:
+        log.error("Failed to build platform payment link for platform=%s charge_id=%s: %s", platform["id"], charge_id, exc)
+        raise
+
+    buyer_fee_gram = price_gram * global_buyer_bps / 10000
+    total_gram     = price_gram + buyer_fee_gram
+
+    # Register the vault with the webhook server's polling loop
+    try:
+        import aiohttp as _aiohttp
+        from renewise.watcher.config import WEBHOOK_HOST, WEBHOOK_PORT
+        async with _aiohttp.ClientSession() as s:
+            await s.post(
+                f"http://{WEBHOOK_HOST}:{WEBHOOK_PORT}/register",
+                json={"vault_address": link.vault_address},
+                timeout=_aiohttp.ClientTimeout(total=2),
+            )
+    except Exception:
+        pass  # Webhook server may not be running in dev; non-fatal
+
+    return PaymentRequest(
+        payment_url=link.ton_deep_link,
+        vault_address=link.vault_address,
+        payload=link.vault_address,
+        amount=total_gram,
+        currency="TON",
+        required_nano=link.required_nano,
+    )
+
+
 async def check_payment_status(user_id: int, group_id: int) -> PaymentStatus:
     """
     Check whether the subscription has been activated by the chain-watcher.

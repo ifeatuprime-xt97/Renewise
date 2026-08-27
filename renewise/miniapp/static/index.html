@@ -1688,6 +1688,17 @@
         <p style="margin:0 0 24px;">You must be 18 or older (or the age of majority in your jurisdiction) to use this
           service.</p>
 
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">14. Developer API — Additional Terms</h2>
+        <p style="margin:0 0 8px;">If you use the Renewise Payments API to build your own application, you additionally agree to:</p>
+        <ul style="margin:0 0 16px;padding-left:18px;">
+          <li><strong>Secret key security.</strong> You are solely responsible for keeping your <code>sk_live_</code> and <code>sk_test_</code> secret keys confidential. Never embed them in client-side code, mobile apps, or public repositories. Renewise is not liable for charges or data breaches arising from exposed keys.</li>
+          <li><strong>Payment UX obligation.</strong> You must present payments to your users as a <code>ton://</code> deep-link or QR code. Displaying the raw vault address for manual copy-paste is prohibited. Renewise uses a Deploy-on-first-message smart contract architecture; bypassing the deep-link breaks payment delivery.</li>
+          <li><strong>Telegram environment.</strong> The Renewise payment infrastructure is designed and tested for use within Telegram. If you deploy the API outside Telegram, you accept full responsibility for ensuring correct payment UX and user communication.</li>
+          <li><strong>Fair use &amp; rate limits.</strong> You must not exceed published rate limits or attempt to circumvent them. Abuse may result in immediate platform suspension without refund.</li>
+          <li><strong>No resale.</strong> You may not resell or sublicense access to the Renewise API to third parties without prior written agreement.</li>
+          <li><strong>Webhook reliability.</strong> If you configure a webhook endpoint, you are responsible for maintaining its availability and correctly verifying the <code>Renewise-Signature</code> header before processing events.</li>
+        </ul>
+
       </div><!-- /tos-body -->
 
       <!-- Agree / Decline -->
@@ -1756,6 +1767,146 @@
       <button class="btn-link" onclick="startWizard()">+ Add</button>
     </div>
     <div id="networks-list">
+      <div class="loading">Loading…</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Developer
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-developer">
+    <div class="section-hdr" style="margin-bottom:8px">
+      <h1 class="page-title">Developer</h1>
+      <button class="btn-link" onclick="openCreatePlatform()">+ App</button>
+    </div>
+    <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px;line-height:1.4">
+      Integrate Renewise billing directly into your own Telegram app.
+    </p>
+
+    <!-- ── API Docs accordion ─────────────────────────────────────────── -->
+    <div class="glass" style="border-radius:var(--r);overflow:hidden;margin-bottom:20px">
+
+      <!-- Quick Start -->
+      <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div><div class="sr-label">Quick Start</div><div class="sr-sub">3 steps to first payment</div></div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+      </div>
+      <div class="accordion-content">
+        <b>1️⃣ Create an app</b><br>
+        Tap <b>+ App</b> above. Test keys are generated immediately and always visible in your dashboard. Live (Mainnet) keys are opt-in — generate them when you're ready for real payments.<br><br>
+        <b>2️⃣ Create a charge from your server</b><br>
+        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;display:block;margin:6px 0;word-break:break-all">POST https://&lt;host&gt;/api/platform/charges<br>Authorization: Bearer sk_test_…<br>Content-Type: application/json<br><br>{"amount_usd_cents": 999, "external_reference": "order_001"}</code>
+        <b>3️⃣ Show the payment link to your user</b><br>
+        Use the <code>payment_url</code> (a <code>ton://</code> deep-link) from the response. Show it as a button inside Telegram or render it as a QR code — <b>never expose the raw vault address</b>.
+      </div>
+
+      <!-- Authentication -->
+      <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div><div class="sr-label">Authentication</div><div class="sr-sub">Bearer token, dual environments</div></div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+      </div>
+      <div class="accordion-content">
+        Every API request must include your secret key:<br>
+        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;display:inline-block;margin:6px 0">Authorization: Bearer sk_test_…</code><br>
+        The prefix automatically routes to the correct network:<br><br>
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <tr style="color:rgba(255,255,255,.5)"><td style="padding:3px 0">Prefix</td><td>Network</td><td>Explorer</td></tr>
+          <tr><td><code>sk_test_</code></td><td>TON Testnet</td><td>testnet.tonscan.org</td></tr>
+          <tr><td><code>sk_live_</code></td><td>TON Mainnet</td><td>tonscan.org</td></tr>
+        </table><br>
+        ⚠️ Never put secret keys in client-side code, mobile apps, or public repos. Store them as environment variables on your server.
+      </div>
+
+      <!-- Create Charge -->
+      <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div><div class="sr-label">Create a Charge</div><div class="sr-sub">POST /api/platform/charges</div></div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+      </div>
+      <div class="accordion-content">
+        <b>Request body</b><br>
+        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7">{<br>&nbsp;&nbsp;"amount_usd_cents": 999,&nbsp;&nbsp;&nbsp;// integer, min 10<br>&nbsp;&nbsp;"external_reference": "…" // your order ID, unique/platform<br>}</code>
+        <b>Response fields</b><br>
+        <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:6px">
+          <tr style="color:rgba(255,255,255,.5)"><td style="padding:3px 4px 3px 0">Field</td><td>Description</td></tr>
+          <tr><td><code>charge_id</code></td><td>Renewise charge ID</td></tr>
+          <tr><td><code>payment_url</code></td><td>ton:// deep-link — show this to the user</td></tr>
+          <tr><td><code>required_nano_amount</code></td><td>Exact nanoTON to send</td></tr>
+          <tr><td><code>status</code></td><td>pending / completed / expired / failed</td></tr>
+        </table>
+      </div>
+
+      <!-- Payment UX Warning -->
+      <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div><div class="sr-label" style="color:var(--error)">Payment UX — Critical</div><div class="sr-sub">Deep-link only. No raw addresses.</div></div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+      </div>
+      <div class="accordion-content">
+        <div style="background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;color:#ff9090">
+          🚫 <b>Never show the raw <code>vault_address</code> to users.</b>
+        </div>
+        Renewise uses a <b>Deploy-on-first-message</b> architecture. The vault smart contract is deployed by the first TON transaction that carries its <code>StateInit</code> payload — and that payload is embedded in the <code>payment_url</code> deep-link.<br><br>
+        If a user manually copies the raw address and sends from an exchange (Binance, OKX…), the <code>StateInit</code> is missing, the contract does not deploy, and the payment stalls.<br><br>
+        <b>Correct approach:</b><br>
+        • <b>Telegram Mini App (mobile)</b> — embed <code>payment_url</code> in a "Pay with TON" button.<br>
+        • <b>Desktop / Web</b> — render <code>payment_url</code> as a QR code for Tonkeeper / TonHub.<br><br>
+        Since Renewise is designed for Telegram, your bot/mini-app should be the delivery mechanism. Using the API outside of Telegram is permitted only when you accept full responsibility for ensuring users never send TON via manual address copy.
+      </div>
+
+      <!-- Webhooks -->
+      <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+          <div><div class="sr-label">Webhooks</div><div class="sr-sub">Real-time charge events</div></div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+      </div>
+      <div class="accordion-content">
+        Set your endpoint URL in the Dashboard → <b>Webhook → Edit</b>. On first setup you'll receive a <code>whsec_…</code> signing secret — save it immediately, it's only shown once.<br><br>
+        Renewise sends a signed <code>POST</code> to your endpoint for every charge status change:<br>
+        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7">{"id":42, "external_reference":"order_001",<br>"status":"completed", "amount_usd_cents":999,<br>"tx_hash":"abc…def"}</code>
+        <b>Verify the signature before processing:</b><br>
+        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7"># Python<br>import hmac, hashlib<br>expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()<br>hmac.compare_digest(expected, header)</code>
+        Return <code>HTTP 200</code> within 5 seconds. Renewise retries failed deliveries (0 s, 10 s, 30 s). Recent delivery logs are in the Dashboard.
+      </div>
+
+      <!-- Errors & Rate Limits -->
+      <div class="settings-row accordion-trigger no-border" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div><div class="sr-label">Errors & Rate Limits</div><div class="sr-sub">HTTP codes, limits per endpoint</div></div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+      </div>
+      <div class="accordion-content no-border">
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <tr style="color:rgba(255,255,255,.5)"><td style="padding:3px 4px 3px 0">Status</td><td>Meaning</td></tr>
+          <tr><td><code>400</code></td><td>Missing or invalid field</td></tr>
+          <tr><td><code>401</code></td><td>Missing Authorization header</td></tr>
+          <tr><td><code>403</code></td><td>Invalid or revoked secret key</td></tr>
+          <tr><td><code>404</code></td><td>Charge not found or not yours</td></tr>
+          <tr><td><code>429</code></td><td>Rate limit — back off and retry</td></tr>
+          <tr><td><code>500</code></td><td>Server error — retry with backoff</td></tr>
+        </table><br>
+        <b>Per-platform rate limits:</b><br>
+        <code>POST /charges</code> — 60/min &nbsp;|&nbsp; <code>GET /charges/:id</code> — 60/min<br>
+        <code>POST /keys/regenerate</code> — 5/min &nbsp;|&nbsp; <code>POST /webhook</code> — 10/min
+      </div>
+
+    </div><!-- /API docs accordion -->
+
+    <div id="platforms-list">
       <div class="loading">Loading…</div>
     </div>
   </section>
@@ -1953,6 +2104,9 @@
 
         <b>11. Age</b><br>
         You must be 18 or older to use this service.<br><br>
+
+        <b>12. Developer API — Additional Terms</b><br>
+        If you use the Renewise Payments API, you additionally agree to: keep secret keys confidential and never expose them client-side; present payments as <code>ton://</code> deep-links or QR codes only (no raw vault addresses); stay within published rate limits; not resell API access; and verify webhook signatures before processing events. Using the API outside Telegram is permitted only when you accept full responsibility for correct payment UX.
 
         <div id="tos-accepted-badge"
           style="display:none;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.25);border-radius:10px;padding:10px 13px;font-size:12.5px;margin-top:4px;">
@@ -2378,7 +2532,7 @@
         <rect x="3" y="14" width="7" height="7" rx="1.5" />
         <rect x="14" y="14" width="7" height="7" rx="1.5" />
       </svg>
-      Dashboard
+      My Networks
       <span class="nav-indicator"></span>
     </button>
     <button class="nav-item active" id="nav-subs" onclick="App.nav('subs')">
@@ -2396,6 +2550,14 @@
           d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
       </svg>
       Settings
+      <span class="nav-indicator"></span>
+    </button>
+    <button class="nav-item" id="nav-developer" onclick="App.nav('developer')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <polyline points="16 18 22 12 16 6" />
+        <polyline points="8 6 2 12 8 18" />
+      </svg>
+      Developer
       <span class="nav-indicator"></span>
     </button>
   </nav>
@@ -2554,8 +2716,8 @@
     // ════════════════════════════════════════════════════
     // Navigation
     // ════════════════════════════════════════════════════
-    const PAGES = ['dashboard', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
-    const NAV_PAGES = ['dashboard', 'subs', 'settings'];
+    const PAGES = ['dashboard', 'developer', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
+    const NAV_PAGES = ['dashboard', 'subs', 'developer', 'settings'];
 
     function toggleAcc(el) {
       const wasOpen = el.classList.contains('open');
@@ -2625,6 +2787,10 @@
             bh.style.background = 'var(--surface2)'; bh.style.color = 'rgba(255,255,255,.6)';
             sl.style.display = 'block'; hl.style.display = 'none';
           }
+        }
+        
+        if (page === 'developer') {
+          loadPlatforms();
         }
       },
 
@@ -3619,6 +3785,272 @@
       }
     }
 
+    let currentPlatformId = null;
+    let chargesPage = 0;
+    const CHARGES_PER_PAGE = 20;
+    
+    async function showPlatformCharges(platformId, platformName) {
+      currentPlatformId = platformId;
+      chargesPage = 0;
+      document.getElementById('confirm-title').textContent = `${platformName} Dashboard`;
+      document.getElementById('confirm-message').innerHTML = `
+        <div id="dashboard-content" style="text-align:left;max-height:60vh;overflow-y:auto;padding-right:8px;">
+          <div style="text-align:center;padding:20px;color:rgba(255,255,255,.5)">Loading dashboard...</div>
+        </div>
+      `;
+      document.getElementById('confirm-buttons').innerHTML = `
+        <button class="btn" onclick="closeConfirm()">Back to Platforms</button>
+      `;
+      document.getElementById('confirm-modal').style.display = 'flex';
+      
+      await renderDashboard();
+    }
+    
+    async function renderDashboard(statusFilter = '') {
+      if (!currentPlatformId) return;
+      try {
+        const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/charges?limit=${CHARGES_PER_PAGE}&offset=${chargesPage * CHARGES_PER_PAGE}${statusFilter ? '&status='+statusFilter : ''}`);
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const data = await r.json();
+        
+        let html = '';
+        
+        // --- 1. Basic Stats ---
+        const s = data.stats;
+        html += `
+          <div style="display:flex;gap:12px;margin-bottom:20px">
+            <div style="flex:1;background:rgba(0,0,0,.2);border-radius:12px;padding:16px;text-align:center">
+              <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Volume</div>
+              <div style="font-size:18px;font-weight:600;color:var(--accent)">$${s.total_volume_usd.toFixed(2)}</div>
+            </div>
+            <div style="flex:1;background:rgba(0,0,0,.2);border-radius:12px;padding:16px;text-align:center">
+              <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Charges</div>
+              <div style="font-size:18px;font-weight:600">${s.total_charges}</div>
+            </div>
+            <div style="flex:1;background:rgba(0,0,0,.2);border-radius:12px;padding:16px;text-align:center">
+              <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:4px;font-weight:700">Success</div>
+              <div style="font-size:18px;font-weight:600">${s.success_rate_pct.toFixed(1)}%</div>
+            </div>
+          </div>
+        `;
+        
+        // --- 2. API Keys ---
+        // Find platform from platforms array
+        const p = platforms.find(x => x.id === currentPlatformId);
+        if (p) {
+          const dashLiveBlock = p.publishable_key_live
+            ? `<div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;word-break:break-all">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <span style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px">Live Keys (Mainnet)</span>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${p.publishable_key_live}')">Copy pk</button>
+                </div>
+                <code style="font-size:11px;color:var(--accent);display:block;margin-bottom:8px">${p.publishable_key_live}</code>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:11px;color:rgba(255,255,255,.5)">Secret key: shown once on generation</span>
+                  <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--error)" onclick="regenerateKey('live')">Rotate</button>
+                </div>
+              </div>`
+            : `<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.25);border-radius:12px;padding:14px;margin-bottom:8px;text-align:center">
+                <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px">🔒 Live Mainnet keys not yet generated</div>
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px">Generate when ready to accept real payments.</div>
+                <button class="btn" style="background:var(--accent);color:#000;font-weight:700;font-size:12px;padding:6px 18px" onclick="generateLiveKeys(${p.id})">Generate Live Keys</button>
+              </div>`;
+
+          html += `
+            <div style="margin-bottom:24px">
+              <div style="font-size:14px;font-weight:600;margin-bottom:6px">API Keys</div>
+              <div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:10px;line-height:1.5">
+                Use your secret key in the <code>Authorization: Bearer</code> header.
+                The prefix (<code>sk_live_</code> vs <code>sk_test_</code>) automatically routes to Mainnet or Testnet.
+              </div>
+
+              <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;word-break:break-all">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <span style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px">Test Keys (Testnet)</span>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${p.publishable_key_test}')">Copy pk</button>
+                </div>
+                <code style="font-size:11px;color:var(--accent);display:block;margin-bottom:8px">${p.publishable_key_test}</code>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <code style="font-size:11px;color:rgba(255,255,255,.6);word-break:break-all;flex:1;margin-right:8px">${p.secret_key_test}</code>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${p.secret_key_test}')">Copy sk</button>
+                </div>
+                <div style="margin-top:6px;text-align:right">
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="regenerateKey('test')">Rotate sk</button>
+                </div>
+              </div>
+
+              ${dashLiveBlock}
+            </div>
+          `;
+        }
+        
+        // --- 3. Webhooks ---
+        const w = data.webhook;
+        html += `
+          <div style="margin-bottom:24px">
+            <div style="font-size:14px;font-weight:600;margin-bottom:8px">Webhook</div>
+            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-size:12px;color:rgba(255,255,255,.7)">Endpoint URL</span>
+                <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="promptWebhook()">Edit</button>
+              </div>
+              <div style="font-size:13px;word-break:break-all;margin-bottom:12px">${w ? esc(w.url) : '<i style="color:rgba(255,255,255,.3)">Not configured</i>'}</div>
+        `;
+        if (w) {
+          html += `<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px">Secret: <span style="font-family:monospace">${w.secret_preview}</span>
+            <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;margin-left:8px" onclick="rotateWebhookSecret()">Rotate</button>
+          </div>`;
+          if (w.recent_deliveries && w.recent_deliveries.length > 0) {
+            html += `<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:rgba(255,255,255,.7)">Recent Deliveries</div>`;
+            w.recent_deliveries.forEach(d => {
+              const color = d.status === 'success' ? 'var(--accent)' : 'var(--error)';
+              html += `<div style="font-size:11px;display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+                <span style="color:${color}">${d.status.toUpperCase()} (HTTP ${d.response_status_code || 'Err'})</span>
+                <span style="color:rgba(255,255,255,.5)">Charge #${d.charge_id}</span>
+              </div>`;
+            });
+          } else {
+            html += `<div style="font-size:11px;color:rgba(255,255,255,.3)">No recent webhook attempts</div>`;
+          }
+        }
+        html += `</div></div>`;
+        
+        // --- 4. Charges List ---
+        html += `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:14px;font-weight:600">Charges</div>
+            <select id="charge-status-filter" style="background:var(--surface2);color:var(--text);border:none;border-radius:8px;padding:4px 8px;font-size:12px;outline:none" onchange="filterCharges(this.value)">
+              <option value="" ${!statusFilter ? 'selected' : ''}>All</option>
+              <option value="completed" ${statusFilter === 'completed' ? 'selected' : ''}>Completed</option>
+              <option value="pending" ${statusFilter === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="expired" ${statusFilter === 'expired' ? 'selected' : ''}>Expired</option>
+              <option value="failed" ${statusFilter === 'failed' ? 'selected' : ''}>Failed</option>
+            </select>
+          </div>
+        `;
+        
+        if (data.charges.length === 0) {
+          html += `<div style="text-align:center;padding:20px;color:rgba(255,255,255,.3);font-size:13px">No charges found.</div>`;
+        } else {
+          data.charges.forEach(c => {
+            const date = new Date(c.created_at).toLocaleString(undefined, {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+            let stColor = 'rgba(255,255,255,.5)';
+            if (c.status === 'completed') stColor = 'var(--accent)';
+            if (c.status === 'failed' || c.status === 'expired') stColor = 'var(--error)';
+            
+            html += `
+              <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                  <div style="font-weight:600;font-size:14px">$${(c.amount_usd_cents/100).toFixed(2)} <span style="font-size:11px;color:rgba(255,255,255,.5);font-weight:400;margin-left:4px">${c.mode === 'test' ? '[TEST]' : ''}</span></div>
+                  <div style="font-size:11px;font-weight:700;color:${stColor};text-transform:uppercase">${c.status}</div>
+                </div>
+                <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px">Ref: ${esc(c.external_reference)} &bull; ${date}</div>
+            `;
+            if (c.tx_hash) {
+              const explorer = c.mode === 'test' ? 'testnet.tonscan.org' : 'tonscan.org';
+              html += `<div style="font-size:11px"><a href="https://${explorer}/tx/${c.tx_hash}" target="_blank" style="color:var(--accent);text-decoration:none">View on Tonscan</a></div>`;
+            }
+            html += `</div>`;
+          });
+          
+          html += `
+            <div style="display:flex;justify-content:space-between;margin-top:16px;padding-bottom:20px">
+              <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" ${chargesPage === 0 ? 'disabled' : ''} onclick="changeChargesPage(-1)">Previous</button>
+              <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" ${data.charges.length < CHARGES_PER_PAGE ? 'disabled' : ''} onclick="changeChargesPage(1)">Next</button>
+            </div>
+          `;
+        }
+        
+        document.getElementById('dashboard-content').innerHTML = html;
+      } catch (e) {
+        document.getElementById('dashboard-content').innerHTML = `<div style="color:var(--error);padding:20px">Error loading dashboard: ${esc(e.message || e)}</div>`;
+      }
+    }
+    
+    async function filterCharges(status) {
+      chargesPage = 0;
+      await renderDashboard(status);
+    }
+    
+    async function changeChargesPage(delta) {
+      chargesPage += delta;
+      const status = document.getElementById('charge-status-filter').value;
+      await renderDashboard(status);
+    }
+    
+    async function regenerateKey(mode) {
+      if (!confirm(`Are you sure you want to regenerate your ${mode} secret key? The old one will immediately stop working.`)) return;
+      
+      try {
+        const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/keys/regenerate`, {
+          method: 'POST',
+          headers: H(),
+          body: JSON.stringify({ mode: mode })
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const data = await r.json();
+        
+        WebApp.HapticFeedback.notificationOccurred('success');
+        alert(`Your new ${mode} secret key is:\n\n${data.new_secret_key}\n\nCopy this now. It will not be shown again.`);
+      } catch (e) {
+        WebApp.showAlert('Error regenerating key: ' + (e.message || e));
+      }
+    }
+    
+    async function promptWebhook() {
+      const url = prompt("Enter your webhook endpoint URL:");
+      if (!url) return;
+      
+      if (!url.startsWith('https://') && !url.startsWith('http://')) {
+        return WebApp.showAlert("URL must start with https://");
+      }
+      
+      try {
+        const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/webhook`, {
+          method: 'POST',
+          headers: H(),
+          body: JSON.stringify({ url: url.trim() })
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const data = await r.json();
+        
+        WebApp.HapticFeedback.notificationOccurred('success');
+        
+        if (data.is_new && data.webhook_secret) {
+          // Only show the secret on first-time setup
+          alert(`Webhook configured!\n\nSigning secret (save this now — shown once):\n\n${data.webhook_secret}`);
+        } else {
+          WebApp.showAlert('Webhook URL updated. Your existing signing secret is unchanged.');
+        }
+        
+        const status = document.getElementById('charge-status-filter') ? document.getElementById('charge-status-filter').value : '';
+        await renderDashboard(status);
+      } catch (e) {
+        WebApp.showAlert('Error setting webhook: ' + (e.message || e));
+      }
+    }
+    
+    async function rotateWebhookSecret() {
+      if (!confirm('Rotate the webhook signing secret? Your server must be updated immediately or webhook verification will fail.')) return;
+      
+      try {
+        const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/webhook/rotate-secret`, {
+          method: 'POST',
+          headers: H()
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const data = await r.json();
+        
+        WebApp.HapticFeedback.notificationOccurred('success');
+        alert(`New signing secret (save this now — shown once):\n\n${data.webhook_secret}`);
+        
+        const status = document.getElementById('charge-status-filter') ? document.getElementById('charge-status-filter').value : '';
+        await renderDashboard(status);
+      } catch (e) {
+        WebApp.showAlert('Error rotating secret: ' + (e.message || e));
+      }
+    }
+
     // ── Subscriptions tab toggle ──────────────────────────────────────────────
     let _subsHistoryLoaded = false;
 
@@ -3688,6 +4120,360 @@
         });
       } catch (e) {
         el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load history.</p></div>`;
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // DEVELOPER — Platforms & API Keys
+    // ════════════════════════════════════════════════════
+    async function loadPlatforms() {
+      const el = document.getElementById('platforms-list');
+      el.innerHTML = skeletonCards(2);
+      try {
+        const r = await apiFetch(`${API}/developer/platforms`, { headers: H() });
+        if (!r.ok) throw new Error(r.status);
+        const { platforms } = await r.json();
+
+        if (!platforms.length) {
+          el.innerHTML = `
+            <div class="empty">
+              ${ico('plus', 40)}
+              <p style="margin-bottom:12px">No apps created yet.</p>
+              <button class="btn btn-primary" style="font-size:14px;padding:10px 24px;border-radius:24px" onclick="openCreatePlatform()">Create App</button>
+            </div>`;
+          return;
+        }
+
+        el.innerHTML = '';
+        for (const p of platforms) {
+          const card = document.createElement('div');
+          card.className = 'glass sub-card';
+          card.style.marginBottom = '14px';
+          
+          const wallet = p.wallet_address ? `${p.wallet_address.slice(0, 10)}…${p.wallet_address.slice(-6)}` : 'Not set';
+          const pk_live = p.publishable_key_live;
+          const pk_test = p.publishable_key_test;
+          const sk_test = p.secret_key_test;
+          
+          // Live key block: show if generated, else show a "Generate" button
+          const liveKeyBlock = pk_live
+            ? `<div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px;word-break:break-all">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Live Keys (Mainnet)</div>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${pk_live}')">Copy pk</button>
+                </div>
+                <code style="color:var(--accent);font-size:12px">${pk_live}</code>
+                <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:12px;color:rgba(255,255,255,.6)">Secret key: shown once on generation</span>
+                  <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--error)" onclick="regenerateKey('live')">Rotate</button>
+                </div>
+              </div>`
+            : `<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.25);border-radius:12px;padding:16px;margin-bottom:8px;text-align:center">
+                <div style="font-size:13px;color:rgba(255,255,255,.7);margin-bottom:4px">🔒 Live Mainnet keys not yet generated</div>
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px">Generate when you're ready to accept real payments.</div>
+                <button class="btn" style="background:var(--accent);color:#000;font-weight:700;font-size:13px;padding:8px 20px" onclick="generateLiveKeys(${p.id})">Generate Live Keys</button>
+              </div>`;
+
+          card.innerHTML = `
+            <div class="sub-hdr" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+              <span class="sub-name" style="font-size:17px;font-weight:700">${esc(p.platform_name)}</span>
+              ${pill(p.status)}
+            </div>
+
+            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px;word-break:break-all">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Test Keys (Testnet)</div>
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
+              </div>
+              <code style="color:var(--accent);font-size:12px;display:block;margin-bottom:8px">${pk_test}</code>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <code style="color:rgba(255,255,255,.6);font-size:11px;word-break:break-all;flex:1;margin-right:8px">${sk_test}</code>
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
+              </div>
+              <div style="margin-top:8px;text-align:right">
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="regenerateKey('test')">Rotate sk</button>
+              </div>
+            </div>
+
+            ${liveKeyBlock}
+
+            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:700;letter-spacing:.5px">Payout Wallet</div>
+                <div style="font-size:13px;font-family:monospace">${wallet}</div>
+              </div>
+              <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="promptPlatformWallet(${p.id}, ${!!p.wallet_address})">Edit</button>
+            </div>
+
+            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:700;letter-spacing:.5px">Security</div>
+                <div style="font-size:13px;">${p.wallet_passcode_hash ? 'Passkey Enabled' : 'No Passkey'}</div>
+              </div>
+              <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="promptPlatformPasscode(${p.id}, ${!!p.wallet_passcode_hash})">${p.wallet_passcode_hash ? 'Change' : 'Set'}</button>
+            </div>
+            
+            <button class="btn" style="background:var(--surface2);width:100%" onclick="showPlatformCharges(${p.id}, '${esc(p.platform_name)}')">
+              View Charges
+            </button>
+          `;
+          el.appendChild(card);
+        }
+      } catch (e) {
+        el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load apps.</p></div>`;
+      }
+    }
+
+    // ── Text input modal (replaces prompt() for creating apps) ───────────────
+    function promptTextModal(title, placeholder) {
+      return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+        
+        overlay.innerHTML = `
+          <div style="background:var(--surface);width:100%;border-radius:20px 20px 0 0;padding:24px;box-sizing:border-box;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.2,0.8,0.2,1);padding-bottom:calc(24px + env(safe-area-inset-bottom))">
+            <h3 style="margin:0 0 16px;font-size:18px">${title}</h3>
+            <input id="text-field-modal" type="text" placeholder="${placeholder}"
+              style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;
+                     padding:12px 14px;color:#fff;font-size:16px;outline:none;box-sizing:border-box;margin-bottom:20px" />
+            <div style="display:flex;gap:12px">
+              <button id="text-btn-cancel" class="btn btn-ghost" style="flex:1;background:rgba(255,255,255,.1)">Cancel</button>
+              <button id="text-btn-submit" class="btn" style="flex:1">Submit</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        const panel = overlay.firstElementChild;
+        const input = overlay.querySelector('#text-field-modal');
+        
+        // Wait for next frame so the transition animates
+        requestAnimationFrame(() => panel.style.transform = 'translateY(0)');
+        // Focus the input
+        setTimeout(() => input.focus(), 300);
+        
+        function close(val) {
+          panel.style.transform = 'translateY(100%)';
+          setTimeout(() => { overlay.remove(); resolve(val); }, 300);
+        }
+        
+        overlay.querySelector('#text-btn-cancel').onclick = () => close(null);
+        overlay.querySelector('#text-btn-submit').onclick = () => close(input.value);
+        overlay.onclick = (e) => { if (e.target === overlay) close(null); };
+      });
+    }
+
+    async function openCreatePlatform() {
+      const name = await promptTextModal("Enter App Name", "e.g. My Telegram Game");
+      if (!name || !name.trim()) return;
+      
+      try {
+        const r = await apiFetch(`${API}/developer/platforms`, {
+          method: 'POST',
+          headers: H(),
+          body: JSON.stringify({ platform_name: name.trim() })
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const res = await r.json();
+        
+        // Test secret key is stored in plaintext — shown here for convenience but
+        // the developer can always view it again in the dashboard.
+        WebApp.HapticFeedback.notificationOccurred('success');
+        WebApp.showAlert(`App "${res.platform.platform_name}" created!\n\nYour test secret key is permanently visible in the dashboard. Generate Live Keys when you are ready for Mainnet.`);
+        loadPlatforms();
+      } catch (e) {
+        WebApp.showAlert('Error creating app: ' + (e.message || e));
+      }
+    }
+
+    async function generateLiveKeys(platformId) {
+      const confirmed = await Confirm.show(
+        'Generate Live Keys?',
+        'This will create your Mainnet secret key. It will be shown ONCE and never again. Make sure you are ready.'
+      );
+      if (!confirmed) return;
+      
+      try {
+        const r = await apiFetch(`${API}/developer/platforms/${platformId}/live-keys`, {
+          method: 'POST',
+          headers: H()
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const data = await r.json();
+        
+        WebApp.HapticFeedback.notificationOccurred('success');
+        // Show the live secret key ONCE — this is the only time it's ever visible
+        alert(`✅ Live keys generated!\n\nSave your Live Secret Key NOW — it will never be shown again:\n\n${data.raw_secret_key_live}\n\nPublishable key is saved to your dashboard.`);
+        loadPlatforms();
+      } catch (e) {
+        WebApp.showAlert('Error generating live keys: ' + (e.message || e));
+      }
+    }
+
+    // ── PIN-pad modal (replaces all prompt() calls for passkeys) ─────────────
+    // showPinModal(config) → Promise<string|null>
+    // config: { title, subtitle, fields: [{id, label, placeholder}], submitLabel }
+    function showPinModal(config) {
+      return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+        
+        let fieldsHtml = config.fields.map(f => `
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;color:rgba(255,255,255,.6);display:block;margin-bottom:4px">${f.label}</label>
+            <input id="pin-field-${f.id}" type="tel" inputmode="numeric" maxlength="4" placeholder="${f.placeholder || '••••'}"
+              style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;
+                     padding:12px 14px;color:#fff;font-size:20px;letter-spacing:8px;text-align:center;
+                     outline:none;box-sizing:border-box"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)" />
+          </div>
+        `).join('');
+        
+        if (config.walletField) {
+          fieldsHtml = `<div style="margin-bottom:14px">
+            <label style="font-size:12px;color:rgba(255,255,255,.6);display:block;margin-bottom:4px">TON Wallet Address</label>
+            <input id="pin-field-wallet" type="text" placeholder="EQ… or UQ…"
+              style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;
+                     padding:12px 14px;color:#fff;font-size:13px;outline:none;box-sizing:border-box" />
+          </div>` + fieldsHtml;
+        }
+        
+        overlay.innerHTML = `
+          <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px">
+            <div style="font-size:16px;font-weight:700;margin-bottom:6px">${config.title}</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:20px">${config.subtitle || ''}</div>
+            ${fieldsHtml}
+            <div id="pin-error" style="color:var(--error);font-size:12px;min-height:18px;margin-bottom:10px"></div>
+            <div style="display:flex;gap:10px">
+              <button class="btn" style="flex:1;background:var(--surface2)" onclick="this.closest('[style*=fixed]').remove();window._pinResolve(null)">
+                Cancel
+              </button>
+              <button class="btn" style="flex:2" id="pin-submit">${config.submitLabel || 'Confirm'}</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        window._pinResolve = resolve;
+        
+        const submitBtn = overlay.querySelector('#pin-submit');
+        submitBtn.onclick = () => {
+          const result = {};
+          if (config.walletField) {
+            result.wallet = overlay.querySelector('#pin-field-wallet').value.trim();
+            if (!result.wallet) { overlay.querySelector('#pin-error').textContent = 'Wallet address is required'; return; }
+          }
+          for (const f of config.fields) {
+            const val = overlay.querySelector(`#pin-field-${f.id}`).value;
+            if (val.length !== 4 || !/^\d{4}$/.test(val)) {
+              overlay.querySelector('#pin-error').textContent = `${f.label} must be exactly 4 digits`;
+              return;
+            }
+            result[f.id] = val;
+          }
+          overlay.remove();
+          resolve(result);
+        };
+        // Focus first input
+        setTimeout(() => overlay.querySelector('input') && overlay.querySelector('input').focus(), 100);
+      });
+    }
+
+    async function promptPlatformWallet(platformId, hasExistingWallet) {
+      const fields = hasExistingWallet
+        ? [{ id: 'passcode', label: 'Current 4-digit Passkey', placeholder: '••••' }]
+        : [];
+      
+      const result = await showPinModal({
+        title: hasExistingWallet ? 'Change Payout Wallet' : 'Set Payout Wallet',
+        subtitle: hasExistingWallet ? 'Enter your passkey to authorize this change.' : 'No passkey required for first-time setup.',
+        walletField: true,
+        fields,
+        submitLabel: 'Save Wallet'
+      });
+      if (!result) return;
+      
+      try {
+        const r = await apiFetch(`${API}/developer/platforms/${platformId}/wallet`, {
+          method: 'PUT',
+          headers: H(),
+          body: JSON.stringify({ wallet_address: result.wallet, passcode: result.passcode || null })
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        loadPlatforms();
+      } catch (e) {
+        WebApp.showAlert('Error updating wallet: ' + (e.message || e));
+      }
+    }
+
+    async function promptPlatformPasscode(platformId, hasExistingPasscode) {
+      const fields = hasExistingPasscode
+        ? [
+            { id: 'current', label: 'Current Passkey', placeholder: '••••' },
+            { id: 'new', label: 'New Passkey', placeholder: '••••' }
+          ]
+        : [{ id: 'new', label: 'New 4-digit Passkey', placeholder: '••••' }];
+      
+      const result = await showPinModal({
+        title: hasExistingPasscode ? 'Change Passkey' : 'Set Passkey',
+        subtitle: 'Used to authorize wallet changes.',
+        fields,
+        submitLabel: 'Save Passkey'
+      });
+      if (!result) return;
+      
+      try {
+        const r = await apiFetch(`${API}/developer/platforms/${platformId}/passcode`, {
+          method: 'POST',
+          headers: H(),
+          body: JSON.stringify({
+            new_passcode: result.new,
+            current_passcode: result.current || null
+          })
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        loadPlatforms();
+      } catch (e) {
+        WebApp.showAlert('Error setting passkey: ' + (e.message || e));
+      }
+    }
+    
+    async function showPlatformCharges(platformId, platformName) {
+      document.getElementById('confirm-title').textContent = `${platformName} Charges`;
+      document.getElementById('confirm-body').innerHTML = '<div class="loading">Loading…</div>';
+      document.getElementById('confirm-overlay').classList.add('show');
+      
+      try {
+        const r = await apiFetch(`${API}/developer/platforms/${platformId}/charges`, { headers: H() });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const { charges } = await r.json();
+        
+        if (!charges.length) {
+          document.getElementById('confirm-body').innerHTML = '<p style="color:rgba(255,255,255,.6);text-align:center;margin:20px 0">No charges yet.</p>';
+          return;
+        }
+        
+        let html = '<div style="max-height:60vh;overflow-y:auto;text-align:left;margin-top:16px">';
+        charges.forEach(c => {
+          const usd = c.amount_usd_cents ? fmtUsd(c.amount_usd_cents) : '—';
+          const icon = c.status === 'completed' ? '✅' : c.status === 'failed' ? '❌' : c.status === 'expired' ? '⏰' : '⏳';
+          html += `
+            <div style="padding:10px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <span style="font-weight:700">${usd}</span>
+                <span>${icon} ${c.status}</span>
+              </div>
+              <div style="font-size:11px;color:rgba(255,255,255,.5);font-family:monospace">
+                Ref: ${esc(c.external_reference)}
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        
+        document.getElementById('confirm-body').innerHTML = html;
+      } catch (e) {
+        document.getElementById('confirm-body').innerHTML = `<p style="color:var(--danger)">Failed to load charges.</p>`;
       }
     }
 

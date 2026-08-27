@@ -498,9 +498,21 @@ async def get_vaults_to_watch() -> list[str]:
             "SELECT DISTINCT vault_address "
             "FROM subscriptions "
             "WHERE vault_address IS NOT NULL "
-            "AND status IN ('pending', 'active')"
+            "AND status IN ('pending', 'active') "
+            "UNION "
+            "SELECT DISTINCT vault_address "
+            "FROM platform_charges "
+            "WHERE vault_address IS NOT NULL "
+            "AND status = 'pending'"
         )
         return [r["vault_address"] for r in rows]
+
+async def get_platform_charge_by_vault(vault_address: str) -> Row | None:
+    async with _db() as db:
+        return await db.fetchrow(
+            "SELECT * FROM platform_charges WHERE vault_address = $1",
+            vault_address,
+        )
 
 
 # ── processed_tx_hashes ───────────────────────────────────────────────────────

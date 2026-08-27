@@ -296,3 +296,32 @@ async def get_admin_detail(admin_telegram_id: int) -> dict:
             "total_subs":        total_subs,
             "total_revenue":     total_revenue,
         }
+
+# ── platforms ─────────────────────────────────────────────────────────────────
+
+async def get_platforms_page(limit: int, offset: int) -> list[dict]:
+    async with _db() as db:
+        rows = await db.fetch(
+            "SELECT * FROM platforms ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+            limit, offset
+        )
+        return [dict(r) for r in rows]
+
+async def get_total_platforms_count() -> int:
+    async with _db() as db:
+        return int(await db.fetchval("SELECT COUNT(*) FROM platforms") or 0)
+
+async def get_platform_details(platform_id: int) -> dict | None:
+    async with _db() as db:
+        row = await db.fetchrow("SELECT * FROM platforms WHERE id = $1", platform_id)
+        if not row:
+            return None
+        platform = dict(row)
+        platform["total_charges"] = int(await db.fetchval(
+            "SELECT COUNT(*) FROM platform_charges WHERE platform_id = $1", platform_id
+        ) or 0)
+        platform["revenue_usd"] = float(await db.fetchval(
+            "SELECT COALESCE(SUM(amount_usd_cents), 0) FROM platform_charges "
+            "WHERE platform_id = $1 AND status = 'completed'", platform_id
+        ) or 0) / 100.0
+        return platform
