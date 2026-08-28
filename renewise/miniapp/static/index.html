@@ -265,8 +265,15 @@
     }
 
     @keyframes pulse-dot {
-      0%, 100% { box-shadow: 0 0 6px rgba(74, 222, 128, .5); }
-      50%       { box-shadow: 0 0 12px rgba(74, 222, 128, .8); }
+
+      0%,
+      100% {
+        box-shadow: 0 0 6px rgba(74, 222, 128, .5);
+      }
+
+      50% {
+        box-shadow: 0 0 12px rgba(74, 222, 128, .8);
+      }
     }
 
     .status-dot.paused {
@@ -663,8 +670,16 @@
       font-size: 15px;
       outline: none;
       transition: border-color .2s, box-shadow .2s;
+    }
+
+    .field select {
       -webkit-appearance: none;
       appearance: none;
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+      padding-right: 40px;
     }
 
     .field input::placeholder {
@@ -1068,8 +1083,13 @@
     }
 
     @keyframes shimmer {
-      0%   { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
     }
 
     .empty {
@@ -1492,17 +1512,18 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 20px;
       padding: 3px;
       margin-top: 12px;
     }
+
     .rev-toggle-btn {
       background: transparent;
       border: none;
       cursor: pointer;
-      color: rgba(255,255,255,0.45);
+      color: rgba(255, 255, 255, 0.45);
       font-family: var(--font-body);
       font-size: 12px;
       font-weight: 700;
@@ -1512,8 +1533,9 @@
       transition: background 0.18s, color 0.18s;
       line-height: 1;
     }
+
     .rev-toggle-btn.active {
-      background: rgba(0,152,234,0.25);
+      background: rgba(0, 152, 234, 0.25);
       color: var(--accent);
     }
 
@@ -1628,9 +1650,12 @@
         </p>
 
         <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">2. Non-Custodial Architecture</h2>
-        <p style="margin:0 0 16px;">Renewise never holds, controls, or has discretionary access to admin or member funds. Completed
-          on-chain splits are final and cannot be reversed. Overpayments above $1.00 USD are detected by Renewise's backend
-          and refunded to the member's TON (GRAM) wallet via a dedicated on-chain trigger, typically within 24 hours.</p>
+        <p style="margin:0 0 16px;">Renewise never holds, controls, or has discretionary access to admin or member
+          funds. Completed
+          on-chain splits are final and cannot be reversed. Overpayments above $1.00 USD are detected by Renewise's
+          backend
+          and refunded to the member's TON (GRAM) wallet via a dedicated on-chain trigger, typically within 24 hours.
+        </p>
 
         <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">3. Fees</h2>
         <p style="margin:0 0 16px;">A <strong>2.00% buyer fee</strong> is added to the subscription price paid by the
@@ -1673,7 +1698,8 @@
 
         <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">10. On-Chain Data is Public</h2>
         <p style="margin:0 0 16px;">Every payment transaction — including amounts and wallet addresses — is permanently
-          and publicly visible on the TON (GRAM) blockchain. This is a property of the blockchain, not a choice Renewise makes.
+          and publicly visible on the TON (GRAM) blockchain. This is a property of the blockchain, not a choice Renewise
+          makes.
         </p>
 
         <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">11. Data Sharing</h2>
@@ -1688,15 +1714,26 @@
         <p style="margin:0 0 24px;">You must be 18 or older (or the age of majority in your jurisdiction) to use this
           service.</p>
 
-        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">14. Developer API — Additional Terms</h2>
-        <p style="margin:0 0 8px;">If you use the Renewise Payments API to build your own application, you additionally agree to:</p>
+        <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">14. Developer API Additional Terms</h2>
+        <p style="margin:0 0 8px;">If you use the Renewise Payments API to build your own application, you additionally
+          agree to:</p>
         <ul style="margin:0 0 16px;padding-left:18px;">
-          <li><strong>Secret key security.</strong> You are solely responsible for keeping your <code>sk_live_</code> and <code>sk_test_</code> secret keys confidential. Never embed them in client-side code, mobile apps, or public repositories. Renewise is not liable for charges or data breaches arising from exposed keys.</li>
-          <li><strong>Payment UX obligation.</strong> You must present payments to your users as a <code>ton://</code> deep-link or QR code. Displaying the raw vault address for manual copy-paste is prohibited. Renewise uses a Deploy-on-first-message smart contract architecture; bypassing the deep-link breaks payment delivery.</li>
-          <li><strong>Telegram environment.</strong> The Renewise payment infrastructure is designed and tested for use within Telegram. If you deploy the API outside Telegram, you accept full responsibility for ensuring correct payment UX and user communication.</li>
-          <li><strong>Fair use &amp; rate limits.</strong> You must not exceed published rate limits or attempt to circumvent them. Abuse may result in immediate platform suspension without refund.</li>
-          <li><strong>No resale.</strong> You may not resell or sublicense access to the Renewise API to third parties without prior written agreement.</li>
-          <li><strong>Webhook reliability.</strong> If you configure a webhook endpoint, you are responsible for maintaining its availability and correctly verifying the <code>Renewise-Signature</code> header before processing events.</li>
+          <li><strong>Secret key security.</strong> You are solely responsible for keeping your <code>sk_live_</code>
+            and <code>sk_test_</code> secret keys confidential. Never embed them in client-side code, mobile apps, or
+            public repositories. Renewise is not liable for charges or data breaches arising from exposed keys.</li>
+          <li><strong>Payment UX obligation.</strong> You must present payments to your users as a <code>ton://</code>
+            deep-link or QR code. Displaying the raw vault address for manual copy-paste is prohibited. Renewise uses a
+            Deploy-on-first-message smart contract architecture; bypassing the deep-link breaks payment delivery.</li>
+          <li><strong>Telegram environment.</strong> The Renewise payment infrastructure is designed and tested for use
+            within Telegram. If you deploy the API outside Telegram, you accept full responsibility for ensuring correct
+            payment UX and user communication.</li>
+          <li><strong>Fair use &amp; rate limits.</strong> You must not exceed published rate limits or attempt to
+            circumvent them. Abuse may result in immediate platform suspension without refund.</li>
+          <li><strong>No resale.</strong> You may not resell or sublicense access to the Renewise API to third parties
+            without prior written agreement.</li>
+          <li><strong>Webhook reliability.</strong> If you configure a webhook endpoint, you are responsible for
+            maintaining its availability and correctly verifying the <code>Renewise-Signature</code> header before
+            processing events.</li>
         </ul>
 
       </div><!-- /tos-body -->
@@ -1808,17 +1845,25 @@
     </p>
 
     <!-- ── Switch Mode Toggle ─────────────────────────────────────────── -->
-    <div class="glass" style="border-radius:var(--r);overflow:hidden;margin-bottom:20px;padding:12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="switchAppMode('creator')">
+    <div class="glass"
+      style="border-radius:var(--r);overflow:hidden;margin-bottom:20px;padding:12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer"
+      onclick="switchAppMode('creator')">
       <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:var(--accent)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <div
+          style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:var(--accent)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
         </div>
         <div>
           <div style="font-weight:700;font-size:14px">Switch to Creator Mode</div>
           <div style="font-size:12px;color:rgba(255,255,255,.5)">Manage groups, channels & subs</div>
         </div>
       </div>
-      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2.5" width="20" height="20"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2.5" width="20" height="20">
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
     </div>
 
 
@@ -1828,115 +1873,255 @@
       <!-- Quick Start -->
       <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
         <div class="sr-left">
-          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          <div><div class="sr-label">Quick Start</div><div class="sr-sub">3 steps to first payment</div></div>
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg></div>
+          <div>
+            <div class="sr-label">Quick Start</div>
+            <div class="sr-sub">3 steps to first payment</div>
+          </div>
         </div>
-        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
       </div>
       <div class="accordion-content">
         <b>1️⃣ Create an app</b><br>
-        Tap <b>+ App</b> above. Test keys are generated immediately and always visible in your dashboard. Live (Mainnet) keys are opt-in — generate them when you're ready for real payments.<br><br>
+        Tap <b>+ App</b> above. Test keys are generated immediately and always visible in your dashboard. Live (Mainnet)
+        keys are opt-in — generate them when you're ready for real payments.<br><br>
         <b>2️⃣ Create a charge from your server</b><br>
-        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;display:block;margin:6px 0;word-break:break-all">POST https://&lt;host&gt;/api/platform/charges<br>Authorization: Bearer sk_test_…<br>Content-Type: application/json<br><br>{"amount_usd_cents": 999, "external_reference": "order_001"}</code>
+        <code
+          style="font-size:11px;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;display:block;margin:6px 0;word-break:break-all">POST https://&lt;host&gt;/api/platform/charges<br>Authorization: Bearer sk_test_…<br>Content-Type: application/json<br><br>{"amount_usd_cents": 999, "external_reference": "order_001"}</code>
         <b>3️⃣ Show the payment link to your user</b><br>
-        Use the <code>payment_url</code> (a <code>ton://</code> deep-link) from the response. Show it as a button inside Telegram or render it as a QR code — <b>never expose the raw vault address</b>.
+        Use the <code>payment_url</code> (a <code>ton://</code> deep-link) from the response. Show it as a button inside
+        Telegram or render it as a QR code — <b>never expose the raw vault address</b>.
       </div>
 
       <!-- Authentication -->
       <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
         <div class="sr-left">
-          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-          <div><div class="sr-label">Authentication</div><div class="sr-sub">Bearer token, dual environments</div></div>
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg></div>
+          <div>
+            <div class="sr-label">Authentication</div>
+            <div class="sr-sub">Bearer token, dual environments</div>
+          </div>
         </div>
-        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
       </div>
       <div class="accordion-content">
         Every API request must include your secret key:<br>
-        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;display:inline-block;margin:6px 0">Authorization: Bearer sk_test_…</code><br>
+        <code
+          style="font-size:11px;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;display:inline-block;margin:6px 0">Authorization: Bearer sk_test_…</code><br>
         The prefix automatically routes to the correct network:<br><br>
         <table style="width:100%;font-size:12px;border-collapse:collapse">
-          <tr style="color:rgba(255,255,255,.5)"><td style="padding:3px 0">Prefix</td><td>Network</td><td>Explorer</td></tr>
-          <tr><td><code>sk_test_</code></td><td>TON Testnet</td><td>testnet.tonscan.org</td></tr>
-          <tr><td><code>sk_live_</code></td><td>TON Mainnet</td><td>tonscan.org</td></tr>
+          <tr style="color:rgba(255,255,255,.5)">
+            <td style="padding:3px 0">Prefix</td>
+            <td>Network</td>
+            <td>Explorer</td>
+          </tr>
+          <tr>
+            <td><code>sk_test_</code></td>
+            <td>TON Testnet</td>
+            <td>testnet.tonscan.org</td>
+          </tr>
+          <tr>
+            <td><code>sk_live_</code></td>
+            <td>TON Mainnet</td>
+            <td>tonscan.org</td>
+          </tr>
         </table><br>
-        ⚠️ Never put secret keys in client-side code, mobile apps, or public repos. Store them as environment variables on your server.
+        ⚠️ Never put secret keys in client-side code, mobile apps, or public repos. Store them as environment variables
+        on your server.
       </div>
 
       <!-- Create Charge -->
       <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
         <div class="sr-left">
-          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-          <div><div class="sr-label">Create a Charge</div><div class="sr-sub">POST /api/platform/charges</div></div>
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg></div>
+          <div>
+            <div class="sr-label">Create a Charge</div>
+            <div class="sr-sub">POST /api/platform/charges</div>
+          </div>
         </div>
-        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
       </div>
       <div class="accordion-content">
         <b>Request body</b><br>
-        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7">{<br>&nbsp;&nbsp;"amount_usd_cents": 999,&nbsp;&nbsp;&nbsp;// integer, min 10<br>&nbsp;&nbsp;"external_reference": "…" // your order ID, unique/platform<br>}</code>
+        <code
+          style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7">{<br>&nbsp;&nbsp;"amount_usd_cents": 999,&nbsp;&nbsp;&nbsp;// integer, min 10<br>&nbsp;&nbsp;"external_reference": "…" // your order ID, unique/platform<br>}</code>
         <b>Response fields</b><br>
         <table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:6px">
-          <tr style="color:rgba(255,255,255,.5)"><td style="padding:3px 4px 3px 0">Field</td><td>Description</td></tr>
-          <tr><td><code>charge_id</code></td><td>Renewise charge ID</td></tr>
-          <tr><td><code>payment_url</code></td><td>ton:// deep-link — show this to the user</td></tr>
-          <tr><td><code>required_nano_amount</code></td><td>Exact nanoTON to send</td></tr>
-          <tr><td><code>status</code></td><td>pending / completed / expired / failed</td></tr>
+          <tr style="color:rgba(255,255,255,.5)">
+            <td style="padding:3px 4px 3px 0">Field</td>
+            <td>Description</td>
+          </tr>
+          <tr>
+            <td><code>charge_id</code></td>
+            <td>Renewise charge ID</td>
+          </tr>
+          <tr>
+            <td><code>payment_url</code></td>
+            <td>ton:// deep-link — show this to the user</td>
+          </tr>
+          <tr>
+            <td><code>required_nano_amount</code></td>
+            <td>Exact nanoTON to send</td>
+          </tr>
+          <tr>
+            <td><code>status</code></td>
+            <td>pending / completed / expired / failed</td>
+          </tr>
         </table>
       </div>
 
       <!-- Payment UX Warning -->
       <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
         <div class="sr-left">
-          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-          <div><div class="sr-label" style="color:var(--error)">Payment UX — Critical</div><div class="sr-sub">Deep-link only. No raw addresses.</div></div>
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg></div>
+          <div>
+            <div class="sr-label" style="color:var(--error)">Payment UX — Critical</div>
+            <div class="sr-sub">Deep-link only. No raw addresses.</div>
+          </div>
         </div>
-        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
       </div>
       <div class="accordion-content">
-        <div style="background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;color:#ff9090">
+        <div
+          style="background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;color:#ff9090">
           🚫 <b>Never show the raw <code>vault_address</code> to users.</b>
         </div>
-        Renewise uses a <b>Deploy-on-first-message</b> architecture. The vault smart contract is deployed by the first TON transaction that carries its <code>StateInit</code> payload — and that payload is embedded in the <code>payment_url</code> deep-link.<br><br>
-        If a user manually copies the raw address and sends from an exchange (Binance, OKX…), the <code>StateInit</code> is missing, the contract does not deploy, and the payment stalls.<br><br>
+        Renewise uses a <b>Deploy-on-first-message</b> architecture. The vault smart contract is deployed by the first
+        TON transaction that carries its <code>StateInit</code> payload and that payload is embedded in the
+        <code>payment_url</code> deep-link.<br><br>
+        If a user manually copies the raw address and sends from an exchange (Binance, OKX…), the <code>StateInit</code>
+        is missing, the contract does not deploy, and the payment stalls.<br><br>
         <b>Correct approach:</b><br>
-        • <b>Telegram Mini App (mobile)</b> — embed <code>payment_url</code> in a "Pay with TON" button.<br>
-        • <b>Desktop / Web</b> — render <code>payment_url</code> as a QR code for Tonkeeper / TonHub.<br><br>
-        Since Renewise is designed for Telegram, your bot/mini-app should be the delivery mechanism. Using the API outside of Telegram is permitted only when you accept full responsibility for ensuring users never send TON via manual address copy.
+        • <b>Telegram Mini App (mobile)</b> embed <code>payment_url</code> in a "Pay with TON" button.<br>
+        • <b>Desktop / Web</b> render <code>payment_url</code> as a QR code for Tonkeeper / TonHub.<br><br>
+        Since Renewise is designed for Telegram, your bot/mini-app should be the delivery mechanism. Using the API
+        outside of Telegram is permitted only when you accept full responsibility for ensuring users never send TON via
+        manual address copy.
       </div>
 
       <!-- Webhooks -->
       <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
         <div class="sr-left">
-          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
-          <div><div class="sr-label">Webhooks</div><div class="sr-sub">Real-time charge events</div></div>
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+              <line x1="6" y1="1" x2="6" y2="4" />
+              <line x1="10" y1="1" x2="10" y2="4" />
+              <line x1="14" y1="1" x2="14" y2="4" />
+            </svg></div>
+          <div>
+            <div class="sr-label">Webhooks</div>
+            <div class="sr-sub">Real-time charge events</div>
+          </div>
         </div>
-        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
       </div>
       <div class="accordion-content">
-        Set your endpoint URL in the Dashboard → <b>Webhook → Edit</b>. On first setup you'll receive a <code>whsec_…</code> signing secret — save it immediately, it's only shown once.<br><br>
+        Set your endpoint URL in the Dashboard → <b>Webhook → Edit</b>. On first setup you'll receive a
+        <code>whsec_…</code> signing secret — save it immediately, it's only shown once.<br><br>
         Renewise sends a signed <code>POST</code> to your endpoint for every charge status change:<br>
-        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7">{"id":42, "external_reference":"order_001",<br>"status":"completed", "amount_usd_cents":999,<br>"tx_hash":"abc…def"}</code>
+        <code
+          style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7">{"id":42, "external_reference":"order_001",<br>"status":"completed", "amount_usd_cents":999,<br>"tx_hash":"abc…def"}</code>
         <b>Verify the signature before processing:</b><br>
-        <code style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7"># Python<br>import hmac, hashlib<br>expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()<br>hmac.compare_digest(expected, header)</code>
-        Return <code>HTTP 200</code> within 5 seconds. Renewise retries failed deliveries (0 s, 10 s, 30 s). Recent delivery logs are in the Dashboard.
+        <code
+          style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7"># Python<br>import hmac, hashlib<br>expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()<br>hmac.compare_digest(expected, header)</code>
+        Return <code>HTTP 200</code> within 5 seconds. Renewise retries failed deliveries (0 s, 10 s, 30 s). Recent
+        delivery logs are in the Dashboard.
+      </div>
+
+      <!-- Sandbox -->
+      <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
+            </svg></div>
+          <div>
+            <div class="sr-label">Testing & Sandbox</div>
+            <div class="sr-sub">End-to-end payment simulations</div>
+          </div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
+      </div>
+      <div class="accordion-content">
+        Use the <b>Sandbox</b> tab to test your integration without losing real funds.<br><br>
+        <b>🧪 Testnet Mode</b><br>
+        Generates simulated charges using your <code>sk_test_</code> keys. Use a Telegram account connected to the <a href="https://wallet.ton.org/?testnet=true" target="_blank" style="color:var(--accent);text-decoration:none">Testnet Wallet</a> to safely test the end-to-end flow.<br><br>
+        <b>🔴 Mainnet Mode</b><br>
+        To test live Mainnet charges, paste your <code>sk_live_</code> key into the Sandbox (we don't save it). It simulates real charges but requires real TON to complete.<br><br>
+        In both modes, Renewise fires live webhooks to your server immediately upon successful payment detection.
       </div>
 
       <!-- Errors & Rate Limits -->
       <div class="settings-row accordion-trigger no-border" style="cursor:pointer" onclick="toggleAcc(this)">
         <div class="sr-left">
-          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-          <div><div class="sr-label">Errors & Rate Limits</div><div class="sr-sub">HTTP codes, limits per endpoint</div></div>
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg></div>
+          <div>
+            <div class="sr-label">Errors & Rate Limits</div>
+            <div class="sr-sub">HTTP codes, limits per endpoint</div>
+          </div>
         </div>
-        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg></div>
       </div>
       <div class="accordion-content no-border">
         <table style="width:100%;font-size:12px;border-collapse:collapse">
-          <tr style="color:rgba(255,255,255,.5)"><td style="padding:3px 4px 3px 0">Status</td><td>Meaning</td></tr>
-          <tr><td><code>400</code></td><td>Missing or invalid field</td></tr>
-          <tr><td><code>401</code></td><td>Missing Authorization header</td></tr>
-          <tr><td><code>403</code></td><td>Invalid or revoked secret key</td></tr>
-          <tr><td><code>404</code></td><td>Charge not found or not yours</td></tr>
-          <tr><td><code>429</code></td><td>Rate limit — back off and retry</td></tr>
-          <tr><td><code>500</code></td><td>Server error — retry with backoff</td></tr>
+          <tr style="color:rgba(255,255,255,.5)">
+            <td style="padding:3px 4px 3px 0">Status</td>
+            <td>Meaning</td>
+          </tr>
+          <tr>
+            <td><code>400</code></td>
+            <td>Missing or invalid field</td>
+          </tr>
+          <tr>
+            <td><code>401</code></td>
+            <td>Missing Authorization header</td>
+          </tr>
+          <tr>
+            <td><code>403</code></td>
+            <td>Invalid or revoked secret key</td>
+          </tr>
+          <tr>
+            <td><code>404</code></td>
+            <td>Charge not found or not yours</td>
+          </tr>
+          <tr>
+            <td><code>429</code></td>
+            <td>Rate limit — back off and retry</td>
+          </tr>
+          <tr>
+            <td><code>500</code></td>
+            <td>Server error — retry with backoff</td>
+          </tr>
         </table><br>
         <b>Per-platform rate limits:</b><br>
         <code>POST /charges</code> — 60/min &nbsp;|&nbsp; <code>GET /charges/:id</code> — 60/min<br>
@@ -1959,15 +2144,18 @@
 
     <!-- App Selector -->
     <div class="glass" style="border-radius:var(--r);padding:16px;margin-bottom:14px">
-      <label style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;display:block;margin-bottom:8px">Select App</label>
-      <select id="sandbox-app-select" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:14px;outline:none;cursor:pointer;font-family:inherit">
-        <option value="">Loading apps…</option>
-      </select>
+      <div class="field" style="margin-bottom:0">
+        <label>Select App</label>
+        <select id="sandbox-app-select">
+          <option value="">Loading apps…</option>
+        </select>
+      </div>
     </div>
 
     <!-- Environment Toggle -->
     <div class="glass" style="border-radius:var(--r);padding:16px;margin-bottom:14px">
-      <label style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;display:block;margin-bottom:10px">Environment</label>
+      <label
+        style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;display:block;margin-bottom:10px">Environment</label>
       <div style="display:flex;gap:8px">
         <button id="sandbox-env-test" onclick="setSandboxEnv('test')"
           style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;background:var(--accent);color:#000;cursor:pointer;transition:.2s">
@@ -1982,19 +2170,24 @@
 
     <!-- Amount Input -->
     <div class="glass" style="border-radius:var(--r);padding:16px;margin-bottom:14px">
-      <label style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;display:block;margin-bottom:8px">Charge Amount</label>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:22px;font-weight:800;color:rgba(255,255,255,.4)">$</span>
-        <input id="sandbox-amount" type="number" min="0.10" step="0.01" value="5.00" placeholder="5.00"
-          style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;
-                 padding:11px 14px;color:#fff;font-size:22px;font-weight:800;outline:none;font-family:inherit">
-        <span style="font-size:14px;color:rgba(255,255,255,.4)">USD</span>
+      <div class="field" style="margin-bottom:0">
+        <label>Charge Amount</label>
+        <div style="position:relative">
+          <span
+            style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;font-weight:800;color:rgba(255,255,255,.4)">$</span>
+          <input id="sandbox-amount" type="number" min="0.10" step="0.01" value="5.00" placeholder="5.00"
+            style="padding-left:32px;padding-right:48px;font-weight:700">
+          <span
+            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:13px;color:rgba(255,255,255,.4);font-weight:700">USD</span>
+        </div>
       </div>
     </div>
 
-    <button class="btn btn-primary" id="sandbox-create-btn" onclick="sandboxCreateCharge()" style="font-size:15px;padding:14px;margin-bottom:20px;border-radius:14px">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" style="margin-right:6px">
-        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+    <button class="btn btn-primary" id="sandbox-create-btn" onclick="sandboxCreateCharge()"
+      style="font-size:15px;padding:14px;margin-bottom:20px;border-radius:14px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"
+        style="margin-right:6px">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
       </svg>
       Create Test Charge
     </button>
@@ -2018,11 +2211,9 @@
     </p>
     <!-- Active / History toggle -->
     <div style="display:flex;gap:8px;margin-bottom:18px">
-      <button id="subs-tab-active" onclick="showSubsTab('active')"
-        style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;
+      <button id="subs-tab-active" onclick="showSubsTab('active')" style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;
                background:var(--accent);color:#fff;cursor:pointer">Active</button>
-      <button id="subs-tab-history" onclick="showSubsTab('history')"
-        style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;
+      <button id="subs-tab-history" onclick="showSubsTab('history')" style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;
                background:var(--surface2);color:rgba(255,255,255,.6);cursor:pointer">History</button>
     </div>
     <div id="subs-list">
@@ -2040,17 +2231,25 @@
     <h1 class="page-title" style="margin-bottom:20px">Settings</h1>
 
     <!-- ── Switch Mode Toggle ─────────────────────────────────────────── -->
-    <div class="glass" style="border-radius:var(--r);overflow:hidden;margin-bottom:20px;padding:12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="switchAppMode('developer')">
+    <div class="glass"
+      style="border-radius:var(--r);overflow:hidden;margin-bottom:20px;padding:12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer"
+      onclick="switchAppMode('developer')">
       <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:var(--accent)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <div
+          style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:var(--accent)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
         </div>
         <div>
           <div style="font-weight:700;font-size:14px">Switch to Developer Mode</div>
           <div style="font-size:12px;color:rgba(255,255,255,.5)">Manage API apps & webhooks</div>
         </div>
       </div>
-      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2.5" width="20" height="20"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2.5" width="20" height="20">
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
     </div>
 
     <div class="glass" style="border-radius:var(--r);overflow:hidden;margin-bottom:14px" id="settings-accordion-group">
@@ -2060,8 +2259,8 @@
         <div class="sr-left">
           <div class="sr-ico">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 8v4l3 3"/>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4l3 3" />
             </svg>
           </div>
           <div>
@@ -2099,9 +2298,11 @@
         <b>1️⃣ Add the bot as admin</b><br>
         Add Renewise to your group or channel as an Admin with the required permissions.<br><br>
         <b>2️⃣ Set your price</b><br>
-        Choose a USD price and billing interval. Members pay the equivalent amount in TON at the live exchange rate.<br><br>
+        Choose a USD price and billing interval. Members pay the equivalent amount in TON at the live exchange
+        rate.<br><br>
         <b>3️⃣ Automatic renewal &amp; removal</b><br>
-        The bot handles reminders, payments, and kicking unpaid members automatically. Payouts go directly to your wallet.<br><br>
+        The bot handles reminders, payments, and kicking unpaid members automatically. Payouts go directly to your
+        wallet.<br><br>
         <hr style="border:0;border-top:1px solid rgba(255,255,255,0.1);margin:12px 0">
         <b>For Mini App & Bot Developers</b><br><br>
         <b>1️⃣ Create a Platform</b><br>
@@ -2198,11 +2399,14 @@
         fee.<br><br>
 
         <b>2. Non-Custodial Architecture</b><br>
-        Renewise never holds admin or member funds. Completed on-chain splits are final and irreversible. Overpayments above $1.00
-        USD are detected by Renewise's backend and refunded to the member's TON (GRAM) wallet via a dedicated on-chain trigger.<br><br>
+        Renewise never holds admin or member funds. Completed on-chain splits are final and irreversible. Overpayments
+        above $1.00
+        USD are detected by Renewise's backend and refunded to the member's TON (GRAM) wallet via a dedicated on-chain
+        trigger.<br><br>
 
         <b>3. Fees</b><br>
-        A <b>2.00% buyer fee</b> is added on top of the subscription price paid by the member. A <b>3.30% admin fee</b> is deducted from
+        A <b>2.00% buyer fee</b> is added on top of the subscription price paid by the member. A <b>3.30% admin fee</b>
+        is deducted from
         the admin's payout. Both are shown to both parties before any payment.<br><br>
 
         <b>4. Pricing &amp; Currency</b><br>
@@ -2237,7 +2441,11 @@
         You must be 18 or older to use this service.<br><br>
 
         <b>12. Developer API — Additional Terms</b><br>
-        If you use the Renewise Payments API, you additionally agree to: keep secret keys confidential and never expose them client-side; present payments as <code>ton://</code> deep-links or QR codes only (no raw vault addresses); stay within published rate limits; not resell API access; and verify webhook signatures before processing events. Using the API outside Telegram is permitted only when you accept full responsibility for correct payment UX.
+        If you use the Renewise Payments API, you additionally agree to: keep secret keys confidential and never expose
+        them client-side; present payments as <code>ton://</code> deep-links or QR codes only (no raw vault addresses);
+        stay within published rate limits; not resell API access; and verify webhook signatures before processing
+        events. Using the API outside Telegram is permitted only when you accept full responsibility for correct payment
+        UX.
 
         <div id="tos-accepted-badge"
           style="display:none;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.25);border-radius:10px;padding:10px 13px;font-size:12.5px;margin-top:4px;">
@@ -2456,10 +2664,11 @@
       style="margin-top:14px;background:rgba(224,92,92,.12);border:1px solid rgba(224,92,92,.25);color:var(--danger)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
         style="width:17px;height:17px;flex-shrink:0">
-        <polyline points="3 6 5 6 21 6"/>
-        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-        <path d="M10 11v6"/><path d="M14 11v6"/>
-        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        <path d="M10 11v6" />
+        <path d="M14 11v6" />
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
       </svg>
       Delete This Network
     </button>
@@ -2481,28 +2690,33 @@
     <div id="delete-step1">
       <h1 class="page-title" style="margin-bottom:14px;color:var(--danger)">Delete Network</h1>
       <div class="glass" style="padding:20px;margin-bottom:18px">
-        <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.3px;text-transform:uppercase;margin-bottom:14px">What will happen, in order</div>
+        <div
+          style="font-size:13px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.3px;text-transform:uppercase;margin-bottom:14px">
+          What will happen, in order</div>
         <div class="inst-list">
           <div class="inst-item">
-            <div class="inst-num" style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">1</div>
+            <div class="inst-num"
+              style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">1</div>
             <div class="inst-text">All new and pending payments are <b>immediately paused</b></div>
           </div>
           <div class="inst-item">
-            <div class="inst-num" style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">2</div>
+            <div class="inst-num"
+              style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">2</div>
             <div class="inst-text">The bot <b>leaves the group/channel</b> automatically</div>
           </div>
           <div class="inst-item">
-            <div class="inst-num" style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">3</div>
+            <div class="inst-num"
+              style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">3</div>
             <div class="inst-text">All subscriber and group records are <b>permanently deleted</b></div>
           </div>
           <div class="inst-item">
-            <div class="inst-num" style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">4</div>
+            <div class="inst-num"
+              style="background:rgba(224,92,92,.15);border-color:rgba(224,92,92,.3);color:var(--danger)">4</div>
             <div class="inst-text"><b>This cannot be undone.</b> Active subscribers lose access immediately.</div>
           </div>
         </div>
       </div>
-      <button class="btn"
-        style="background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.3);color:var(--danger)"
+      <button class="btn" style="background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.3);color:var(--danger)"
         onclick="deleteStep2()">
         ⚠️ Continue to Confirmation
       </button>
@@ -2511,7 +2725,8 @@
     <!-- Step 2: type-to-confirm -->
     <div id="delete-step2" style="display:none">
       <h1 class="page-title" style="margin-bottom:6px;color:var(--danger)">Final Confirmation</h1>
-      <p style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px">Type the exact network name to confirm.</p>
+      <p style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px">Type the exact network name to confirm.
+      </p>
       <div class="glass" style="padding:20px">
         <div class="field">
           <label>Type exactly:
@@ -2522,8 +2737,11 @@
           <div class="field-err" id="delete-name-err"></div>
         </div>
         <div class="alert alert-error" style="margin-bottom:20px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;flex-shrink:0">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            style="width:16px;height:16px;flex-shrink:0">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
           <span>This action is irreversible. All subscriber records will be permanently deleted.</span>
         </div>
@@ -2713,13 +2931,6 @@
       Dev Settings
       <span class="nav-indicator"></span>
     </button>
-    <button class="nav-item" id="nav-dev-sandbox" onclick="App.nav('dev-sandbox')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-        <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
-      </svg>
-      Sandbox
-      <span class="nav-indicator"></span>
-    </button>
   </nav>
 
   <!-- ════════════════════════════════════════════════════
@@ -2733,7 +2944,8 @@
       <!-- Header row -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
         <h2 style="font-size:17px;font-weight:800;color:#fff;margin:0">Payment Details</h2>
-        <button onclick="PmtDetail.hide()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:22px;cursor:pointer;line-height:1;padding:0 4px">&times;</button>
+        <button onclick="PmtDetail.hide()"
+          style="background:none;border:none;color:rgba(255,255,255,.5);font-size:22px;cursor:pointer;line-height:1;padding:0 4px">&times;</button>
       </div>
       <!-- Content filled by JS -->
       <div id="pmt-detail-body">
@@ -2877,7 +3089,7 @@
     // Navigation
     // ════════════════════════════════════════════════════
     const PAGES = ['dashboard', 'dev-dashboard', 'dev-subs', 'dev-settings', 'dev-sandbox', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
-    const NAV_PAGES = ['dashboard', 'subs', 'settings', 'dev-dashboard', 'dev-subs', 'dev-settings', 'dev-sandbox'];
+    const NAV_PAGES = ['dashboard', 'subs', 'settings', 'dev-dashboard', 'dev-subs', 'dev-settings'];
 
     // Returns the current app mode ('creator' or 'developer')
     function getAppMode() {
@@ -2952,7 +3164,7 @@
         const subPages = ['history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
         const bnc = document.getElementById('bottom-nav-creator');
         const bnd = document.getElementById('bottom-nav-dev');
-        
+
         if (subPages.includes(page)) {
           if (bnc) bnc.style.display = 'none';
           if (bnd) bnd.style.display = 'none';
@@ -2965,7 +3177,7 @@
             if (bnd) bnd.style.display = 'none';
           }
         }
-        
+
         this._cur = page;
         WebApp.MainButton.hide();
         WebApp.HapticFeedback.impactOccurred('light');
@@ -2983,7 +3195,7 @@
             sl.style.display = 'block'; hl.style.display = 'none';
           }
         }
-        
+
         if (page === 'dev-dashboard') {
           loadPlatforms();
         } else if (page === 'dev-subs') {
@@ -3045,39 +3257,39 @@
       },
 
       _render(body, d) {
-        const name  = esc(d.first_name || 'User');
+        const name = esc(d.first_name || 'User');
         const uname = d.username ? ` <span style="color:rgba(255,255,255,.5)">@${esc(d.username)}</span>` : '';
-        const uid   = d.telegram_user_id || '—';
+        const uid = d.telegram_user_id || '—';
         const price = (d.price_locked_in != null && d.price_locked_in < 1000)
           ? `$${Number(d.price_locked_in).toFixed(2)}`
           : d.price_locked_in ? `${(d.price_locked_in / 1e9).toFixed(4)} TON` : '—';
         const interval = d.billing_interval_days === 7 ? 'week' : 'month';
-        const vault  = d.vault_address || null;
-        const vaultS = vault ? `${vault.slice(0,10)}…${vault.slice(-6)}` : '—';
-        const tx     = d.last_payment_tx_hash || null;
-        const txS    = tx ? `${tx.slice(0,16)}…` : '—';
+        const vault = d.vault_address || null;
+        const vaultS = vault ? `${vault.slice(0, 10)}…${vault.slice(-6)}` : '—';
+        const tx = d.last_payment_tx_hash || null;
+        const txS = tx ? `${tx.slice(0, 16)}…` : '—';
         const tonReq = d.required_ton != null ? `${d.required_ton} TON` : '—';
-        const start  = d.start_date || '—';
-        const renew  = d.next_renewal_date || '—';
+        const start = d.start_date || '—';
+        const renew = d.next_renewal_date || '—';
         const created = (d.created_at || '').slice(0, 16);
 
         const rows = [
-          ['Member',       `${name}${uname}`],
-          ['Telegram ID',  `<code>${uid}</code>`],
-          ['Status',       pill(d.status)],
-          ['Price Paid',   `<b>${price}</b> / ${interval}`],
+          ['Member', `${name}${uname}`],
+          ['Telegram ID', `<code>${uid}</code>`],
+          ['Status', pill(d.status)],
+          ['Price Paid', `<b>${price}</b> / ${interval}`],
           ['TON Required', tonReq],
           ...(d.admin_payout_ton != null ? [
-            ['Platform Fee',  `${(d.platform_fee_pct || 5.3).toFixed(2)}% (buyer ${(d.buyer_fee_pct||2).toFixed(2)}% + admin ${(d.admin_fee_pct||3.3).toFixed(2)}%)`],
-            ['Your Payout',   `<b style="color:var(--success)">${d.admin_payout_ton} TON</b>`],
+            ['Platform Fee', `${(d.platform_fee_pct || 5.3).toFixed(2)}% (buyer ${(d.buyer_fee_pct || 2).toFixed(2)}% + admin ${(d.admin_fee_pct || 3.3).toFixed(2)}%)`],
+            ['Your Payout', `<b style="color:var(--success)">${d.admin_payout_ton} TON</b>`],
           ] : []),
-          ['Start Date',   start],
+          ['Start Date', start],
           ['Next Renewal', renew],
-          ['Joined',       created],
-          ['Vault',        vault
+          ['Joined', created],
+          ['Vault', vault
             ? `<code style="font-size:11px">${vaultS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
-          ['TX Hash',      tx
+          ['TX Hash', tx
             ? `<code style="font-size:11px;color:var(--accent);cursor:pointer" onclick="WebApp.openLink('${d.tonviewer_url}')">${txS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
         ];
@@ -3110,15 +3322,15 @@
         body.innerHTML = `
           <div style="display:flex;flex-direction:column;gap:0">
             ${[
-              ['Member',      esc(tx.first_name || 'User')],
-              ['Status',      pill(tx.status)],
-              ['Price Paid',  `<b>${price}</b>`],
-              ['Start Date',  esc(tx.start_date || '—')],
-              ['Next Renewal',esc(tx.next_renewal_date || '—')],
-              ['TX Hash',     txHash
-                ? `<code style="font-size:11px;color:var(--accent)">${txHash.slice(0,18)}…</code>`
-                : '—'],
-            ].map(([l,v]) => `
+            ['Member', esc(tx.first_name || 'User')],
+            ['Status', pill(tx.status)],
+            ['Price Paid', `<b>${price}</b>`],
+            ['Start Date', esc(tx.start_date || '—')],
+            ['Next Renewal', esc(tx.next_renewal_date || '—')],
+            ['TX Hash', txHash
+              ? `<code style="font-size:11px;color:var(--accent)">${txHash.slice(0, 18)}…</code>`
+              : '—'],
+          ].map(([l, v]) => `
               <div style="display:flex;justify-content:space-between;align-items:center;
                           padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
                 <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.5);
@@ -3165,7 +3377,7 @@
           'font-size:13px;font-weight:700;z-index:9999;pointer-events:none;' +
           'box-shadow:0 4px 16px rgba(0,152,234,.4)';
         document.body.appendChild(badge);
-        setTimeout(() => { badge.style.transition='opacity .3s'; badge.style.opacity='0'; }, 1300);
+        setTimeout(() => { badge.style.transition = 'opacity .3s'; badge.style.opacity = '0'; }, 1300);
         setTimeout(() => badge.remove(), 1600);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -3238,7 +3450,7 @@
     const _REV_UNIT_KEY = 'rw_rev_unit'; // CloudStorage key
     let _revUnit = 'USD'; // default; overwritten from CloudStorage on first load
     let _revDataUsdCents = 0;    // cached from last loadNetworks() call
-    let _revDataNano     = 0;    // cached from last loadNetworks() call
+    let _revDataNano = 0;    // cached from last loadNetworks() call
 
     // Format nanonano → human-readable GRAM string
     function fmtGram(nano) {
@@ -3268,10 +3480,10 @@
         revEl.innerHTML = `<span class="hero-symbol">$</span><span id="hero-dollars">${dollars}</span><span class="hero-cents">.<span id="hero-cents">${cents}</span></span>`;
         if (animate && !_heroAnimated) {
           const dollarsEl = document.getElementById('hero-dollars');
-          const centsEl   = document.getElementById('hero-cents');
+          const centsEl = document.getElementById('hero-cents');
           countUp(dollarsEl, Math.floor(totalUsd), 600, false);
           const centsTarget = parseInt(cents, 10);
-          const centsStart  = performance.now();
+          const centsStart = performance.now();
           (function tickCents(now) {
             const p = Math.min((now - centsStart) / 600, 1);
             const e = 1 - Math.pow(1 - p, 3);
@@ -3281,7 +3493,7 @@
         }
       }
       // Keep toggle buttons and subtitle in sync
-      document.getElementById('rev-btn-usd') ?.classList.toggle('active', _revUnit === 'USD');
+      document.getElementById('rev-btn-usd')?.classList.toggle('active', _revUnit === 'USD');
       document.getElementById('rev-btn-gram')?.classList.toggle('active', _revUnit === 'GRAM');
       const sub = document.getElementById('rev-unit-sub');
       if (sub) sub.textContent = _revUnit === 'GRAM' ? 'Showing in GRAM' : 'Showing in USD';
@@ -3297,8 +3509,8 @@
       if (sub) sub.textContent = unit === 'GRAM' ? 'Showing in GRAM' : 'Showing in USD';
       // Persist to CloudStorage — fire-and-forget, non-blocking
       try {
-        WebApp.CloudStorage.setItem(_REV_UNIT_KEY, unit, () => {});
-      } catch(e) { /* CloudStorage not available in older Bot API — silent */ }
+        WebApp.CloudStorage.setItem(_REV_UNIT_KEY, unit, () => { });
+      } catch (e) { /* CloudStorage not available in older Bot API — silent */ }
     }
 
     // ════════════════════════════════════════════════════
@@ -3314,7 +3526,7 @@
           if (!err && (val === 'GRAM' || val === 'USD')) {
             _revUnit = val;
             // Sync button states (data may or may not be loaded yet)
-            document.getElementById('rev-btn-usd') ?.classList.toggle('active', _revUnit === 'USD');
+            document.getElementById('rev-btn-usd')?.classList.toggle('active', _revUnit === 'USD');
             document.getElementById('rev-btn-gram')?.classList.toggle('active', _revUnit === 'GRAM');
           }
         });
@@ -3324,18 +3536,18 @@
         const r = await apiFetch(`${API}/my-groups`, { headers: H() });
         if (!r.ok) { el.innerHTML = `<div class="empty">${ico('users', 40)}<p>No admin account.</p></div>`; return; }
         const { groups, total_subs, total_revenue, total_revenue_nano,
-                net_revenue, net_revenue_nano, admin_fee_pct } = await r.json();
+          net_revenue, net_revenue_nano, admin_fee_pct } = await r.json();
 
         if (total_subs !== undefined) {
-          const subsEl    = document.getElementById('admin-total-members');
-          const groupsEl  = document.getElementById('admin-total-groups');
+          const subsEl = document.getElementById('admin-total-members');
+          const groupsEl = document.getElementById('admin-total-groups');
           const channelsEl = document.getElementById('admin-total-channels');
-          const toggleEl  = document.getElementById('rev-unit-row');
+          const toggleEl = document.getElementById('rev-unit-row');
 
           // Cache net (after-fee) amounts for the hero — this is what lands in
           // the admin's wallet, matching what they see on-chain.
-          _revDataUsdCents = net_revenue  || 0;
-          _revDataNano     = net_revenue_nano || 0;
+          _revDataUsdCents = net_revenue || 0;
+          _revDataNano = net_revenue_nano || 0;
 
           // Always show the Settings toggle row for admins
           if (toggleEl) toggleEl.style.display = 'flex';
@@ -3987,7 +4199,7 @@
     let currentPlatformId = null;
     let chargesPage = 0;
     const CHARGES_PER_PAGE = 20;
-    
+
     async function showPlatformCharges(platformId, platformName) {
       currentPlatformId = platformId;
       chargesPage = 0;
@@ -4001,19 +4213,19 @@
         <button class="btn" onclick="closeConfirm()">Back to Platforms</button>
       `;
       document.getElementById('confirm-modal').style.display = 'flex';
-      
+
       await renderDashboard();
     }
-    
+
     async function renderDashboard(statusFilter = '') {
       if (!currentPlatformId) return;
       try {
-        const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/charges?limit=${CHARGES_PER_PAGE}&offset=${chargesPage * CHARGES_PER_PAGE}${statusFilter ? '&status='+statusFilter : ''}`);
+        const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/charges?limit=${CHARGES_PER_PAGE}&offset=${chargesPage * CHARGES_PER_PAGE}${statusFilter ? '&status=' + statusFilter : ''}`);
         if (!r.ok) throw new Error(await _errDetail(r));
         const data = await r.json();
-        
+
         let html = '';
-        
+
         // --- 1. Basic Stats ---
         const s = data.stats;
         html += `
@@ -4032,7 +4244,7 @@
             </div>
           </div>
         `;
-        
+
         // --- 2. API Keys ---
         // Find platform from platforms array
         const p = platforms.find(x => x.id === currentPlatformId);
@@ -4046,13 +4258,24 @@
                 <code style="font-size:11px;color:var(--accent);display:block;margin-bottom:8px">${p.publishable_key_live}</code>
                 <div style="display:flex;justify-content:space-between;align-items:center">
                   <span style="font-size:11px;color:rgba(255,255,255,.5)">Secret key: shown once on generation</span>
-                  <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--error)" onclick="regenerateKey('live')">Rotate</button>
+                  <div style="display:flex;gap:6px">
+                    <button class="btn" style="padding:3px 10px;font-size:11px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.1)" onclick="document.getElementById('sb-env').value='mainnet'; App.nav('dev-sandbox')">Sandbox</button>
+                    <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--error)" onclick="regenerateKey('live')">Rotate</button>
+                  </div>
                 </div>
               </div>`
-            : `<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.25);border-radius:12px;padding:14px;margin-bottom:8px;text-align:center">
-                <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px">🔒 Live Mainnet keys not yet generated</div>
-                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px">Generate when ready to accept real payments.</div>
-                <button class="btn" style="background:var(--accent);color:#000;font-weight:700;font-size:12px;padding:6px 18px" onclick="generateLiveKeys(${p.id})">Generate Live Keys</button>
+            : `<div style="background:linear-gradient(180deg, rgba(74,222,128,.08) 0%, rgba(74,222,128,.02) 100%); border:1px solid rgba(74,222,128,.3); border-radius:16px; padding:20px; margin-bottom:12px; text-align:center; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1)">
+                <div style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); width:100px; height:40px; background:var(--accent); filter:blur(40px); opacity:0.3; border-radius:50%"></div>
+                <div style="display:flex; justify-content:center; align-items:center; width:40px; height:40px; background:rgba(74,222,128,.15); border-radius:12px; margin:0 auto 12px auto; border:1px solid rgba(74,222,128,.3)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                </div>
+                <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px; text-shadow:0 1px 2px rgba(0,0,0,.5)">Go Live on Mainnet</div>
+                <div style="font-size:12px; color:rgba(255,255,255,.6); margin-bottom:16px; line-height:1.5; max-width:280px; margin-left:auto; margin-right:auto">
+                  Your app is currently running in Testnet mode. Generate Live Keys to start accepting real TON payments.
+                </div>
+                <button class="btn" style="background:linear-gradient(180deg, var(--accent) 0%, #3bb665 100%); color:#000; font-weight:800; font-size:13px; padding:10px 24px; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(74,222,128,.2), inset 0 1px 0 rgba(255,255,255,.3)" onclick="generateLiveKeys(${p.id})">
+                  Generate Live Keys
+                </button>
               </div>`;
 
           html += `
@@ -4073,7 +4296,8 @@
                   <code style="font-size:11px;color:rgba(255,255,255,.6);word-break:break-all;flex:1;margin-right:8px">${p.secret_key_test}</code>
                   <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${p.secret_key_test}')">Copy sk</button>
                 </div>
-                <div style="margin-top:6px;text-align:right">
+                <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+                  <button class="btn" style="padding:4px 12px;font-size:11px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:6px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
                   <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="regenerateKey('test')">Rotate sk</button>
                 </div>
               </div>
@@ -4082,7 +4306,7 @@
             </div>
           `;
         }
-        
+
         // --- 3. Webhooks ---
         const w = data.webhook;
         html += `
@@ -4113,7 +4337,7 @@
           }
         }
         html += `</div></div>`;
-        
+
         // --- 4. Charges List ---
         html += `
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -4127,20 +4351,20 @@
             </select>
           </div>
         `;
-        
+
         if (data.charges.length === 0) {
           html += `<div style="text-align:center;padding:20px;color:rgba(255,255,255,.3);font-size:13px">No charges found.</div>`;
         } else {
           data.charges.forEach(c => {
-            const date = new Date(c.created_at).toLocaleString(undefined, {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+            const date = new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             let stColor = 'rgba(255,255,255,.5)';
             if (c.status === 'completed') stColor = 'var(--accent)';
             if (c.status === 'failed' || c.status === 'expired') stColor = 'var(--error)';
-            
+
             html += `
               <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px">
                 <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                  <div style="font-weight:600;font-size:14px">$${(c.amount_usd_cents/100).toFixed(2)} <span style="font-size:11px;color:rgba(255,255,255,.5);font-weight:400;margin-left:4px">${c.mode === 'test' ? '[TEST]' : ''}</span></div>
+                  <div style="font-weight:600;font-size:14px">$${(c.amount_usd_cents / 100).toFixed(2)} <span style="font-size:11px;color:rgba(255,255,255,.5);font-weight:400;margin-left:4px">${c.mode === 'test' ? '[TEST]' : ''}</span></div>
                   <div style="font-size:11px;font-weight:700;color:${stColor};text-transform:uppercase">${c.status}</div>
                 </div>
                 <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px">Ref: ${esc(c.external_reference)} &bull; ${date}</div>
@@ -4151,7 +4375,7 @@
             }
             html += `</div>`;
           });
-          
+
           html += `
             <div style="display:flex;justify-content:space-between;margin-top:16px;padding-bottom:20px">
               <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" ${chargesPage === 0 ? 'disabled' : ''} onclick="changeChargesPage(-1)">Previous</button>
@@ -4159,27 +4383,27 @@
             </div>
           `;
         }
-        
+
         document.getElementById('dashboard-content').innerHTML = html;
       } catch (e) {
         document.getElementById('dashboard-content').innerHTML = `<div style="color:var(--error);padding:20px">Error loading dashboard: ${esc(e.message || e)}</div>`;
       }
     }
-    
+
     async function filterCharges(status) {
       chargesPage = 0;
       await renderDashboard(status);
     }
-    
+
     async function changeChargesPage(delta) {
       chargesPage += delta;
       const status = document.getElementById('charge-status-filter').value;
       await renderDashboard(status);
     }
-    
+
     async function regenerateKey(mode) {
       if (!confirm(`Are you sure you want to regenerate your ${mode} secret key? The old one will immediately stop working.`)) return;
-      
+
       try {
         const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/keys/regenerate`, {
           method: 'POST',
@@ -4188,22 +4412,22 @@
         });
         if (!r.ok) throw new Error(await _errDetail(r));
         const data = await r.json();
-        
+
         WebApp.HapticFeedback.notificationOccurred('success');
         alert(`Your new ${mode} secret key is:\n\n${data.new_secret_key}\n\nCopy this now. It will not be shown again.`);
       } catch (e) {
         WebApp.showAlert('Error regenerating key: ' + (e.message || e));
       }
     }
-    
+
     async function promptWebhook() {
       const url = prompt("Enter your webhook endpoint URL:");
       if (!url) return;
-      
+
       if (!url.startsWith('https://') && !url.startsWith('http://')) {
         return WebApp.showAlert("URL must start with https://");
       }
-      
+
       try {
         const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/webhook`, {
           method: 'POST',
@@ -4212,26 +4436,26 @@
         });
         if (!r.ok) throw new Error(await _errDetail(r));
         const data = await r.json();
-        
+
         WebApp.HapticFeedback.notificationOccurred('success');
-        
+
         if (data.is_new && data.webhook_secret) {
           // Only show the secret on first-time setup
           alert(`Webhook configured!\n\nSigning secret (save this now — shown once):\n\n${data.webhook_secret}`);
         } else {
           WebApp.showAlert('Webhook URL updated. Your existing signing secret is unchanged.');
         }
-        
+
         const status = document.getElementById('charge-status-filter') ? document.getElementById('charge-status-filter').value : '';
         await renderDashboard(status);
       } catch (e) {
         WebApp.showAlert('Error setting webhook: ' + (e.message || e));
       }
     }
-    
+
     async function rotateWebhookSecret() {
       if (!confirm('Rotate the webhook signing secret? Your server must be updated immediately or webhook verification will fail.')) return;
-      
+
       try {
         const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/webhook/rotate-secret`, {
           method: 'POST',
@@ -4239,10 +4463,10 @@
         });
         if (!r.ok) throw new Error(await _errDetail(r));
         const data = await r.json();
-        
+
         WebApp.HapticFeedback.notificationOccurred('success');
         alert(`New signing secret (save this now — shown once):\n\n${data.webhook_secret}`);
-        
+
         const status = document.getElementById('charge-status-filter') ? document.getElementById('charge-status-filter').value : '';
         await renderDashboard(status);
       } catch (e) {
@@ -4254,19 +4478,19 @@
     let _subsHistoryLoaded = false;
 
     function showSubsTab(tab) {
-      const activeList   = document.getElementById('subs-list');
-      const historyList  = document.getElementById('subs-history-list');
-      const btnActive    = document.getElementById('subs-tab-active');
-      const btnHistory   = document.getElementById('subs-tab-history');
-      const isHistory    = tab === 'history';
+      const activeList = document.getElementById('subs-list');
+      const historyList = document.getElementById('subs-history-list');
+      const btnActive = document.getElementById('subs-tab-active');
+      const btnHistory = document.getElementById('subs-tab-history');
+      const isHistory = tab === 'history';
 
-      activeList.style.display  = isHistory ? 'none' : 'block';
+      activeList.style.display = isHistory ? 'none' : 'block';
       historyList.style.display = isHistory ? 'block' : 'none';
 
-      btnActive.style.background  = isHistory ? 'var(--surface2)' : 'var(--accent)';
-      btnActive.style.color       = isHistory ? 'rgba(255,255,255,.6)' : '#fff';
+      btnActive.style.background = isHistory ? 'var(--surface2)' : 'var(--accent)';
+      btnActive.style.color = isHistory ? 'rgba(255,255,255,.6)' : '#fff';
       btnHistory.style.background = isHistory ? 'var(--accent)' : 'var(--surface2)';
-      btnHistory.style.color      = isHistory ? '#fff' : 'rgba(255,255,255,.6)';
+      btnHistory.style.color = isHistory ? '#fff' : 'rgba(255,255,255,.6)';
 
       if (isHistory && !_subsHistoryLoaded) {
         _subsHistoryLoaded = true;
@@ -4290,14 +4514,14 @@
 
         el.innerHTML = '';
         history.forEach(p => {
-          const groupName  = esc(p.chat_title || 'Unknown Group');
-          const interval   = p.billing_interval_days === 7 ? '/week' : '/month';
-          const priceUsd   = p.price_usd_cents ? fmtUsd(p.price_usd_cents) : '—';
-          const date       = p.start_date ? p.start_date.slice(0, 16).replace('T', ' ') : '—';
-          const statusIcon = p.subscription_status === 'active'    ? '✅'
-                           : p.subscription_status === 'expired'   ? '⏰'
-                           : p.subscription_status === 'cancelled' ? '❌'
-                           : p.subscription_status === 'comped'    ? '🎁' : '•';
+          const groupName = esc(p.chat_title || 'Unknown Group');
+          const interval = p.billing_interval_days === 7 ? '/week' : '/month';
+          const priceUsd = p.price_usd_cents ? fmtUsd(p.price_usd_cents) : '—';
+          const date = p.start_date ? p.start_date.slice(0, 16).replace('T', ' ') : '—';
+          const statusIcon = p.subscription_status === 'active' ? '✅'
+            : p.subscription_status === 'expired' ? '⏰'
+              : p.subscription_status === 'cancelled' ? '❌'
+                : p.subscription_status === 'comped' ? '🎁' : '•';
 
           const card = document.createElement('div');
           card.className = 'glass sub-card';
@@ -4530,11 +4754,11 @@
       // Real platform split (matching config.py):
       //   ADMIN_FEE_BPS = 330  → 3.30% taken from dev payout by Renewise
       //   BUYER_FEE_BPS = 200  → 2.00% added on top by the buyer (shown separately)
-      const totalCents    = Math.round(amtUsd * 100);
+      const totalCents = Math.round(amtUsd * 100);
       const adminFeeCents = Math.floor(totalCents * 330 / 10000);  // 3.30%
       const buyerFeeCents = Math.floor(totalCents * 200 / 10000);  // 2.00% (paid on top)
-      const devRevenue    = totalCents - adminFeeCents;             // 96.70%
-      const renewiseFee   = adminFeeCents + buyerFeeCents;          // total platform take
+      const devRevenue = totalCents - adminFeeCents;             // 96.70%
+      const renewiseFee = adminFeeCents + buyerFeeCents;          // total platform take
 
       resEl.innerHTML = `
         <div class="glass" style="border-radius:var(--r);padding:24px;text-align:center;border:1px solid rgba(74,222,128,.3);background:rgba(74,222,128,.06)">
@@ -4621,12 +4845,12 @@
           const card = document.createElement('div');
           card.className = 'glass sub-card';
           card.style.marginBottom = '14px';
-          
+
           const wallet = p.wallet_address ? `${p.wallet_address.slice(0, 10)}…${p.wallet_address.slice(-6)}` : 'Not set';
           const pk_live = p.publishable_key_live;
           const pk_test = p.publishable_key_test;
           const sk_test = p.secret_key_test;
-          
+
           // Live key block: show if generated, else show a "Generate" button
           const liveKeyBlock = pk_live
             ? `<div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px;word-break:break-all">
@@ -4640,10 +4864,18 @@
                   <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--error)" onclick="regenerateKey('live')">Rotate</button>
                 </div>
               </div>`
-            : `<div style="background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.25);border-radius:12px;padding:16px;margin-bottom:8px;text-align:center">
-                <div style="font-size:13px;color:rgba(255,255,255,.7);margin-bottom:4px">🔒 Live Mainnet keys not yet generated</div>
-                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px">Generate when you're ready to accept real payments.</div>
-                <button class="btn" style="background:var(--accent);color:#000;font-weight:700;font-size:13px;padding:8px 20px" onclick="generateLiveKeys(${p.id})">Generate Live Keys</button>
+            : `<div style="background:linear-gradient(180deg, rgba(74,222,128,.08) 0%, rgba(74,222,128,.02) 100%); border:1px solid rgba(74,222,128,.3); border-radius:16px; padding:20px; margin-bottom:12px; text-align:center; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1)">
+                <div style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); width:100px; height:40px; background:var(--accent); filter:blur(40px); opacity:0.3; border-radius:50%"></div>
+                <div style="display:flex; justify-content:center; align-items:center; width:40px; height:40px; background:rgba(74,222,128,.15); border-radius:12px; margin:0 auto 12px auto; border:1px solid rgba(74,222,128,.3)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                </div>
+                <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px; text-shadow:0 1px 2px rgba(0,0,0,.5)">Go Live on Mainnet</div>
+                <div style="font-size:12px; color:rgba(255,255,255,.6); margin-bottom:16px; line-height:1.5; max-width:280px; margin-left:auto; margin-right:auto">
+                  Your app is currently running in Testnet mode. Generate Live Keys to start accepting real TON payments.
+                </div>
+                <button class="btn" style="background:linear-gradient(180deg, var(--accent) 0%, #3bb665 100%); color:#000; font-weight:800; font-size:13px; padding:10px 24px; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(74,222,128,.2), inset 0 1px 0 rgba(255,255,255,.3)" onclick="generateLiveKeys(${p.id})">
+                  Generate Live Keys
+                </button>
               </div>`;
 
           card.innerHTML = `
@@ -4702,7 +4934,7 @@
       return new Promise(resolve => {
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
-        
+
         overlay.innerHTML = `
           <div style="background:var(--surface);width:100%;border-radius:20px 20px 0 0;padding:24px;box-sizing:border-box;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.2,0.8,0.2,1);padding-bottom:calc(24px + env(safe-area-inset-bottom))">
             <h3 style="margin:0 0 16px;font-size:18px">${title}</h3>
@@ -4718,17 +4950,17 @@
         document.body.appendChild(overlay);
         const panel = overlay.firstElementChild;
         const input = overlay.querySelector('#text-field-modal');
-        
+
         // Wait for next frame so the transition animates
         requestAnimationFrame(() => panel.style.transform = 'translateY(0)');
         // Focus the input
         setTimeout(() => input.focus(), 300);
-        
+
         function close(val) {
           panel.style.transform = 'translateY(100%)';
           setTimeout(() => { overlay.remove(); resolve(val); }, 300);
         }
-        
+
         overlay.querySelector('#text-btn-cancel').onclick = () => close(null);
         overlay.querySelector('#text-btn-submit').onclick = () => close(input.value);
         overlay.onclick = (e) => { if (e.target === overlay) close(null); };
@@ -4738,7 +4970,7 @@
     async function openCreatePlatform() {
       const name = await promptTextModal("Enter App Name", "e.g. My Telegram Game");
       if (!name || !name.trim()) return;
-      
+
       let platformId = null;
       try {
         const r = await apiFetch(`${API}/developer/platforms`, {
@@ -4749,7 +4981,7 @@
         if (!r.ok) throw new Error(await _errDetail(r));
         const res = await r.json();
         platformId = res.platform.id;
-        
+
         WebApp.HapticFeedback.notificationOccurred('success');
         WebApp.showAlert(`✅ App "${res.platform.platform_name}" created!\n\nYour test keys are ready. Now let's set up your Payout Wallet — this is required to receive test charges.`);
         loadPlatforms();
@@ -4773,7 +5005,7 @@
         'This will create your Mainnet secret key. It will be shown ONCE and never again. Make sure you are ready.'
       );
       if (!confirmed) return;
-      
+
       try {
         const r = await apiFetch(`${API}/developer/platforms/${platformId}/live-keys`, {
           method: 'POST',
@@ -4781,7 +5013,7 @@
         });
         if (!r.ok) throw new Error(await _errDetail(r));
         const data = await r.json();
-        
+
         WebApp.HapticFeedback.notificationOccurred('success');
         // Show the live secret key ONCE — this is the only time it's ever visible
         alert(`✅ Live keys generated!\n\nSave your Live Secret Key NOW — it will never be shown again:\n\n${data.raw_secret_key_live}\n\nPublishable key is saved to your dashboard.`);
@@ -4798,7 +5030,7 @@
       return new Promise(resolve => {
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
-        
+
         let fieldsHtml = config.fields.map(f => `
           <div style="margin-bottom:14px">
             <label style="font-size:12px;color:rgba(255,255,255,.6);display:block;margin-bottom:4px">${f.label}</label>
@@ -4809,7 +5041,7 @@
               oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)" />
           </div>
         `).join('');
-        
+
         if (config.walletField) {
           fieldsHtml = `<div style="margin-bottom:14px">
             <label style="font-size:12px;color:rgba(255,255,255,.6);display:block;margin-bottom:4px">TON Wallet Address</label>
@@ -4818,7 +5050,7 @@
                      padding:12px 14px;color:#fff;font-size:13px;outline:none;box-sizing:border-box" />
           </div>` + fieldsHtml;
         }
-        
+
         overlay.innerHTML = `
           <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px">
             <div style="font-size:16px;font-weight:700;margin-bottom:6px">${config.title}</div>
@@ -4835,7 +5067,7 @@
         `;
         document.body.appendChild(overlay);
         window._pinResolve = resolve;
-        
+
         const submitBtn = overlay.querySelector('#pin-submit');
         submitBtn.onclick = () => {
           const result = {};
@@ -4863,7 +5095,7 @@
       const fields = hasExistingWallet
         ? [{ id: 'passcode', label: 'Current 4-digit Passkey', placeholder: '••••' }]
         : [];
-      
+
       const result = await showPinModal({
         title: hasExistingWallet ? 'Change Payout Wallet' : 'Set Payout Wallet',
         subtitle: hasExistingWallet ? 'Enter your passkey to authorize this change.' : 'No passkey required for first-time setup.',
@@ -4872,7 +5104,7 @@
         submitLabel: 'Save Wallet'
       });
       if (!result) return;
-      
+
       try {
         const r = await apiFetch(`${API}/developer/platforms/${platformId}/wallet`, {
           method: 'PUT',
@@ -4890,11 +5122,11 @@
     async function promptPlatformPasscode(platformId, hasExistingPasscode) {
       const fields = hasExistingPasscode
         ? [
-            { id: 'current', label: 'Current Passkey', placeholder: '••••' },
-            { id: 'new', label: 'New Passkey', placeholder: '••••' }
-          ]
+          { id: 'current', label: 'Current Passkey', placeholder: '••••' },
+          { id: 'new', label: 'New Passkey', placeholder: '••••' }
+        ]
         : [{ id: 'new', label: 'New 4-digit Passkey', placeholder: '••••' }];
-      
+
       const result = await showPinModal({
         title: hasExistingPasscode ? 'Change Passkey' : 'Set Passkey',
         subtitle: 'Used to authorize wallet changes.',
@@ -4902,7 +5134,7 @@
         submitLabel: 'Save Passkey'
       });
       if (!result) return;
-      
+
       try {
         const r = await apiFetch(`${API}/developer/platforms/${platformId}/passcode`, {
           method: 'POST',
@@ -4919,22 +5151,22 @@
         WebApp.showAlert('Error setting passkey: ' + (e.message || e));
       }
     }
-    
+
     async function showPlatformCharges(platformId, platformName) {
       document.getElementById('confirm-title').textContent = `${platformName} Charges`;
       document.getElementById('confirm-body').innerHTML = '<div class="loading">Loading…</div>';
       document.getElementById('confirm-overlay').classList.add('show');
-      
+
       try {
         const r = await apiFetch(`${API}/developer/platforms/${platformId}/charges`, { headers: H() });
         if (!r.ok) throw new Error(await _errDetail(r));
         const { charges } = await r.json();
-        
+
         if (!charges.length) {
           document.getElementById('confirm-body').innerHTML = '<p style="color:rgba(255,255,255,.6);text-align:center;margin:20px 0">No charges yet.</p>';
           return;
         }
-        
+
         let html = '<div style="max-height:60vh;overflow-y:auto;text-align:left;margin-top:16px">';
         charges.forEach(c => {
           const usd = c.amount_usd_cents ? fmtUsd(c.amount_usd_cents) : '—';
@@ -4952,7 +5184,7 @@
           `;
         });
         html += '</div>';
-        
+
         document.getElementById('confirm-body').innerHTML = html;
       } catch (e) {
         document.getElementById('confirm-body').innerHTML = `<p style="color:var(--danger)">Failed to load charges.</p>`;
