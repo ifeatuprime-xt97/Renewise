@@ -4264,16 +4264,16 @@
                   </div>
                 </div>
               </div>`
-            : `<div style="background:linear-gradient(180deg, rgba(74,222,128,.08) 0%, rgba(74,222,128,.02) 100%); border:1px solid rgba(74,222,128,.3); border-radius:16px; padding:20px; margin-bottom:12px; text-align:center; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1)">
+            : `<div style="background:linear-gradient(180deg, rgba(0,152,234,.08) 0%, rgba(0,152,234,.02) 100%); border:1px solid rgba(0,152,234,.3); border-radius:16px; padding:20px; margin-bottom:12px; text-align:center; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1)">
                 <div style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); width:100px; height:40px; background:var(--accent); filter:blur(40px); opacity:0.3; border-radius:50%"></div>
-                <div style="display:flex; justify-content:center; align-items:center; width:40px; height:40px; background:rgba(74,222,128,.15); border-radius:12px; margin:0 auto 12px auto; border:1px solid rgba(74,222,128,.3)">
+                <div style="display:flex; justify-content:center; align-items:center; width:40px; height:40px; background:rgba(0,152,234,.15); border-radius:12px; margin:0 auto 12px auto; border:1px solid rgba(0,152,234,.3)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                 </div>
                 <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px; text-shadow:0 1px 2px rgba(0,0,0,.5)">Go Live on Mainnet</div>
                 <div style="font-size:12px; color:rgba(255,255,255,.6); margin-bottom:16px; line-height:1.5; max-width:280px; margin-left:auto; margin-right:auto">
                   Your app is currently running in Testnet mode. Generate Live Keys to start accepting real TON payments.
                 </div>
-                <button class="btn" style="background:linear-gradient(180deg, var(--accent) 0%, #3bb665 100%); color:#000; font-weight:800; font-size:13px; padding:10px 24px; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(74,222,128,.2), inset 0 1px 0 rgba(255,255,255,.3)" onclick="generateLiveKeys(${p.id})">
+                <button class="btn" style="background:linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%); color:#fff; font-weight:800; font-size:13px; padding:10px 24px; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(0,152,234,.2), inset 0 1px 0 rgba(255,255,255,.3)" onclick="generateLiveKeys(${p.id})">
                   Generate Live Keys
                 </button>
               </div>`;
@@ -4732,7 +4732,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="#6250EC" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><path d="M8 12l4-4 4 4m-4-4v8"/></svg>
               Pay with TonHub
             </a>
-            <a href="${payUrl}" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);border-radius:14px;text-decoration:none;color:#fff;font-weight:700;font-size:14px">
+            <a href="${payUrl}" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:rgba(0,152,234,.1);border:1px solid rgba(0,152,234,.2);border-radius:14px;text-decoration:none;color:#fff;font-weight:700;font-size:14px">
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><path d="M8 12l4-4 4 4m-4-4v8"/></svg>
               Pay with Gram Wallet
             </a>
@@ -4761,7 +4761,7 @@
       const renewiseFee = adminFeeCents + buyerFeeCents;          // total platform take
 
       resEl.innerHTML = `
-        <div class="glass" style="border-radius:var(--r);padding:24px;text-align:center;border:1px solid rgba(74,222,128,.3);background:rgba(74,222,128,.06)">
+        <div class="glass" style="border-radius:var(--r);padding:24px;text-align:center;border:1px solid rgba(0,152,234,.3);background:rgba(0,152,234,.06)">
           <div style="font-size:48px;margin-bottom:8px">✅</div>
           <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">Payment Received!</div>
           <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px">Charge ID #${charge.id}</div>
@@ -4864,16 +4864,16 @@
                   <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--error)" onclick="regenerateKey('live')">Rotate</button>
                 </div>
               </div>`
-            : `<div style="background:linear-gradient(180deg, rgba(74,222,128,.08) 0%, rgba(74,222,128,.02) 100%); border:1px solid rgba(74,222,128,.3); border-radius:16px; padding:20px; margin-bottom:12px; text-align:center; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1)">
+            : `<div style="background:linear-gradient(180deg, rgba(0,152,234,.08) 0%, rgba(0,152,234,.02) 100%); border:1px solid rgba(0,152,234,.3); border-radius:16px; padding:20px; margin-bottom:12px; text-align:center; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1)">
                 <div style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); width:100px; height:40px; background:var(--accent); filter:blur(40px); opacity:0.3; border-radius:50%"></div>
-                <div style="display:flex; justify-content:center; align-items:center; width:40px; height:40px; background:rgba(74,222,128,.15); border-radius:12px; margin:0 auto 12px auto; border:1px solid rgba(74,222,128,.3)">
+                <div style="display:flex; justify-content:center; align-items:center; width:40px; height:40px; background:rgba(0,152,234,.15); border-radius:12px; margin:0 auto 12px auto; border:1px solid rgba(0,152,234,.3)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                 </div>
                 <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px; text-shadow:0 1px 2px rgba(0,0,0,.5)">Go Live on Mainnet</div>
                 <div style="font-size:12px; color:rgba(255,255,255,.6); margin-bottom:16px; line-height:1.5; max-width:280px; margin-left:auto; margin-right:auto">
                   Your app is currently running in Testnet mode. Generate Live Keys to start accepting real TON payments.
                 </div>
-                <button class="btn" style="background:linear-gradient(180deg, var(--accent) 0%, #3bb665 100%); color:#000; font-weight:800; font-size:13px; padding:10px 24px; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(74,222,128,.2), inset 0 1px 0 rgba(255,255,255,.3)" onclick="generateLiveKeys(${p.id})">
+                <button class="btn" style="background:linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%); color:#fff; font-weight:800; font-size:13px; padding:10px 24px; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(0,152,234,.2), inset 0 1px 0 rgba(255,255,255,.3)" onclick="generateLiveKeys(${p.id})">
                   Generate Live Keys
                 </button>
               </div>`;
@@ -4887,17 +4887,17 @@
             <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px;word-break:break-all">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
                 <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Test Keys (Testnet)</div>
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
               </div>
-              <code style="color:var(--accent);font-size:12px;display:block;margin-bottom:12px">${pk_test}</code>
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Secret Key</div>
-                <div style="display:flex;gap:4px">
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="regenerateKey('test')">Rotate</button>
-                </div>
+              <code style="color:var(--accent);font-size:12px;display:block;margin-bottom:8px">${pk_test}</code>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <code style="font-size:11px;color:rgba(255,255,255,.6);word-break:break-all;flex:1;margin-right:8px">${sk_test}</code>
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
               </div>
-              <code style="color:rgba(255,255,255,.6);font-size:11px;display:block">${sk_test}</code>
+              <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+                <button class="btn" style="padding:4px 12px;font-size:11px;background:rgba(0,152,234,.15);color:var(--accent);border:1px solid rgba(0,152,234,.3);border-radius:6px;white-space:nowrap" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap" onclick="regenerateKey('test')">Rotate sk</button>
+              </div>
             </div>
 
             ${liveKeyBlock}
