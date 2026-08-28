@@ -4291,19 +4291,20 @@
                 The prefix (<code>sk_live_</code> vs <code>sk_test_</code>) automatically routes to Mainnet or Testnet.
               </div>
 
-              <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;word-break:break-all">
+              <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
                   <span style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px">Test Keys (Testnet)</span>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${p.publishable_key_test}')">Copy pk</button>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${p.publishable_key_test}')">Copy pk</button>
                 </div>
-                <code style="font-size:11px;color:var(--accent);display:block;margin-bottom:8px">${p.publishable_key_test}</code>
+                <code style="font-size:11px;color:var(--accent);display:block;word-break:break-all;margin-bottom:8px">${p.publishable_key_test}</code>
+                <div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:4px">Secret Key</div>
+                <code style="font-size:11px;color:rgba(255,255,255,.6);display:block;word-break:break-all;margin-bottom:8px">${p.secret_key_test}</code>
                 <div style="display:flex;justify-content:space-between;align-items:center">
-                  <code style="font-size:11px;color:rgba(255,255,255,.6);word-break:break-all;flex:1;margin-right:8px">${p.secret_key_test}</code>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${p.secret_key_test}')">Copy</button>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${p.secret_key_test}')">Copy sk</button>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="regenerateKey('test')">Rotate</button>
                 </div>
-                <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
-                  <button class="btn" style="padding:4px 12px;font-size:11px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:6px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="regenerateKey('test')">Rotate sk</button>
+                <div style="margin-top:8px">
+                  <button class="btn" style="width:100%;padding:7px 12px;font-size:11px;background:rgba(0,152,234,.15);color:var(--accent);border:1px solid rgba(0,152,234,.3);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
                 </div>
               </div>
 
@@ -4889,20 +4890,19 @@
               ${pill(p.status)}
             </div>
 
-            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px;word-break:break-all">
+            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
                 <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Test Keys (Testnet)</div>
                 <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
               </div>
-              <code style="color:var(--accent);font-size:12px;display:block;margin-bottom:8px">${pk_test}</code>
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <code style="font-size:11px;color:rgba(255,255,255,.6);word-break:break-all;flex:1;margin-right:8px">${sk_test}</code>
+              <code style="color:var(--accent);font-size:12px;display:block;word-break:break-all;margin-bottom:8px">${pk_test}</code>
+              <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:4px">Secret Key</div>
+              <code style="font-size:11px;color:rgba(255,255,255,.6);display:block;word-break:break-all;margin-bottom:8px">${sk_test}</code>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                 <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap" onclick="regenerateKey('test')">Rotate</button>
               </div>
-              <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
-                <button class="btn" style="padding:4px 12px;font-size:11px;background:rgba(0,152,234,.15);color:var(--accent);border:1px solid rgba(0,152,234,.3);border-radius:6px;white-space:nowrap" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap" onclick="regenerateKey('test')">Rotate sk</button>
-              </div>
+              <button class="btn" style="width:100%;padding:7px 12px;font-size:11px;background:rgba(0,152,234,.15);color:var(--accent);border:1px solid rgba(0,152,234,.3);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
             </div>
 
             ${liveKeyBlock}
