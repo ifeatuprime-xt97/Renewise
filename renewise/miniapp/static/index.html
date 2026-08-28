@@ -1986,18 +1986,21 @@
           </svg></div>
       </div>
       <div class="accordion-content">
+        <b>For Telegram Groups & Channels</b><br><br>
         <b>1️⃣ Add the bot as admin</b><br>
-        Add Renewise to your group or channel as an Admin with the required permissions Invite Users and Manage Chat /
-        Post Messages.<br><br>
+        Add Renewise to your group or channel as an Admin with the required permissions.<br><br>
         <b>2️⃣ Set your price</b><br>
-        Choose a USD price and billing interval (weekly or monthly). Members always pay the equivalent amount in GRAM at
-        the live exchange rate.<br><br>
-        <b>3️⃣ Members pay the bot handles the rest</b><br>
-        Share your unique invite link. When someone pays, the bot auto-approves their join request and sends them a
-        welcome message. No manual work needed.<br><br>
-        <b>4️⃣ Automatic renewal &amp; removal</b><br>
-        Before a subscription expires, members get a renewal reminder via DM. If they don't renew, the bot removes them
-        automatically. Payouts go directly to your TON (GRAM) wallet — no middleman.
+        Choose a USD price and billing interval. Members pay the equivalent amount in TON at the live exchange rate.<br><br>
+        <b>3️⃣ Automatic renewal &amp; removal</b><br>
+        The bot handles reminders, payments, and kicking unpaid members automatically. Payouts go directly to your wallet.<br><br>
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,0.1);margin:12px 0">
+        <b>For Mini App & Bot Developers</b><br><br>
+        <b>1️⃣ Create a Platform</b><br>
+        Go to the Developer API section in Settings and create a new platform to get your secret keys.<br><br>
+        <b>2️⃣ Integrate the API</b><br>
+        Use the Renewise API to generate payment deep-links for your users to pay directly in your app.<br><br>
+        <b>3️⃣ Receive Webhooks</b><br>
+        Listen for real-time webhooks on your server to instantly deliver digital goods or credits when a user pays.
       </div>
 
       <!-- Reminders -->
@@ -2036,6 +2039,25 @@
         Support is handled directly through the Renewise bot.<br><br>
         Open your DM with the bot, tap the <b>Contact Support</b> button from the main menu, then type your message. It
         goes straight to our team and you'll get a reply back through the bot.
+      </div>
+
+      <!-- Developer API -->
+      <div class="settings-row" style="cursor:pointer" onclick="App.nav('developer')">
+        <div class="sr-left">
+          <div class="sr-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+          </div>
+          <div>
+            <div class="sr-label">Developer API</div>
+            <div class="sr-sub">Webhooks & Integration</div>
+          </div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6" />
+          </svg></div>
       </div>
 
       <!-- Terms & Privacy -->
@@ -2552,14 +2574,7 @@
       Settings
       <span class="nav-indicator"></span>
     </button>
-    <button class="nav-item" id="nav-developer" onclick="App.nav('developer')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-        <polyline points="16 18 22 12 16 6" />
-        <polyline points="8 6 2 12 8 18" />
-      </svg>
-      Developer
-      <span class="nav-indicator"></span>
-    </button>
+
   </nav>
 
   <!-- ════════════════════════════════════════════════════
