@@ -1993,7 +1993,7 @@
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg></div>
           <div>
-            <div class="sr-label" style="color:var(--error)">Payment UX — Critical</div>
+            <div class="sr-label" style="color:var(--error)">Payment UX Critical</div>
             <div class="sr-sub">Deep-link only. No raw addresses.</div>
           </div>
         </div>
@@ -2040,7 +2040,7 @@
       </div>
       <div class="accordion-content">
         Set your endpoint URL in the Dashboard → <b>Webhook → Edit</b>. On first setup you'll receive a
-        <code>whsec_…</code> signing secret — save it immediately, it's only shown once.<br><br>
+        <code>whsec_…</code> signing secret save it immediately, it's only shown once.<br><br>
         Renewise sends a signed <code>POST</code> to your endpoint for every charge status change:<br>
         <code
           style="font-size:11px;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:6px;display:block;margin:6px 0;line-height:1.7">{"id":42, "external_reference":"order_001",<br>"status":"completed", "amount_usd_cents":999,<br>"tx_hash":"abc…def"}</code>
@@ -2121,11 +2121,11 @@
           </tr>
           <tr>
             <td><code>429</code></td>
-            <td>Rate limit — back off and retry</td>
+            <td>Rate limit back off and retry</td>
           </tr>
           <tr>
             <td><code>500</code></td>
-            <td>Server error — retry with backoff</td>
+            <td>Server error retry with backoff</td>
           </tr>
         </table><br>
         <b>Per-platform rate limits:</b><br>
@@ -4292,20 +4292,18 @@
               </div>
 
               <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                  <span style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px">Test Keys (Testnet)</span>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${p.publishable_key_test}')">Copy pk</button>
+                <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Test Keys · Testnet</div>
+                <code style="font-size:11px;color:var(--accent);display:block;word-break:break-all;margin-bottom:4px">${p.publishable_key_test}</code>
+                <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${p.publishable_key_test}')">Copy pk</button>
                 </div>
-                <code style="font-size:11px;color:var(--accent);display:block;word-break:break-all;margin-bottom:8px">${p.publishable_key_test}</code>
-                <div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:4px">Secret Key</div>
-                <code style="font-size:11px;color:rgba(255,255,255,.6);display:block;word-break:break-all;margin-bottom:8px">${p.secret_key_test}</code>
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${p.secret_key_test}')">Copy sk</button>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="regenerateKey('test')">Rotate</button>
+                <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Secret Key</div>
+                <code style="font-size:11px;color:rgba(255,255,255,.6);display:block;word-break:break-all;margin-bottom:4px">${p.secret_key_test}</code>
+                <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:10px">
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${p.secret_key_test}')">Copy sk</button>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="regenerateKey('test')">Rotate</button>
                 </div>
-                <div style="margin-top:8px">
-                  <button class="btn" style="width:100%;padding:7px 12px;font-size:11px;background:rgba(0,152,234,.15);color:var(--accent);border:1px solid rgba(0,152,234,.3);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
-                </div>
+                <button class="btn" style="width:100%;padding:7px 12px;font-size:11px;background:rgba(0,152,234,.15);color:var(--accent);border:1px solid rgba(0,152,234,.3);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
               </div>
 
               ${dashLiveBlock}
@@ -4891,15 +4889,15 @@
             </div>
 
             <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Test Keys (Testnet)</div>
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
+              <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Test Keys · Testnet</div>
+              <code style="color:var(--accent);font-size:12px;display:block;word-break:break-all;margin-bottom:4px">${pk_test}</code>
+              <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
               </div>
-              <code style="color:var(--accent);font-size:12px;display:block;word-break:break-all;margin-bottom:8px">${pk_test}</code>
-              <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px;margin-bottom:4px">Secret Key</div>
-              <code style="font-size:11px;color:rgba(255,255,255,.6);display:block;word-break:break-all;margin-bottom:8px">${sk_test}</code>
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
+              <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Secret Key</div>
+              <code style="font-size:11px;color:rgba(255,255,255,.6);display:block;word-break:break-all;margin-bottom:4px">${sk_test}</code>
+              <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:10px">
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
                 <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap" onclick="regenerateKey('test')">Rotate</button>
               </div>
               <button class="btn" style="width:100%;padding:7px 12px;font-size:11px;background:rgba(0,152,234,.15);color:var(--accent);border:1px solid rgba(0,152,234,.3);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
