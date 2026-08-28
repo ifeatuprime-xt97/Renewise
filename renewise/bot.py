@@ -612,7 +612,8 @@ async def _start_inner(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             "👋 <b>Welcome to Renewise!</b>\n\n"
             "I turn your Telegram group or channel into a paid community "
             "members pay in GRAM, you get paid directly, no middleman holding your funds.\n\n"
-            "Ready to set one up? It takes about 2 minutes.",
+            "👨‍💻 <b>For Developers:</b> You can also use my Developer API to accept TON payments in your own apps and websites.\n\n"
+            "Use the <b>Menu Button</b> (bottom left) to open the Mini App and get started!",
             parse_mode="HTML",
             reply_markup=kb,
         )
@@ -809,7 +810,8 @@ async def cb_start_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             "👋 <b>Welcome to Renewise!</b>\n\n"
             "I turn your Telegram group or channel into a paid community "
             "members pay in GRAM, you get paid directly, no middleman holding your funds.\n\n"
-            "Ready to set one up? It takes about 2 minutes."
+            "👨‍💻 <b>For Developers:</b> You can also use my Developer API to accept TON payments in your own apps and websites.\n\n"
+            "Use the <b>Menu Button</b> (bottom left) to open the Mini App and get started!"
         )
     else:
         buttons = []

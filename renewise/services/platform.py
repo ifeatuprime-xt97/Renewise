@@ -273,6 +273,20 @@ async def get_platform_charges(platform_id: int, status: str | None = None, limi
             )
         return [dict(r) for r in rows]
 
+async def get_all_user_platform_charges(owner_telegram_id: int, limit: int = 50, offset: int = 0) -> list[dict]:
+    """Retrieves paginated charges across all platforms owned by the user."""
+    async with _db() as db:
+        rows = await db.fetch(
+            "SELECT c.id, c.platform_id, p.platform_name, c.external_reference, c.mode, c.amount_usd_cents, c.status, "
+            "c.vault_address, c.tx_hash, c.required_nano_amount, c.created_at, c.completed_at "
+            "FROM platform_charges c "
+            "JOIN platforms p ON c.platform_id = p.id "
+            "WHERE p.owner_telegram_id = $1 "
+            "ORDER BY c.created_at DESC LIMIT $2 OFFSET $3",
+            owner_telegram_id, limit, offset
+        )
+        return [dict(r) for r in rows]
+
 async def get_platform_stats(platform_id: int) -> dict:
     """Aggregates total charges, volume, and success rate for a platform."""
     async with _db() as db:

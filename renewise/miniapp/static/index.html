@@ -1774,14 +1774,53 @@
   <!-- ════════════════════════════════════════════════════
      PAGE — Developer
 ════════════════════════════════════════════════════ -->
-  <section class="page" id="page-developer">
+  <section class="page" id="page-dev-dashboard">
     <div class="section-hdr" style="margin-bottom:8px">
-      <h1 class="page-title">Developer</h1>
+      <h1 class="page-title">Developer Apps</h1>
       <button class="btn-link" onclick="openCreatePlatform()">+ App</button>
     </div>
     <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px;line-height:1.4">
       Integrate Renewise billing directly into your own Telegram app.
     </p>
+    <div id="platforms-list">
+      <div class="loading">Loading…</div>
+    </div>
+  </section>
+
+  <section class="page" id="page-dev-subs">
+    <div class="section-hdr" style="margin-bottom:8px">
+      <h1 class="page-title">API Charges</h1>
+    </div>
+    <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px;line-height:1.4">
+      Global feed of charges across all your apps.
+    </p>
+    <div id="dev-subs-list">
+      <div class="loading">Loading…</div>
+    </div>
+  </section>
+
+  <section class="page" id="page-dev-settings">
+    <div class="section-hdr" style="margin-bottom:8px">
+      <h1 class="page-title">Dev Settings</h1>
+    </div>
+    <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px;line-height:1.4">
+      API documentation and webhook configuration.
+    </p>
+
+    <!-- ── Switch Mode Toggle ─────────────────────────────────────────── -->
+    <div class="glass" style="border-radius:var(--r);overflow:hidden;margin-bottom:20px;padding:12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="switchAppMode('creator')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:var(--accent)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:14px">Switch to Creator Mode</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.5)">Manage groups, channels & subs</div>
+        </div>
+      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2.5" width="20" height="20"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+
 
     <!-- ── API Docs accordion ─────────────────────────────────────────── -->
     <div class="glass" style="border-radius:var(--r);overflow:hidden;margin-bottom:20px">
@@ -1905,9 +1944,64 @@
       </div>
 
     </div><!-- /API docs accordion -->
+  </section>
 
-    <div id="platforms-list">
-      <div class="loading">Loading…</div>
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Developer Sandbox
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-dev-sandbox">
+    <div class="section-hdr" style="margin-bottom:8px">
+      <h1 class="page-title">API Sandbox</h1>
+    </div>
+    <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px;line-height:1.5">
+      Test a real end-to-end charge against your app. The bot notification fires just like in production.
+    </p>
+
+    <!-- App Selector -->
+    <div class="glass" style="border-radius:var(--r);padding:16px;margin-bottom:14px">
+      <label style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;display:block;margin-bottom:8px">Select App</label>
+      <select id="sandbox-app-select" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:11px 14px;color:#fff;font-size:14px;outline:none;cursor:pointer;font-family:inherit">
+        <option value="">Loading apps…</option>
+      </select>
+    </div>
+
+    <!-- Environment Toggle -->
+    <div class="glass" style="border-radius:var(--r);padding:16px;margin-bottom:14px">
+      <label style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;display:block;margin-bottom:10px">Environment</label>
+      <div style="display:flex;gap:8px">
+        <button id="sandbox-env-test" onclick="setSandboxEnv('test')"
+          style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;background:var(--accent);color:#000;cursor:pointer;transition:.2s">
+          🧪 Testnet
+        </button>
+        <button id="sandbox-env-live" onclick="setSandboxEnv('live')"
+          style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;background:var(--surface2);color:rgba(255,255,255,.6);cursor:pointer;transition:.2s">
+          🔴 Mainnet
+        </button>
+      </div>
+    </div>
+
+    <!-- Amount Input -->
+    <div class="glass" style="border-radius:var(--r);padding:16px;margin-bottom:14px">
+      <label style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;display:block;margin-bottom:8px">Charge Amount</label>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:22px;font-weight:800;color:rgba(255,255,255,.4)">$</span>
+        <input id="sandbox-amount" type="number" min="0.10" step="0.01" value="5.00" placeholder="5.00"
+          style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;
+                 padding:11px 14px;color:#fff;font-size:22px;font-weight:800;outline:none;font-family:inherit">
+        <span style="font-size:14px;color:rgba(255,255,255,.4)">USD</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="sandbox-create-btn" onclick="sandboxCreateCharge()" style="font-size:15px;padding:14px;margin-bottom:20px;border-radius:14px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" style="margin-right:6px">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+      Create Test Charge
+    </button>
+
+    <!-- Result Area (hidden initially) -->
+    <div id="sandbox-result" style="display:none">
+      <!-- Pending payment UI injected here by JS -->
     </div>
   </section>
 
@@ -1944,6 +2038,21 @@
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-settings">
     <h1 class="page-title" style="margin-bottom:20px">Settings</h1>
+
+    <!-- ── Switch Mode Toggle ─────────────────────────────────────────── -->
+    <div class="glass" style="border-radius:var(--r);overflow:hidden;margin-bottom:20px;padding:12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="switchAppMode('developer')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:var(--accent)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:14px">Switch to Developer Mode</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.5)">Manage API apps & webhooks</div>
+        </div>
+      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2.5" width="20" height="20"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+
     <div class="glass" style="border-radius:var(--r);overflow:hidden;margin-bottom:14px" id="settings-accordion-group">
 
       <!-- Revenue Currency (admin-only, shown/hidden by JS) -->
@@ -2546,7 +2655,7 @@
     <div id="comp-result" style="margin-top:14px"></div>
   </section>
 
-  <nav class="bottom-nav" id="bottom-nav">
+  <nav class="bottom-nav" id="bottom-nav-creator">
     <button class="nav-item" id="nav-dashboard" onclick="App.nav('dashboard')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -2574,7 +2683,43 @@
       Settings
       <span class="nav-indicator"></span>
     </button>
+  </nav>
 
+  <nav class="bottom-nav" id="bottom-nav-dev" style="display:none">
+    <button class="nav-item" id="nav-dev-dashboard" onclick="App.nav('dev-dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+      My Apps
+      <span class="nav-indicator"></span>
+    </button>
+    <button class="nav-item" id="nav-dev-subs" onclick="App.nav('dev-subs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path
+          d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      </svg>
+      API Charges
+      <span class="nav-indicator"></span>
+    </button>
+    <button class="nav-item" id="nav-dev-settings" onclick="App.nav('dev-settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+      Dev Settings
+      <span class="nav-indicator"></span>
+    </button>
+    <button class="nav-item" id="nav-dev-sandbox" onclick="App.nav('dev-sandbox')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
+      </svg>
+      Sandbox
+      <span class="nav-indicator"></span>
+    </button>
   </nav>
 
   <!-- ════════════════════════════════════════════════════
@@ -2731,8 +2876,26 @@
     // ════════════════════════════════════════════════════
     // Navigation
     // ════════════════════════════════════════════════════
-    const PAGES = ['dashboard', 'developer', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
-    const NAV_PAGES = ['dashboard', 'subs', 'developer', 'settings'];
+    const PAGES = ['dashboard', 'dev-dashboard', 'dev-subs', 'dev-settings', 'dev-sandbox', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
+    const NAV_PAGES = ['dashboard', 'subs', 'settings', 'dev-dashboard', 'dev-subs', 'dev-settings', 'dev-sandbox'];
+
+    // Returns the current app mode ('creator' or 'developer')
+    function getAppMode() {
+      return localStorage.getItem('appMode') || 'creator';
+    }
+
+    function switchAppMode(mode) {
+      localStorage.setItem('appMode', mode);
+      if (mode === 'developer') {
+        document.getElementById('bottom-nav-creator').style.display = 'none';
+        document.getElementById('bottom-nav-dev').style.display = 'flex';
+        App.nav('dev-dashboard');
+      } else {
+        document.getElementById('bottom-nav-dev').style.display = 'none';
+        document.getElementById('bottom-nav-creator').style.display = 'flex';
+        App.nav('dashboard');
+      }
+    }
 
     function toggleAcc(el) {
       const wasOpen = el.classList.contains('open');
@@ -2778,14 +2941,31 @@
       _cur: 'dashboard',
 
       nav(page) {
-        PAGES.forEach(p => document.getElementById('page-' + p).classList.toggle('show', p === page));
+        PAGES.forEach(p => {
+          const el = document.getElementById('page-' + p);
+          if (el) el.classList.toggle('show', p === page);
+        });
         NAV_PAGES.forEach(t => {
           const el = document.getElementById('nav-' + t);
           if (el) el.classList.toggle('active', t === page);
         });
         const subPages = ['history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
-        const bn = document.getElementById('bottom-nav');
-        bn.style.display = subPages.includes(page) ? 'none' : 'flex';
+        const bnc = document.getElementById('bottom-nav-creator');
+        const bnd = document.getElementById('bottom-nav-dev');
+        
+        if (subPages.includes(page)) {
+          if (bnc) bnc.style.display = 'none';
+          if (bnd) bnd.style.display = 'none';
+        } else {
+          if (getAppMode() === 'developer') {
+            if (bnd) bnd.style.display = 'flex';
+            if (bnc) bnc.style.display = 'none';
+          } else {
+            if (bnc) bnc.style.display = 'flex';
+            if (bnd) bnd.style.display = 'none';
+          }
+        }
+        
         this._cur = page;
         WebApp.MainButton.hide();
         WebApp.HapticFeedback.impactOccurred('light');
@@ -2804,8 +2984,12 @@
           }
         }
         
-        if (page === 'developer') {
+        if (page === 'dev-dashboard') {
           loadPlatforms();
+        } else if (page === 'dev-subs') {
+          loadDevCharges();
+        } else if (page === 'dev-sandbox') {
+          loadSandboxApps();
         }
       },
 
@@ -4141,6 +4325,279 @@
     // ════════════════════════════════════════════════════
     // DEVELOPER — Platforms & API Keys
     // ════════════════════════════════════════════════════
+    async function loadDevCharges() {
+      const el = document.getElementById('dev-subs-list');
+      if (!el) return;
+      el.innerHTML = skeletonCards(3);
+      try {
+        const r = await apiFetch(`${API}/developer/charges`, { headers: H() });
+        if (!r.ok) throw new Error();
+        const { charges } = await r.json();
+
+        if (!charges || !charges.length) {
+          el.innerHTML = `<div class="empty">${ico('hash', 40)}<p>No API charges yet.</p></div>`;
+          return;
+        }
+
+        el.innerHTML = '';
+        charges.forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'glass sub-card';
+          card.style.marginBottom = '10px';
+          const usd = fmtUsd(c.amount_usd_cents);
+          const icon = c.status === 'completed' ? '✅' : c.status === 'expired' ? '⏰' : c.status === 'failed' ? '❌' : '⏳';
+          card.innerHTML = `
+            <div class="sub-hdr" style="margin-bottom:6px">
+              <span class="sub-name" style="font-size:15px">${esc(c.platform_name || 'App')}</span>
+              <span style="font-size:18px">${icon}</span>
+            </div>
+            <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px">
+              ${usd}<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.5)">/charge</span>
+            </div>
+            <div style="font-size:12px;color:rgba(255,255,255,.45);display:flex;flex-direction:column;gap:4px">
+              <div>Ref: <code style="color:var(--accent)">${esc(c.external_reference)}</code></div>
+              <div>📅 ${c.created_at.slice(0, 16).replace('T', ' ')}</div>
+            </div>
+          `;
+          el.appendChild(card);
+        });
+      } catch (e) {
+        el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load charges.</p></div>`;
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // DEVELOPER — API Sandbox
+    // ════════════════════════════════════════════════════
+    let _sandboxEnv = 'test';     // 'test' | 'live'
+    let _sandboxPlatforms = [];   // cached platform list
+    let _sandboxPollTimer = null; // interval ID for polling
+
+    function setSandboxEnv(env) {
+      _sandboxEnv = env;
+      document.getElementById('sandbox-env-test').style.background = env === 'test' ? 'var(--accent)' : 'var(--surface2)';
+      document.getElementById('sandbox-env-test').style.color = env === 'test' ? '#000' : 'rgba(255,255,255,.6)';
+      document.getElementById('sandbox-env-live').style.background = env === 'live' ? '#e05c5c' : 'var(--surface2)';
+      document.getElementById('sandbox-env-live').style.color = env === 'live' ? '#fff' : 'rgba(255,255,255,.6)';
+    }
+
+    async function loadSandboxApps() {
+      const sel = document.getElementById('sandbox-app-select');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Loading…</option>';
+      // Reset result area
+      const res = document.getElementById('sandbox-result');
+      if (res) { res.style.display = 'none'; res.innerHTML = ''; }
+      // Clear any active poll
+      if (_sandboxPollTimer) { clearInterval(_sandboxPollTimer); _sandboxPollTimer = null; }
+      try {
+        const r = await apiFetch(`${API}/developer/platforms`, { headers: H() });
+        if (!r.ok) throw new Error();
+        const { platforms } = await r.json();
+        _sandboxPlatforms = platforms;
+        if (!platforms.length) {
+          sel.innerHTML = '<option value="">No apps yet — create one first</option>';
+          return;
+        }
+        sel.innerHTML = platforms.map(p =>
+          `<option value="${p.id}" data-sk-test="${esc(p.secret_key_test)}" data-has-live="${!!p.publishable_key_live}" data-has-wallet="${!!p.wallet_address}">${esc(p.platform_name)}${!p.wallet_address ? ' ⚠️ No Wallet' : ''}</option>`
+        ).join('');
+      } catch (e) {
+        sel.innerHTML = '<option value="">Failed to load apps</option>';
+      }
+    }
+
+    async function sandboxCreateCharge() {
+      const sel = document.getElementById('sandbox-app-select');
+      const amtInput = document.getElementById('sandbox-amount');
+      const btn = document.getElementById('sandbox-create-btn');
+      const resEl = document.getElementById('sandbox-result');
+
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) { WebApp.showAlert('Please select an app first.'); return; }
+
+      const hasWallet = opt.dataset.hasWallet === 'true';
+      if (!hasWallet) {
+        WebApp.showAlert('⚠️ This app has no Payout Wallet set. Please add one in Developer Apps first.');
+        return;
+      }
+
+      const amtUsd = parseFloat(amtInput.value);
+      if (!amtUsd || amtUsd < 0.10) { WebApp.showAlert('Minimum charge is $0.10'); return; }
+
+      const skTest = opt.dataset.skTest;
+      const hasLive = opt.dataset.hasLive === 'true';
+      if (_sandboxEnv === 'live' && !hasLive) {
+        WebApp.showAlert('This app has no Live (Mainnet) keys yet. Generate them first in Developer Apps.');
+        return;
+      }
+
+      // For live mode, the sk_live is never stored in the UI (shown only once on generation).
+      // We prompt the dev to paste their key for Mainnet sandbox testing.
+      let secretKey = skTest;
+      if (_sandboxEnv === 'live') {
+        const enteredKey = await promptTextModal('Enter Live Secret Key', 'sk_live_…');
+        if (!enteredKey || !enteredKey.trim().startsWith('sk_live_')) {
+          WebApp.showAlert('Invalid live key format. Must start with sk_live_');
+          return;
+        }
+        secretKey = enteredKey.trim();
+      }
+
+      // Stop any existing poll
+      if (_sandboxPollTimer) { clearInterval(_sandboxPollTimer); _sandboxPollTimer = null; }
+
+      btn.disabled = true;
+      btn.textContent = 'Creating charge…';
+      resEl.style.display = 'none';
+      resEl.innerHTML = '';
+
+      try {
+        const ref = `sandbox_${Date.now()}`;
+        const r = await fetch(`${API}/platform/charges`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount_usd_cents: Math.round(amtUsd * 100), external_reference: ref })
+        });
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          throw new Error(d.detail || `HTTP ${r.status}`);
+        }
+        const charge = await r.json();
+
+        _renderSandboxPending(charge, amtUsd, secretKey);
+        _sandboxPollCharge(charge.charge_id, secretKey);
+      } catch (e) {
+        WebApp.showAlert('Error creating charge: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" style="margin-right:6px"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Create Test Charge`;
+      }
+    }
+
+    function _renderSandboxPending(charge, amtUsd, sk) {
+      const resEl = document.getElementById('sandbox-result');
+      const payUrl = charge.payment_url || '';
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payUrl)}&bgcolor=0d111a&color=ffffff&qzone=2`;
+      const envLabel = _sandboxEnv === 'test' ? '🧪 Testnet' : '🔴 Mainnet';
+
+      resEl.style.display = 'block';
+      resEl.innerHTML = `
+        <div id="sandbox-pending-view">
+          <div class="glass" style="border-radius:var(--r);padding:20px;margin-bottom:14px;text-align:center">
+            <div style="font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.4);margin-bottom:4px">${envLabel} · Awaiting Payment</div>
+            <div style="font-size:28px;font-weight:900;color:#fff;margin-bottom:4px">${fmtUsd(Math.round(amtUsd * 100))}</div>
+            <div style="width:8px;height:8px;background:#f5a623;border-radius:50%;display:inline-block;animation:pulse 1.5s ease-in-out infinite;margin-right:6px;vertical-align:middle"></div>
+            <span style="font-size:13px;color:#f5a623;font-weight:700">Pending</span>
+          </div>
+
+          <!-- QR Code -->
+          <div class="glass" style="border-radius:var(--r);padding:20px;margin-bottom:14px;text-align:center">
+            <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:12px">Scan with your TON wallet to pay</p>
+            <img src="${qrUrl}" alt="Payment QR" style="width:180px;height:180px;border-radius:12px;image-rendering:pixelated">
+            <p style="font-size:11px;color:rgba(255,255,255,.35);margin-top:10px">or use one of these wallets:</p>
+          </div>
+
+          <!-- Wallet Deep Links -->
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+            <a href="${payUrl}" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:rgba(0,151,232,.15);border:1px solid rgba(0,151,232,.3);border-radius:14px;text-decoration:none;color:#fff;font-weight:700;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#0097E8" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><path d="M8 12l4-4 4 4m-4-4v8"/></svg>
+              Pay with Tonkeeper
+            </a>
+            <a href="${payUrl}" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:rgba(98,80,236,.15);border:1px solid rgba(98,80,236,.3);border-radius:14px;text-decoration:none;color:#fff;font-weight:700;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6250EC" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><path d="M8 12l4-4 4 4m-4-4v8"/></svg>
+              Pay with TonHub
+            </a>
+            <a href="${payUrl}" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);border-radius:14px;text-decoration:none;color:#fff;font-weight:700;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><path d="M8 12l4-4 4 4m-4-4v8"/></svg>
+              Pay with Gram Wallet
+            </a>
+            <a href="${payUrl}" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;text-decoration:none;color:#fff;font-weight:700;font-size:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><path d="M8 12l4-4 4 4m-4-4v8"/></svg>
+              Open in MyTonWallet
+            </a>
+          </div>
+
+          <p style="text-align:center;font-size:12px;color:rgba(255,255,255,.35)">
+            Polling for confirmation every 3 seconds…
+          </p>
+        </div>
+      `;
+    }
+
+    function _renderSandboxSuccess(charge, amtUsd) {
+      const resEl = document.getElementById('sandbox-result');
+      // Real platform split (matching config.py):
+      //   ADMIN_FEE_BPS = 330  → 3.30% taken from dev payout by Renewise
+      //   BUYER_FEE_BPS = 200  → 2.00% added on top by the buyer (shown separately)
+      const totalCents    = Math.round(amtUsd * 100);
+      const adminFeeCents = Math.floor(totalCents * 330 / 10000);  // 3.30%
+      const buyerFeeCents = Math.floor(totalCents * 200 / 10000);  // 2.00% (paid on top)
+      const devRevenue    = totalCents - adminFeeCents;             // 96.70%
+      const renewiseFee   = adminFeeCents + buyerFeeCents;          // total platform take
+
+      resEl.innerHTML = `
+        <div class="glass" style="border-radius:var(--r);padding:24px;text-align:center;border:1px solid rgba(74,222,128,.3);background:rgba(74,222,128,.06)">
+          <div style="font-size:48px;margin-bottom:8px">✅</div>
+          <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">Payment Received!</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px">Charge ID #${charge.id}</div>
+
+          <div style="background:rgba(0,0,0,.25);border-radius:12px;padding:14px;text-align:left;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+              <span style="font-size:13px;color:rgba(255,255,255,.6)">Total Charged (incl. buyer fee)</span>
+              <span style="font-weight:700;color:#fff">${fmtUsd(totalCents + buyerFeeCents)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+              <span style="font-size:13px;color:rgba(255,255,255,.6)">Your Revenue <span style="color:var(--accent)">(96.7%)</span></span>
+              <span style="font-weight:700;color:var(--accent)">${fmtUsd(devRevenue)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+              <span style="font-size:13px;color:rgba(255,255,255,.6)">Renewise Cut <span style="color:rgba(255,255,255,.35)">(3.3% admin)</span></span>
+              <span style="font-weight:500;color:rgba(255,255,255,.45)">${fmtUsd(adminFeeCents)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0">
+              <span style="font-size:13px;color:rgba(255,255,255,.6)">Buyer Convenience Fee <span style="color:rgba(255,255,255,.35)">(2.0%)</span></span>
+              <span style="font-weight:500;color:rgba(255,255,255,.45)">${fmtUsd(buyerFeeCents)}</span>
+            </div>
+          </div>
+
+          <p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px">
+            📬 Check the Telegram bot — you should have received a payment notification.
+          </p>
+          <button class="btn btn-primary" onclick="document.getElementById('sandbox-result').style.display='none';document.getElementById('sandbox-result').innerHTML=''" style="border-radius:12px;padding:12px">
+            Test Another Charge
+          </button>
+        </div>
+      `;
+    }
+
+    function _sandboxPollCharge(chargeId, sk) {
+      let attempts = 0;
+      const MAX = 120; // 6 min @ 3s
+      _sandboxPollTimer = setInterval(async () => {
+        attempts++;
+        if (attempts > MAX) {
+          clearInterval(_sandboxPollTimer);
+          _sandboxPollTimer = null;
+          return;
+        }
+        try {
+          const r = await fetch(`${API}/platform/charges/${chargeId}`, {
+            headers: { 'Authorization': `Bearer ${sk}` }
+          });
+          if (!r.ok) return;
+          const charge = await r.json();
+          if (charge.status === 'completed') {
+            clearInterval(_sandboxPollTimer);
+            _sandboxPollTimer = null;
+            const amtUsd = charge.amount_usd_cents / 100;
+            _renderSandboxSuccess(charge, amtUsd);
+            WebApp.HapticFeedback.notificationOccurred('success');
+          }
+        } catch (_) { /* network hiccup, keep polling */ }
+      }, 3000);
+    }
+
     async function loadPlatforms() {
       const el = document.getElementById('platforms-list');
       el.innerHTML = skeletonCards(2);
@@ -4200,14 +4657,15 @@
                 <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Test Keys (Testnet)</div>
                 <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
               </div>
-              <code style="color:var(--accent);font-size:12px;display:block;margin-bottom:8px">${pk_test}</code>
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <code style="color:rgba(255,255,255,.6);font-size:11px;word-break:break-all;flex:1;margin-right:8px">${sk_test}</code>
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
+              <code style="color:var(--accent);font-size:12px;display:block;margin-bottom:12px">${pk_test}</code>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Secret Key</div>
+                <div style="display:flex;gap:4px">
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="regenerateKey('test')">Rotate</button>
+                </div>
               </div>
-              <div style="margin-top:8px;text-align:right">
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="regenerateKey('test')">Rotate sk</button>
-              </div>
+              <code style="color:rgba(255,255,255,.6);font-size:11px;display:block">${sk_test}</code>
             </div>
 
             ${liveKeyBlock}
@@ -4281,6 +4739,7 @@
       const name = await promptTextModal("Enter App Name", "e.g. My Telegram Game");
       if (!name || !name.trim()) return;
       
+      let platformId = null;
       try {
         const r = await apiFetch(`${API}/developer/platforms`, {
           method: 'POST',
@@ -4289,14 +4748,22 @@
         });
         if (!r.ok) throw new Error(await _errDetail(r));
         const res = await r.json();
+        platformId = res.platform.id;
         
-        // Test secret key is stored in plaintext — shown here for convenience but
-        // the developer can always view it again in the dashboard.
         WebApp.HapticFeedback.notificationOccurred('success');
-        WebApp.showAlert(`App "${res.platform.platform_name}" created!\n\nYour test secret key is permanently visible in the dashboard. Generate Live Keys when you are ready for Mainnet.`);
+        WebApp.showAlert(`✅ App "${res.platform.platform_name}" created!\n\nYour test keys are ready. Now let's set up your Payout Wallet — this is required to receive test charges.`);
         loadPlatforms();
       } catch (e) {
         WebApp.showAlert('Error creating app: ' + (e.message || e));
+        return;
+      }
+
+      // ── Immediately chain the wallet setup ───────────────────────────────
+      // A payout wallet is required even on Testnet to calculate the vault address.
+      if (platformId) {
+        // Brief delay so the user can read the alert first
+        await new Promise(r => setTimeout(r, 500));
+        await promptPlatformWallet(platformId, false);
       }
     }
 
@@ -4792,10 +5259,14 @@
 
       // 4. Load page data and route
       const isAdmin = await loadNetworks();
-      if (isAdmin) {
-        App.nav('dashboard');
+      if (getAppMode() === 'developer') {
+        App.nav('dev-dashboard');
       } else {
-        App.nav('subs');
+        if (isAdmin) {
+          App.nav('dashboard');
+        } else {
+          App.nav('subs');
+        }
       }
       hidePreloader();
 

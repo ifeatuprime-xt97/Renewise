@@ -708,6 +708,23 @@ async def msg_support(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
                 if row and row["cnt"]:
                     titles = (row["titles"] or "")[:80]
                     role_parts.append(f"👑 Admin ({row['cnt']} group{'s' if row['cnt'] > 1 else ''}: {html.escape(titles)})")
+
+                # Check if they are a Developer (own platforms)
+                if USE_POSTGRES:
+                    dev_row = await db.fetchrow(
+                        "SELECT COUNT(*) AS cnt, STRING_AGG(platform_name, ', ') AS names "
+                        "FROM platforms WHERE owner_telegram_id=$1",
+                        user.id,
+                    )
+                else:
+                    dev_row = await db.fetchrow(
+                        "SELECT COUNT(*) AS cnt, GROUP_CONCAT(platform_name, ', ') AS names "
+                        "FROM platforms WHERE owner_telegram_id=$1",
+                        user.id,
+                    )
+                if dev_row and dev_row["cnt"]:
+                    names = (dev_row["names"] or "")[:80]
+                    role_parts.append(f"👨‍💻 Developer ({dev_row['cnt']} app{'s' if dev_row['cnt'] > 1 else ''}: {html.escape(names)})")
     except Exception as _e:
         log.warning("msg_support: could not resolve role for user %d: %s", user.id, _e)
 

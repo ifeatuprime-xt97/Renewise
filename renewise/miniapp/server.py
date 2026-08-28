@@ -840,6 +840,19 @@ async def api_developer_platforms_get(
     platforms = await platform_svc.get_user_platforms(user["id"])
     return {"platforms": platforms}
 
+@app.get("/api/developer/charges")
+@limiter.limit("60/minute")
+async def api_developer_charges_global(
+    request: Request,
+    user: Annotated[dict, Depends(get_telegram_user)],
+    limit: int = 50,
+    offset: int = 0
+) -> dict:
+    """Retrieves paginated API charges across all platforms owned by the user."""
+    telegram_user_id = user["id"]
+    charges = await platform_svc.get_all_user_platform_charges(telegram_user_id, limit=limit, offset=offset)
+    return {"charges": charges}
+
 @app.post("/api/developer/platforms")
 @limiter.limit("10/minute")
 async def api_developer_platforms_create(
