@@ -2055,7 +2055,8 @@
       <div class="settings-row accordion-trigger" style="cursor:pointer" onclick="toggleAcc(this)">
         <div class="sr-left">
           <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
+              <path
+                d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
             </svg></div>
           <div>
             <div class="sr-label">Testing & Sandbox</div>
@@ -2069,9 +2070,13 @@
       <div class="accordion-content">
         Use the <b>Sandbox</b> tab to test your integration without losing real funds.<br><br>
         <b>🧪 Testnet Mode</b><br>
-        Generates simulated charges using your <code>sk_test_</code> keys. Use a Telegram account connected to the <a href="https://wallet.ton.org/?testnet=true" target="_blank" style="color:var(--accent);text-decoration:none">Testnet Wallet</a> to safely test the end-to-end flow.<br><br>
+        Generates simulated charges using your <code>sk_test_</code> keys. Use a Telegram account connected to the <a
+          href="https://wallet.ton.org/?testnet=true" target="_blank"
+          style="color:var(--accent);text-decoration:none">Testnet Wallet</a> to safely test the end-to-end
+        flow.<br><br>
         <b>🔴 Mainnet Mode</b><br>
-        To test live Mainnet charges, paste your <code>sk_live_</code> key into the Sandbox (we don't save it). It simulates real charges but requires real TON to complete.<br><br>
+        To test live Mainnet charges, paste your <code>sk_live_</code> key into the Sandbox (we don't save it). It
+        simulates real charges but requires real TON to complete.<br><br>
         In both modes, Renewise fires live webhooks to your server immediately upon successful payment detection.
       </div>
 
@@ -4294,7 +4299,7 @@
                 <code style="font-size:11px;color:var(--accent);display:block;margin-bottom:8px">${p.publishable_key_test}</code>
                 <div style="display:flex;justify-content:space-between;align-items:center">
                   <code style="font-size:11px;color:rgba(255,255,255,.6);word-break:break-all;flex:1;margin-right:8px">${p.secret_key_test}</code>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${p.secret_key_test}')">Copy sk</button>
+                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;flex-shrink:0" onclick="copyInviteLink('${p.secret_key_test}')">Copy</button>
                 </div>
                 <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
                   <button class="btn" style="padding:4px 12px;font-size:11px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:6px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
