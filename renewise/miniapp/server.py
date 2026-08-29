@@ -951,6 +951,36 @@ async def api_developer_regenerate_keys(
     
     return {"ok": True, "new_secret_key": new_secret}
 
+@app.delete("/api/developer/platforms/{platform_id}/keys/test")
+@limiter.limit("5/minute")
+async def api_developer_delete_test_keys(
+    request: Request,
+    platform_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """Revokes and deletes the test key pair for a platform."""
+    telegram_user_id = user["id"]
+    await verify_platform_ownership(platform_id, telegram_user_id)
+
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        await db.execute(
+            "UPDATE platforms SET secret_key_test = NULL, publishable_key_test = NULL WHERE id = $1",
+            platform_id
+        )
+        await db.execute(
+            "INSERT INTO audit_log (platform_id, action, actor_telegram_id, detail) VALUES ($1, $2, $3, $4)",
+            platform_id, "delete_test_keys", telegram_user_id, "test"
+        )
+
+    # Invalidate any cached auth for old test keys
+    from renewise.api.platform import auth_cache
+    stale = [k for k, v in list(auth_cache.items()) if isinstance(v, dict) and v.get('id') == platform_id and v.get('auth_mode') == 'test']
+    for k in stale:
+        auth_cache.pop(k, None)
+
+    return {"ok": True}
+
 class WebhookRequest(BaseModel):
     url: str
 
