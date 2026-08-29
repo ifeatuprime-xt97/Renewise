@@ -596,8 +596,8 @@
     }
 
     .btn-ghost {
-      background: rgba(255, 255, 255, .08);
-      border: 1px solid rgba(255, 255, 255, .1);
+      background: rgb(35, 157, 244);
+      border: 1px solid rgb(35, 157, 244);
       color: #ffffff;
       margin-top: 10px;
     }
@@ -1816,9 +1816,28 @@
       <h1 class="page-title">Developer Apps</h1>
       <button class="btn-link" onclick="openCreatePlatform()">+ App</button>
     </div>
-    <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px;line-height:1.4">
+    <p style="font-size:13px;color:rgb(255, 255, 255);margin-bottom:16px;line-height:1.4">
       Integrate Renewise billing directly into your own Telegram app.
     </p>
+
+    <!-- Developer Dashboard Card -->
+    <div class="admin-card" id="dev-hero-card" style="display:none; margin-bottom:24px;">
+      <div class="admin-card-title">Global API Revenue</div>
+      <div class="admin-stats">
+        <div style="padding: 10px 0 20px; text-align: center;">
+          <div class="admin-stat-value hero" id="dev-total-revenue">
+            <span class="hero-symbol">$</span>0<span class="hero-cents">.00</span>
+          </div>
+        </div>
+        <div class="admin-sub-stats">
+          <div class="admin-sub-stat">
+            <div class="sub-stat-val" id="dev-total-transactions">0</div>
+            <div class="sub-stat-label">Transactions</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="platforms-list">
       <div class="loading">Loading…</div>
     </div>
@@ -4291,20 +4310,20 @@
                 The prefix (<code>sk_live_</code> vs <code>sk_test_</code>) automatically routes to Mainnet or Testnet.
               </div>
 
-              <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px">
+              <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:14px;margin-bottom:8px">
                 <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Test Keys · Testnet</div>
-                <code style="font-size:11px;color:var(--accent);display:block;word-break:break-all;margin-bottom:4px">${p.publishable_key_test}</code>
-                <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${p.publishable_key_test}')">Copy pk</button>
+                <code style="font-size:11px;color:var(--accent);display:block;word-break:break-all;margin-bottom:6px">${p.publishable_key_test}</code>
+                <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+                  <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="copyInviteLink('${p.publishable_key_test}')">Copy pk</button>
                 </div>
                 <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Secret Key</div>
-                <code style="font-size:11px;color:rgba(255,255,255,.6);display:block;word-break:break-all;margin-bottom:4px">${p.secret_key_test}</code>
-                <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:10px">
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${p.secret_key_test}')">Copy sk</button>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="regenerateKey('test')">Rotate</button>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;color:var(--destructive);border-color:rgba(255,92,92,.3)" onclick="deleteTestKeys(${p.id})">Delete</button>
+                <code style="font-size:11px;color:rgba(255,255,255,.7);display:block;word-break:break-all;margin-bottom:6px">${p.secret_key_test}</code>
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;align-items:center">
+                  <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="copyInviteLink('${p.secret_key_test}')">Copy sk</button>
+                  <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="regenerateKey('test')">Rotate</button>
+                  <button class="btn" title="Delete test keys" style="padding:5px 10px;font-size:12px;background:transparent;color:var(--destructive);border:1px solid var(--destructive);border-radius:8px;display:flex;align-items:center" onclick="deleteTestKeys(${p.id})"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' width='14' height='14'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4h6v2'/></svg></button>
                 </div>
-                <button class="btn" style="width:100%;padding:7px 12px;font-size:11px;background:rgba(0,152,234,.15);color:var(--accent);border:1px solid rgba(0,152,234,.3);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
+                <button class="btn" style="width:100%;padding:9px 12px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
               </div>
 
               ${dashLiveBlock}
@@ -4855,7 +4874,20 @@
       try {
         const r = await apiFetch(`${API}/developer/platforms`, { headers: H() });
         if (!r.ok) throw new Error(r.status);
-        const { platforms } = await r.json();
+        const { platforms, total_revenue_usd_cents, total_transactions } = await r.json();
+
+        const devHeroCard = document.getElementById('dev-hero-card');
+        if (total_revenue_usd_cents !== undefined) {
+          devHeroCard.style.display = 'block';
+          const revUsd = fmtUsd(total_revenue_usd_cents);
+          const match = revUsd.match(/^\$(\d+)\.(\d{2})$/);
+          if (match) {
+            document.getElementById('dev-total-revenue').innerHTML = `<span class="hero-symbol">$</span>${match[1]}<span class="hero-cents">.${match[2]}</span>`;
+          } else {
+            document.getElementById('dev-total-revenue').innerHTML = revUsd;
+          }
+          document.getElementById('dev-total-transactions').textContent = total_transactions || 0;
+        }
 
         if (!platforms.length) {
           el.innerHTML = `
@@ -4877,6 +4909,8 @@
           const pk_live = p.publishable_key_live;
           const pk_test = p.publishable_key_test;
           const sk_test = p.secret_key_test;
+          const rev = p.revenue_usd_cents || 0;
+          const txCount = p.transactions_count || 0;
 
           // Live key block: show if generated, else show a "Generate" button
           const liveKeyBlock = pk_live
@@ -4911,20 +4945,31 @@
               ${pill(p.status)}
             </div>
 
-            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px">
+            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,0.05)">
+              <div>
+                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:700;letter-spacing:.5px">Revenue</div>
+                <div style="font-size:15px;font-weight:700;color:var(--accent)">${fmtUsd(rev)}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:700;letter-spacing:.5px">Transactions</div>
+                <div style="font-size:14px;font-weight:600">${txCount}</div>
+              </div>
+            </div>
+
+            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:14px;margin-bottom:8px">
               <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Test Keys · Testnet</div>
-              <code style="color:var(--accent);font-size:12px;display:block;word-break:break-all;margin-bottom:4px">${pk_test}</code>
-              <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
+              <code style="color:var(--accent);font-size:12px;display:block;word-break:break-all;margin-bottom:6px">${pk_test}</code>
+              <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+                <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;white-space:nowrap" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
               </div>
               <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Secret Key</div>
-              <code style="font-size:11px;color:rgba(255,255,255,.6);display:block;word-break:break-all;margin-bottom:4px">${sk_test}</code>
-              <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:10px">
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap" onclick="regenerateKey('test')">Rotate</button>
-                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;white-space:nowrap;color:var(--destructive);border-color:rgba(255,92,92,.3)" onclick="deleteTestKeys(${p.id})">Delete</button>
+              <code style="font-size:11px;color:rgba(255,255,255,.7);display:block;word-break:break-all;margin-bottom:6px">${sk_test}</code>
+              <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;align-items:center">
+                <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;white-space:nowrap" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
+                <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;white-space:nowrap" onclick="regenerateKey('test')">Rotate</button>
+                <button class="btn" title="Delete test keys" style="padding:5px 10px;font-size:12px;background:transparent;color:var(--destructive);border:1px solid var(--destructive);border-radius:8px;display:flex;align-items:center;white-space:nowrap" onclick="deleteTestKeys(${p.id})"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' width='14' height='14'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4h6v2'/></svg></button>
               </div>
-              <button class="btn" style="width:100%;padding:7px 12px;font-size:11px;background:rgba(0,152,234,.15);color:var(--accent);border:1px solid rgba(0,152,234,.3);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
+              <button class="btn" style="width:100%;padding:9px 12px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
             </div>
 
             ${liveKeyBlock}

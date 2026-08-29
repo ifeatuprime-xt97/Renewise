@@ -836,9 +836,15 @@ async def api_developer_platforms_get(
     request: Request,
     user: Annotated[dict, Depends(get_telegram_user)],
 ) -> dict:
-    """Returns all active platforms owned by the authenticated user."""
+    """Returns all active platforms owned by the authenticated user and aggregated stats."""
     platforms = await platform_svc.get_user_platforms(user["id"])
-    return {"platforms": platforms}
+    total_revenue_usd_cents = sum(p.get("revenue_usd_cents", 0) for p in platforms)
+    total_transactions = sum(p.get("transactions_count", 0) for p in platforms)
+    return {
+        "platforms": platforms,
+        "total_revenue_usd_cents": total_revenue_usd_cents,
+        "total_transactions": total_transactions
+    }
 
 @app.get("/api/developer/charges")
 @limiter.limit("60/minute")
@@ -965,7 +971,9 @@ async def api_developer_delete_test_keys(
     from renewise.db.connection import _db as _conn
     async with _conn() as db:
         await db.execute(
-            "UPDATE platforms SET secret_key_test = NULL, publishable_key_test = NULL WHERE id = $1",
+            # Only revoke the secret key — publishable_key_test has NOT NULL constraint.
+            # Nulling the secret key alone is sufficient: no secret = no authenticated API access.
+            "UPDATE platforms SET secret_key_test = NULL WHERE id = $1",
             platform_id
         )
         await db.execute(

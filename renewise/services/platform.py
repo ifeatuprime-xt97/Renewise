@@ -182,9 +182,18 @@ async def get_user_platforms(owner_telegram_id: int) -> list[dict]:
     """Retrieves all active platforms owned by a specific telegram user."""
     async with _db() as db:
         rows = await db.fetch(
-            "SELECT id, owner_telegram_id, platform_name, publishable_key_live, publishable_key_test, "
-            "secret_key_test, wallet_address, wallet_passcode_hash, status, created_at "
-            "FROM platforms WHERE owner_telegram_id = $1 AND status = 'active' ORDER BY created_at DESC",
+            """
+            SELECT 
+                p.id, p.owner_telegram_id, p.platform_name, p.publishable_key_live, p.publishable_key_test, 
+                p.secret_key_test, p.wallet_address, p.wallet_passcode_hash, p.status, p.created_at,
+                COALESCE(SUM(c.amount_usd_cents), 0) AS revenue_usd_cents,
+                COUNT(c.id) AS transactions_count
+            FROM platforms p
+            LEFT JOIN platform_charges c ON c.platform_id = p.id AND c.status = 'completed' AND c.mode = 'live'
+            WHERE p.owner_telegram_id = $1 AND p.status = 'active'
+            GROUP BY p.id
+            ORDER BY p.created_at DESC
+            """,
             owner_telegram_id
         )
         return [dict(r) for r in rows]
@@ -333,7 +342,7 @@ async def regenerate_platform_keys(platform_id: int, mode: str, actor_telegram_i
 async def get_platform_webhook(platform_id: int) -> dict | None:
     """Gets the active webhook endpoint and its recent delivery stats."""
     async with _db() as db:
-        ep = await db.fetchrow("SELECT * FROM webhook_endpoints WHERE platform_id = $1 AND active = 1", platform_id)
+        ep = await db.fetchrow("SELECT * FROM webhook_endpoints WHERE platform_id = $1 AND active = true", platform_id)
         if not ep:
             return None
         
