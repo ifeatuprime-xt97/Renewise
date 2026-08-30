@@ -320,24 +320,6 @@ async def get_platform_stats(platform_id: int) -> dict:
             "success_rate_pct": success_rate
         }
 
-async def regenerate_platform_keys(platform_id: int, mode: str, actor_telegram_id: int) -> str:
-    """Regenerates the secret key for a specific mode and invalidates the old one."""
-    new_raw_secret = f"sk_{mode}_{os.urandom(32).hex()}"
-    new_hash = _hash_secret(new_raw_secret)
-    
-    async with _db() as db:
-        if mode == 'live':
-            await db.execute("UPDATE platforms SET secret_key_live_hash = $1 WHERE id = $2", new_hash, platform_id)
-        elif mode == 'test':
-            await db.execute("UPDATE platforms SET secret_key_test_hash = $1 WHERE id = $2", new_hash, platform_id)
-        else:
-            raise ValueError("Mode must be 'live' or 'test'")
-            
-        await db.execute(
-            "INSERT INTO platform_audit_log (platform_id, action, actor_telegram_id, details) VALUES ($1, $2, $3, $4)",
-            platform_id, "regenerate_keys", actor_telegram_id, mode
-        )
-    return new_raw_secret
 
 async def get_platform_webhook(platform_id: int) -> dict | None:
     """Gets the active webhook endpoint and its recent delivery stats."""
@@ -373,7 +355,7 @@ async def set_platform_webhook(platform_id: int, url: str, actor_telegram_id: in
     """
     async with _db() as db:
         existing = await db.fetchrow(
-            "SELECT id, secret FROM webhook_endpoints WHERE platform_id = $1 AND active = 1",
+            "SELECT id, secret FROM webhook_endpoints WHERE platform_id = $1 AND active = TRUE",
             platform_id,
         )
 
@@ -393,11 +375,11 @@ async def set_platform_webhook(platform_id: int, url: str, actor_telegram_id: in
         # First-time setup — generate secret
         # Deactivate any stale inactive rows just in case
         await db.execute(
-            "UPDATE webhook_endpoints SET active = 0 WHERE platform_id = $1", platform_id
+            "UPDATE webhook_endpoints SET active = FALSE WHERE platform_id = $1", platform_id
         )
         secret = f"whsec_{os.urandom(24).hex()}"
         await db.execute(
-            "INSERT INTO webhook_endpoints (platform_id, url, secret, active) VALUES ($1, $2, $3, 1)",
+            "INSERT INTO webhook_endpoints (platform_id, url, secret, active) VALUES ($1, $2, $3, TRUE)",
             platform_id, url, secret,
         )
         await db.execute(
@@ -416,7 +398,7 @@ async def rotate_webhook_secret(platform_id: int, actor_telegram_id: int) -> str
     new_secret = f"whsec_{os.urandom(24).hex()}"
     async with _db() as db:
         result = await db.execute(
-            "UPDATE webhook_endpoints SET secret = $1 WHERE platform_id = $2 AND active = 1",
+            "UPDATE webhook_endpoints SET secret = $1 WHERE platform_id = $2 AND active = TRUE",
             new_secret, platform_id,
         )
         if result == "UPDATE 0":

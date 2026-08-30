@@ -11,6 +11,9 @@ Available commands
 /killswitch     — global kill switch
 /lookup <term>  — search by TX hash or Telegram user ID
 /msgadmin <id> <text>  — DM an admin via the main bot
+/announce       — send a public announcement to all users / admins / active subs
+/txfeed         — platform-wide transaction feed (filterable by status)
+/revenue        — revenue breakdown (all-time, MoM, by status)
 /pendingrefunds — overpayment refund queue
 /auditlog       — recent platform audit events
 /help           — command list
@@ -37,6 +40,11 @@ from renewise.superadmin.queries import (
     get_active_admins_page, get_total_active_admins_count,
     get_banned_admins_page, get_total_banned_admins_count,
     get_pending_send_refund_count, get_trigger_wallet_balance,
+    get_user_detail, get_all_user_ids,
+    get_platform_tx_feed, get_platform_tx_count,
+    get_platform_revenue_breakdown,
+    get_admin_groups_detail,
+    force_cancel_subscription, force_expire_subscription,
 )
 from renewise.watcher.toncenter import fetch_single_transaction, extract_in_msg_value
 from renewise.watcher.db import is_tx_processed
@@ -158,10 +166,19 @@ async def show_main_menu(update: Update, context):
             InlineKeyboardButton("⚡ Trigger Wallet",   callback_data="sa_trigger_status"),
             InlineKeyboardButton("⚙️ Settings",          callback_data="sa_settings_menu"),
         ],
+        [
+            InlineKeyboardButton("📣 Announce",          callback_data="sa_announce_prompt"),
+        ],
+        [
+            InlineKeyboardButton("💹 TX Feed",           callback_data="sa_txfeed_all_0"),
+            InlineKeyboardButton("📈 Revenue",           callback_data="sa_revenue"),
+        ],
     ]
     # Clear all multi-step flow state
     for key in ("fee_group_id", "sa_price_group_id", "sa_price_pending_cents",
-                "msg_admin_target", "reply_target", "lookup_pending", "global_fee_pending"):
+                "msg_admin_target", "msg_user_target", "reply_target",
+                "lookup_pending", "global_fee_pending", "announce_pending",
+                "announce_confirm_text", "announce_confirm_audience"):
         context.user_data.pop(key, None)
 
     markup = InlineKeyboardMarkup(keyboard)
@@ -182,6 +199,9 @@ async def help_cmd(update: Update, context):
         "/killswitch — global kill switch\n"
         "/lookup &lt;tx_hash|user_id&gt; — search\n"
         "/msgadmin &lt;user_id&gt; &lt;text&gt; — DM admin via main bot\n"
+        "/announce — send public announcement\n"
+        "/txfeed — platform-wide TX feed\n"
+        "/revenue — revenue breakdown\n"
         "/pendingrefunds — overpayment refund queue\n"
         "/auditlog — recent audit events\n"
         "/help — this list"
@@ -429,6 +449,15 @@ async def show_sa_payment_history(update: Update, context, group_id: int, page: 
             )
         text = "\n".join(lines)
 
+    # Per-subscription manage buttons (superadmin power actions)
+    for r in rows:
+        if r.get("status") not in ("pending",):
+            sub_name = html.escape(r.get("first_name") or str(r["telegram_user_id"]))[:14]
+            kb.append([InlineKeyboardButton(
+                f"⚙️ Manage {sub_name} (#{r['id']})",
+                callback_data=f"sa_sub_{r['id']}_{group_id}",
+            )])
+
     nav = []
     if page > 0:
         nav.append(InlineKeyboardButton("⬅️ Prev", callback_data=f"sa_pmthist_{group_id}_{page - 1}"))
@@ -441,8 +470,6 @@ async def show_sa_payment_history(update: Update, context, group_id: int, page: 
     kb.append([InlineKeyboardButton("🔙 Back to Group", callback_data=f"sa_group_{group_id}")])
     kb.append([InlineKeyboardButton("◀️ Main Menu",     callback_data="sa_home_main")])
     await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb))
-
-# ── Users directory ───────────────────────────────────────────────────────────
 
 async def show_users_page(update: Update, context, page: int):
     LIMIT = 5
@@ -480,6 +507,470 @@ async def show_users_page(update: Update, context, page: int):
         await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=markup)
     else:
         await update.message.reply_text(text, parse_mode="HTML", reply_markup=markup)
+
+# ── User detail ───────────────────────────────────────────────────────────────
+
+async def show_user_detail(update: Update, context, telegram_user_id: int):
+    user = await get_user_detail(telegram_user_id)
+    if not user:
+        msg = f"No user found with Telegram ID <code>{telegram_user_id}</code>."
+        if update.callback_query:
+            await update.callback_query.edit_message_text(
+                msg, parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Back", callback_data="sa_upage_0")]]),
+            )
+        else:
+            await update.message.reply_text(msg, parse_mode="HTML")
+        return
+
+    name  = html.escape(user.get("first_name") or "Unknown")
+    uname = f" (@{html.escape(user['username'])})" if user.get("username") else ""
+    joined = (user.get("created_at") or "")[:10] or "N/A"
+
+    text = (
+        f"👤 <b>{name}</b>{uname}\n"
+        f"<b>Telegram ID:</b> <code>{user['telegram_user_id']}</code>\n"
+        f"<b>Joined:</b>      {joined}\n\n"
+        f"📊 <b>Subscription Summary</b>\n"
+        f"  Active:  <b>{user['active_sub_count']}</b>\n"
+        f"  Total:   <b>{user['total_sub_count']}</b>\n"
+        f"  Spent:   <b>${user['total_spent_usd']:.2f} USD</b>\n"
+    )
+
+    if user["subscriptions"]:
+        text += "\n📋 <b>Subscriptions:</b>\n"
+        icon_map = {"active": "✅", "comped": "🎁", "expired": "⏰", "cancelled": "❌", "pending": "⏳"}
+        for s in user["subscriptions"][:8]:  # cap at 8 to stay within message limits
+            raw = s.get("price_locked_in") or 0
+            price_str = f"${float(raw):.2f}" if float(raw) < 1000 else f"{float(raw) / 1e9:.4f} TON"
+            title = html.escape(s.get("chat_title") or str(s["telegram_chat_id"]))
+            text += (
+                f"{icon_map.get(s['status'], '•')} <i>{title}</i> | {price_str}\n"
+                f"   Renews: {s.get('next_renewal_date') or 'N/A'}\n"
+            )
+        if len(user["subscriptions"]) > 8:
+            text += f"<i>…and {len(user['subscriptions']) - 8} more</i>\n"
+
+    kb = [
+        [InlineKeyboardButton("✉️ Message User", callback_data=f"sa_msguser_{user['telegram_user_id']}")],
+        [InlineKeyboardButton("🔙 Back to Users", callback_data="sa_upage_0")],
+        [InlineKeyboardButton("◀️ Main Menu",     callback_data="sa_home_main")],
+    ]
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb)
+        )
+    else:
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb))
+
+# ── Public announcements ──────────────────────────────────────────────────────
+
+async def show_announce_prompt(update: Update, context):
+    """Show audience selection for a broadcast announcement."""
+    text = (
+        "📣 <b>Send Public Announcement</b>\n\n"
+        "Choose who receives this message:\n\n"
+        "• <b>All Users</b> — every registered user\n"
+        "• <b>All Admins</b> — group admins only\n"
+        "• <b>Active Subscribers</b> — users with an active subscription\n"
+    )
+    kb = [
+        [InlineKeyboardButton("👥 All Users",           callback_data="sa_announce_audience_all_users")],
+        [InlineKeyboardButton("👑 All Admins",          callback_data="sa_announce_audience_admins")],
+        [InlineKeyboardButton("✅ Active Subscribers",  callback_data="sa_announce_audience_active_subs")],
+        [InlineKeyboardButton("❌ Cancel",              callback_data="sa_home_main")],
+    ]
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb)
+        )
+    else:
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb))
+
+
+async def show_announce_compose(update: Update, context, audience: str):
+    """Ask the superadmin to type the announcement text."""
+    audience_labels = {
+        "all_users":   "All Users",
+        "admins":      "All Admins",
+        "active_subs": "Active Subscribers",
+    }
+    context.user_data["announce_pending"] = audience
+    label = audience_labels.get(audience, audience)
+    kb = [[InlineKeyboardButton("❌ Cancel", callback_data="sa_announce_cancel")]]
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            f"📣 <b>Announcement → {label}</b>\n\n"
+            "Type your announcement message below. Supports HTML formatting.\n"
+            "<i>Example: <b>bold</b>, <i>italic</i>, <code>code</code></i>",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(kb),
+        )
+    else:
+        await update.message.reply_text(
+            f"📣 <b>Announcement → {label}</b>\n\nType your message:",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(kb),
+        )
+
+
+async def announce_text_handler(update: Update, context):
+    """Receives the typed announcement, shows a preview with confirm/cancel."""
+    audience = context.user_data.pop("announce_pending", None)
+    if audience is None:
+        return
+    text = update.message.text.strip()
+    if not text:
+        await update.message.reply_text("❌ Empty message — announcement cancelled.")
+        return
+
+    audience_labels = {
+        "all_users":   "All Users",
+        "admins":      "All Admins",
+        "active_subs": "Active Subscribers",
+    }
+    label = audience_labels.get(audience, audience)
+    preview = text[:300] + ("…" if len(text) > 300 else "")
+
+    # Store message in user_data for confirm step
+    context.user_data["announce_confirm_text"]     = text
+    context.user_data["announce_confirm_audience"] = audience
+
+    await update.message.reply_text(
+        f"📣 <b>Preview — {label}</b>\n\n"
+        f"<blockquote>{html.escape(preview)}</blockquote>\n\n"
+        "Send this to all recipients?",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ Send Now",  callback_data="sa_announce_confirm"),
+                InlineKeyboardButton("❌ Cancel",    callback_data="sa_announce_cancel"),
+            ]
+        ]),
+    )
+
+
+async def _do_broadcast(context, audience: str, text: str, actor: int):
+    """
+    Fetch recipient IDs by audience type, send the message via the main bot,
+    and return (sent_count, fail_count).
+    """
+    from renewise.db.connection import _db as _conn
+    from telegram import Bot
+    from renewise.db.queries import audit
+
+    # Resolve IDs
+    if audience == "all_users":
+        ids = await get_all_user_ids()
+    elif audience == "admins":
+        async with _conn() as db:
+            rows = await db.fetch(
+                "SELECT DISTINCT admin_telegram_id FROM groups "
+                "WHERE admin_telegram_id NOT IN (SELECT telegram_id FROM banned_admins)"
+            )
+            ids = [r["admin_telegram_id"] for r in rows]
+    elif audience == "active_subs":
+        async with _conn() as db:
+            rows = await db.fetch(
+                "SELECT DISTINCT u.telegram_user_id "
+                "FROM subscriptions s "
+                "JOIN users u ON u.id = s.user_id "
+                "WHERE s.status = 'active'"
+            )
+            ids = [r["telegram_user_id"] for r in rows]
+    else:
+        ids = []
+
+    sent = fail = 0
+    if not BOT_TOKEN or not ids:
+        return sent, fail
+
+    msg = f"📢 <b>Platform Announcement</b>\n\n{text}"
+    async with Bot(BOT_TOKEN) as bot:
+        for uid in ids:
+            try:
+                await bot.send_message(chat_id=uid, text=msg, parse_mode="HTML")
+                sent += 1
+            except Exception as exc:
+                log.debug("SA broadcast: failed for %d: %s", uid, exc)
+                fail += 1
+
+    await audit(None, "broadcast_announcement", actor, {
+        "audience": audience,
+        "sent": sent,
+        "failed": fail,
+        "preview": text[:120],
+    })
+    return sent, fail
+
+
+async def announce_cmd(update: Update, context):
+    """Slash command shortcut: /announce"""
+    await show_announce_prompt(update, context)
+
+# ── Message user (DM a subscriber via main bot) ───────────────────────────────
+
+async def msguser_text_handler(update: Update, context):
+    user_tg_id = context.user_data.pop("msg_user_target", None)
+    if user_tg_id is None:
+        return
+    text  = update.message.text.strip()
+    actor = update.effective_user.id
+    sent  = False
+    if BOT_TOKEN:
+        from telegram import Bot
+        try:
+            async with Bot(BOT_TOKEN) as bot:
+                await bot.send_message(
+                    chat_id=user_tg_id,
+                    text=f"📢 <b>Message from renewise platform:</b>\n\n{html.escape(text)}",
+                    parse_mode="HTML",
+                )
+            sent = True
+        except Exception as exc:
+            log.warning("SA: failed to DM user %d: %s", user_tg_id, exc)
+    from renewise.db.queries import audit
+    await audit(None, "user_messaged", actor,
+                {"target_user_telegram_id": user_tg_id, "sent": sent, "preview": text[:80]})
+    await update.message.reply_text("✅ Sent." if sent else "⚠️ Could not deliver.")
+
+# ── Platform-wide TX feed ─────────────────────────────────────────────────────
+
+_TX_STATUS_FILTERS = ["all", "active", "expired", "cancelled", "pending"]
+_TX_STATUS_LABELS  = {
+    "all":       "All",
+    "active":    "✅ Active",
+    "expired":   "⏰ Expired",
+    "cancelled": "❌ Cancelled",
+    "pending":   "⏳ Pending",
+}
+
+async def show_tx_feed(update: Update, context, status_filter: str, page: int):
+    LIMIT  = 8
+    offset = page * LIMIT
+    rows   = await get_platform_tx_feed(LIMIT, offset, status_filter)
+    total  = await get_platform_tx_count(status_filter)
+    total_pages = max(1, -(-total // LIMIT))
+
+    label = _TX_STATUS_LABELS.get(status_filter, status_filter)
+    if not rows:
+        text = f"💹 <b>TX Feed — {label}</b>\n\nNo transactions found."
+    else:
+        lines = [f"💹 <b>TX Feed — {label}</b>  ({page + 1}/{total_pages})\n"]
+        icon_map = {"active": "✅", "comped": "🎁", "expired": "⏰",
+                    "cancelled": "❌", "pending": "⏳"}
+        for r in rows:
+            raw        = float(r.get("price_locked_in") or 0)
+            price_str  = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} TON"
+            name       = html.escape(r.get("first_name") or "Unknown")
+            uname      = f"@{html.escape(r['username'])}" if r.get("username") else str(r["telegram_user_id"])
+            group_title = html.escape(r.get("chat_title") or f"Group {r['group_id']}")
+            tx_short   = f"{r['tx_hash'][:10]}…" if r.get("tx_hash") else "—"
+            ts         = (str(r.get("processed_at") or "")[:16]) or "?"
+            lines.append(
+                f"{icon_map.get(r['sub_status'], '•')} <b>{name}</b> ({uname})\n"
+                f"   💰 {price_str} → <i>{group_title}</i>\n"
+                f"   TX: <code>{tx_short}</code> | {ts}\n"
+            )
+        text = "\n".join(lines)
+
+    # ── filter tabs ──
+    filter_row = []
+    for sf in _TX_STATUS_FILTERS:
+        lbl = ("▶ " if sf == status_filter else "") + _TX_STATUS_LABELS[sf]
+        filter_row.append(InlineKeyboardButton(lbl, callback_data=f"sa_txfeed_{sf}_0"))
+
+    # Break filter buttons into two rows of 3
+    kb = [filter_row[:3], filter_row[3:]]
+
+    # Per-TX recheck buttons (only for rows that have a tx_hash)
+    for r in rows:
+        if r.get("tx_hash"):
+            kb.append([InlineKeyboardButton(
+                f"🔄 Recheck {r['tx_hash'][:10]}…",
+                callback_data=f"sa_r_{r['tx_hash']}",
+            )])
+
+    nav = []
+    if page > 0:
+        nav.append(InlineKeyboardButton("⬅️ Prev", callback_data=f"sa_txfeed_{status_filter}_{page - 1}"))
+    if offset + LIMIT < total:
+        nav.append(InlineKeyboardButton("Next ➡️", callback_data=f"sa_txfeed_{status_filter}_{page + 1}"))
+    if nav:
+        kb.append(nav)
+    kb.append([InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")])
+
+    markup = InlineKeyboardMarkup(kb)
+    if update.callback_query:
+        await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=markup)
+
+async def txfeed_cmd(update: Update, context):
+    await show_tx_feed(update, context, "all", 0)
+
+async def revenue_cmd(update: Update, context):
+    await show_revenue_breakdown(update, context)
+
+# ── Revenue breakdown ─────────────────────────────────────────────────────────
+
+async def show_revenue_breakdown(update: Update, context):
+    data = await get_platform_revenue_breakdown()
+
+    mom_diff  = data["cur_gmv"] - data["prev_gmv"]
+    mom_arrow = "📈" if mom_diff >= 0 else "📉"
+    mom_pct   = (
+        f"{abs(mom_diff / data['prev_gmv'] * 100):.1f}%"
+        if data["prev_gmv"] > 0 else "N/A"
+    )
+
+    lines = [
+        "📈 <b>Revenue Breakdown</b>\n",
+        f"<b>All-time GMV:</b>     <b>${data['all_time_rev']:.2f} USD</b>",
+        f"<b>This Month:</b>       ${data['cur_gmv']:.2f} USD",
+        f"<b>Last Month:</b>       ${data['prev_gmv']:.2f} USD",
+        f"<b>MoM Change:</b>       {mom_arrow} {mom_pct} (${mom_diff:+.2f})",
+        f"<b>Total TX Processed:</b> {data['total_tx']}",
+        f"<b>Total Users:</b>      {data['total_users']}",
+        f"<b>Groups (active/all):</b> {data['active_groups']}/{data['total_groups']}\n",
+        "<b>By Subscription Status:</b>",
+    ]
+    status_icons = {"active": "✅", "expired": "⏰", "cancelled": "❌",
+                    "comped": "🎁", "pending": "⏳"}
+    for status, vals in sorted(data["by_status"].items()):
+        icon = status_icons.get(status, "•")
+        lines.append(
+            f"  {icon} <b>{status.capitalize()}</b>: "
+            f"{vals['count']} subs | ${vals['revenue']:.2f}"
+        )
+
+    text = "\n".join(lines)
+    kb = [
+        [InlineKeyboardButton("💹 TX Feed",    callback_data="sa_txfeed_all_0")],
+        [InlineKeyboardButton("◀️ Main Menu",  callback_data="sa_home_main")],
+    ]
+    markup = InlineKeyboardMarkup(kb)
+    if update.callback_query:
+        await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=markup)
+
+# ── Admin detail view ─────────────────────────────────────────────────────────
+
+async def show_admin_detail(update: Update, context, admin_tg_id: int):
+    detail = await get_admin_groups_detail(admin_tg_id)
+
+    name  = html.escape(detail.get("first_name") or "Unknown")
+    uname = f" (@{html.escape(detail['username'])})" if detail.get("username") else ""
+    ban_line = ""
+    if detail["is_banned"]:
+        ban_line = f"\n⛔ <b>BANNED</b> — reason: {html.escape(detail.get('ban_reason') or 'N/A')}"
+    elif detail["is_suspended"]:
+        ban_line = "\n⏸ <b>SUSPENDED</b>"
+
+    text = (
+        f"👑 <b>Admin {name}</b>{uname}{ban_line}\n"
+        f"<b>Telegram ID:</b> <code>{admin_tg_id}</code>\n\n"
+        f"<b>Groups:</b>       {detail['total_groups']}\n"
+        f"<b>Active Subs:</b>  {detail['total_active_subs']}\n"
+        f"<b>Total Revenue:</b> ${detail['total_revenue']:.2f} USD\n"
+    )
+
+    if detail["groups"]:
+        text += "\n📂 <b>Groups:</b>\n"
+        for g in detail["groups"][:10]:
+            dot   = "🟢" if g["status"] == "active" else ("🔴" if g["status"] == "suspended" else "⚪")
+            price = (g.get("price_usd_cents") or 0) / 100
+            title = html.escape(g.get("chat_title") or str(g["telegram_chat_id"]))
+            text += (
+                f"{dot} #{g['id']} <i>{title}</i>\n"
+                f"   ${price:.2f}/cycle | {g['active_subs']} active | "
+                f"${float(g.get('total_revenue') or 0):.2f} rev\n"
+            )
+        if len(detail["groups"]) > 10:
+            text += f"<i>…and {len(detail['groups']) - 10} more</i>\n"
+
+    kb = []
+    # Action row
+    if not detail["is_banned"]:
+        kb.append([InlineKeyboardButton("🚫 Ban Admin", callback_data=f"sa_ban_select_{admin_tg_id}")])
+    else:
+        kb.append([InlineKeyboardButton("✅ Unban Admin", callback_data=f"sa_unban_select_{admin_tg_id}")])
+
+    if not detail["is_suspended"]:
+        kb.append([InlineKeyboardButton("⏸ Suspend Admin", callback_data=f"sa_suspend_admin_{admin_tg_id}")])
+    else:
+        kb.append([InlineKeyboardButton("▶️ Unsuspend Admin", callback_data=f"sa_unsuspend_admin_{admin_tg_id}")])
+
+    kb.append([InlineKeyboardButton("✉️ Message Admin", callback_data=f"sa_msgadmin_{admin_tg_id}")])
+
+    # Quick-manage group buttons
+    for g in detail["groups"][:5]:
+        kb.append([InlineKeyboardButton(
+            f"Manage group #{g['id']}", callback_data=f"sa_group_{g['id']}"
+        )])
+
+    kb.append([InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")])
+
+    markup = InlineKeyboardMarkup(kb)
+    if update.callback_query:
+        await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=markup)
+
+# ── Force-cancel / force-expire subscription (from payment history) ───────────
+
+async def show_sub_actions(update: Update, context, sub_id: int, group_id: int):
+    """Actions panel for a single subscription — force cancel or expire."""
+    from renewise.db.queries import get_payment_detail
+    sub = await get_payment_detail(sub_id)
+    if not sub:
+        await update.callback_query.edit_message_text(
+            "⚠️ Subscription not found.",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("🔙 Back", callback_data=f"sa_pmthist_{group_id}_0")
+            ]]),
+        )
+        return
+
+    raw       = float(sub.get("price_locked_in") or 0)
+    price_str = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} TON"
+    name      = html.escape(sub.get("first_name") or "Unknown")
+    uname     = f" (@{html.escape(sub['username'])})" if sub.get("username") else ""
+    status    = sub.get("status", "?")
+
+    text = (
+        f"⚙️ <b>Subscription #{sub_id}</b>\n\n"
+        f"<b>User:</b>   {name}{uname} (<code>{sub['telegram_user_id']}</code>)\n"
+        f"<b>Group:</b>  {html.escape(sub.get('chat_title') or str(group_id))}\n"
+        f"<b>Status:</b> {status.upper()}\n"
+        f"<b>Price:</b>  {price_str}\n"
+        f"<b>Renews:</b> {sub.get('next_renewal_date') or 'N/A'}\n"
+        f"<b>TX:</b>     <code>{(sub.get('last_payment_tx_hash') or 'None')}</code>\n"
+    )
+
+    kb = []
+    if status not in ("cancelled", "pending"):
+        kb.append([InlineKeyboardButton(
+            "❌ Force Cancel",
+            callback_data=f"sa_sub_cancel_{sub_id}_{group_id}",
+        )])
+    if status == "active":
+        kb.append([InlineKeyboardButton(
+            "⏰ Force Expire",
+            callback_data=f"sa_sub_expire_{sub_id}_{group_id}",
+        )])
+    if sub.get("last_payment_tx_hash"):
+        kb.append([InlineKeyboardButton(
+            "🔄 Recheck TX",
+            callback_data=f"sa_r_{sub['last_payment_tx_hash']}",
+        )])
+    kb.append([InlineKeyboardButton("🔙 Back to History", callback_data=f"sa_pmthist_{group_id}_0")])
+    kb.append([InlineKeyboardButton("◀️ Main Menu",        callback_data="sa_home_main")])
+
+    await update.callback_query.edit_message_text(
+        text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb)
+    )
 
 # ── Kill switch ───────────────────────────────────────────────────────────────
 
@@ -802,7 +1293,15 @@ async def show_ban_admin_page(update: Update, context, page: int):
         )
         return
     text = f"🚫 <b>Select Admin to Ban</b> (Page {page + 1})\n\n"
-    kb = [[InlineKeyboardButton(f"Admin {a['admin_telegram_id']}", callback_data=f"sa_ban_select_{a['admin_telegram_id']}")] for a in admins]
+    kb = [
+        [
+            InlineKeyboardButton(f"Admin {a['admin_telegram_id']}",
+                                 callback_data=f"sa_ban_select_{a['admin_telegram_id']}"),
+            InlineKeyboardButton("🔍 Detail",
+                                 callback_data=f"sa_admindetail_{a['admin_telegram_id']}"),
+        ]
+        for a in admins
+    ]
     nav = []
     if page > 0:
         nav.append(InlineKeyboardButton("⬅️ Prev", callback_data=f"sa_ban_page_{page - 1}"))
@@ -1164,12 +1663,16 @@ async def _multiplex_text_handler(update: Update, context):
         await sa_price_text_handler(update, context)
     elif "msg_admin_target" in context.user_data:
         await msgadmin_text_handler(update, context)
+    elif "msg_user_target" in context.user_data:
+        await msguser_text_handler(update, context)
     elif "reply_target" in context.user_data:
         await _reply_text_handler(update, context)
     elif "global_fee_pending" in context.user_data:
         await global_fee_text_handler(update, context)
     elif "lookup_pending" in context.user_data:
         await lookup_text_handler(update, context)
+    elif "announce_pending" in context.user_data:
+        await announce_text_handler(update, context)
     # else: no active flow — ignore
 
 # ── Master callback handler ───────────────────────────────────────────────────
@@ -1285,8 +1788,146 @@ async def sa_callback_handler(update: Update, context):
         await query.answer()
 
     elif data.startswith("sa_u_"):
-        await perform_lookup(update, context, data.split("_")[2])
+        uid_str = data.split("_")[2]
+        if uid_str.isdigit():
+            await show_user_detail(update, context, int(uid_str))
+        else:
+            await perform_lookup(update, context, uid_str)
         await query.answer()
+
+    # ── message user (DM a subscriber) ───────────────────────────────────────
+    elif data.startswith("sa_msguser_"):
+        user_tg_id = int(data.split("_")[2])
+        context.user_data["msg_user_target"] = user_tg_id
+        await query.edit_message_text(
+            f"✉️ <b>Message User {user_tg_id}</b>\n\nType your message. Delivered via main bot.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("❌ Cancel", callback_data="sa_cancelmsgusr"),
+                InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main"),
+            ]]),
+        )
+        await query.answer()
+
+    elif data == "sa_cancelmsgusr":
+        context.user_data.pop("msg_user_target", None)
+        await query.edit_message_text(
+            "Message cancelled.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
+        )
+        await query.answer()
+
+    # ── TX feed ───────────────────────────────────────────────────────────────
+    elif data.startswith("sa_txfeed_"):
+        parts  = data.split("_")       # sa / txfeed / <filter> / <page>
+        status_filter = parts[2]
+        page   = int(parts[3]) if len(parts) > 3 else 0
+        await show_tx_feed(update, context, status_filter, page)
+        await query.answer()
+
+    elif data == "sa_revenue":
+        await show_revenue_breakdown(update, context)
+        await query.answer()
+
+    # ── admin detail ──────────────────────────────────────────────────────────
+    elif data.startswith("sa_admindetail_"):
+        admin_tg_id = int(data.split("_")[2])
+        await show_admin_detail(update, context, admin_tg_id)
+        await query.answer()
+
+    elif data.startswith("sa_suspend_admin_"):
+        target = int(data.split("_")[3])
+        from renewise.db.queries import suspend_admin, audit
+        await suspend_admin(target)
+        await audit(None, "suspend_admin", user_id, {"target_telegram_id": target})
+        await query.answer("Admin suspended.", show_alert=True)
+        await show_admin_detail(update, context, target)
+
+    elif data.startswith("sa_unsuspend_admin_"):
+        target = int(data.split("_")[3])
+        from renewise.db.queries import unsuspend_admin, audit
+        await unsuspend_admin(target)
+        await audit(None, "unsuspend_admin", user_id, {"target_telegram_id": target})
+        await query.answer("Admin unsuspended.", show_alert=True)
+        await show_admin_detail(update, context, target)
+
+    # ── subscription force-actions ────────────────────────────────────────────
+    elif data.startswith("sa_sub_"):
+        parts = data.split("_")
+        # sa_sub_<sub_id>_<group_id>          → show actions panel
+        # sa_sub_cancel_<sub_id>_<group_id>   → force cancel
+        # sa_sub_expire_<sub_id>_<group_id>   → force expire
+        if parts[2] == "cancel":
+            sub_id   = int(parts[3])
+            group_id = int(parts[4])
+            ok = await force_cancel_subscription(sub_id, user_id)
+            await query.answer(
+                "Subscription cancelled." if ok else "Already cancelled or not found.",
+                show_alert=True,
+            )
+            await show_sa_payment_history(update, context, group_id, 0)
+        elif parts[2] == "expire":
+            sub_id   = int(parts[3])
+            group_id = int(parts[4])
+            ok = await force_expire_subscription(sub_id, user_id)
+            await query.answer(
+                "Subscription expired." if ok else "Not active or not found.",
+                show_alert=True,
+            )
+            await show_sa_payment_history(update, context, group_id, 0)
+        else:
+            sub_id   = int(parts[2])
+            group_id = int(parts[3])
+            await show_sub_actions(update, context, sub_id, group_id)
+            await query.answer()
+
+    # ── announcements ─────────────────────────────────────────────────────────
+    elif data == "sa_announce_prompt":
+        await show_announce_prompt(update, context)
+        await query.answer()
+
+    elif data.startswith("sa_announce_audience_"):
+        audience = data[len("sa_announce_audience_"):]
+        await show_announce_compose(update, context, audience)
+        await query.answer()
+
+    elif data == "sa_announce_cancel":
+        context.user_data.pop("announce_pending", None)
+        context.user_data.pop("announce_confirm_text", None)
+        context.user_data.pop("announce_confirm_audience", None)
+        await query.edit_message_text(
+            "Announcement cancelled.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
+        )
+        await query.answer()
+
+    elif data == "sa_announce_confirm":
+        text_to_send = context.user_data.pop("announce_confirm_text", None)
+        audience     = context.user_data.pop("announce_confirm_audience", None)
+        if not text_to_send or not audience:
+            await query.answer("Nothing to send.", show_alert=True)
+            await show_main_menu(update, context)
+            return
+
+        await query.edit_message_text(
+            "📤 Sending announcement… this may take a moment.",
+            parse_mode="HTML",
+        )
+        sent, fail = await _do_broadcast(context, audience, text_to_send, user_id)
+        audience_labels = {
+            "all_users":   "All Users",
+            "admins":      "All Admins",
+            "active_subs": "Active Subscribers",
+        }
+        label = audience_labels.get(audience, audience)
+        await query.edit_message_text(
+            f"📣 <b>Announcement Sent — {label}</b>\n\n"
+            f"✅ Delivered: <b>{sent}</b>\n"
+            f"❌ Failed:    <b>{fail}</b>",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
+        )
+        await query.answer("Broadcast complete.", show_alert=True)
 
     # ── refunds ───────────────────────────────────────────────────────────────
     elif data.startswith("sa_refunds_"):
@@ -1609,6 +2250,9 @@ def build_app():
     application.add_handler(CommandHandler("killswitch",     killswitch_cmd))
     application.add_handler(CommandHandler("lookup",         lookup_cmd))
     application.add_handler(CommandHandler("msgadmin",       msgadmin_cmd))
+    application.add_handler(CommandHandler("announce",       announce_cmd))
+    application.add_handler(CommandHandler("txfeed",         txfeed_cmd))
+    application.add_handler(CommandHandler("revenue",        revenue_cmd))
     application.add_handler(CommandHandler("pendingrefunds", pending_refunds_cmd))
     application.add_handler(CommandHandler("auditlog",       auditlog_cmd))
 

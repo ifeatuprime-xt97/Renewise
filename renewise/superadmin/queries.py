@@ -311,6 +311,247 @@ async def get_total_platforms_count() -> int:
     async with _db() as db:
         return int(await db.fetchval("SELECT COUNT(*) FROM platforms") or 0)
 
+async def get_user_detail(telegram_user_id: int) -> dict | None:
+    """Full profile for a single user: base info + subscription summary."""
+    async with _db() as db:
+        user = await db.fetchrow(
+            "SELECT * FROM users WHERE telegram_user_id=$1", telegram_user_id
+        )
+        if not user:
+            return None
+        user = dict(user)
+
+        # All subscriptions with group title
+        subs = await db.fetch(
+            "SELECT s.id, s.status, s.price_locked_in, s.start_date, "
+            "s.next_renewal_date, s.last_payment_tx_hash, "
+            "g.id AS group_id, g.chat_title, g.telegram_chat_id "
+            "FROM subscriptions s "
+            "JOIN groups g ON g.id = s.group_id "
+            "WHERE s.user_id = $1 "
+            "ORDER BY s.created_at DESC",
+            user["id"],
+        )
+        user["subscriptions"] = [dict(s) for s in subs]
+        user["active_sub_count"]  = sum(1 for s in user["subscriptions"] if s["status"] == "active")
+        user["total_sub_count"]   = len(user["subscriptions"])
+        user["total_spent_usd"]   = sum(
+            float(s["price_locked_in"] or 0)
+            for s in user["subscriptions"]
+            if s["status"] in ("active", "comped", "expired", "cancelled")
+        )
+        return user
+
+
+async def get_all_user_ids() -> list[int]:
+    """Return telegram_user_id for every user — used for broadcast."""
+    async with _db() as db:
+        rows = await db.fetch("SELECT telegram_user_id FROM users ORDER BY id ASC")
+        return [r["telegram_user_id"] for r in rows]
+
+
+# ── platform-wide TX feed ─────────────────────────────────────────────────────
+
+async def get_platform_tx_feed(
+    limit: int,
+    offset: int,
+    status_filter: str = "all",   # "all" | "active" | "expired" | "cancelled" | "pending"
+) -> list[dict]:
+    """
+    Platform-wide transaction feed ordered by most recent first.
+    Joins processed_tx_hashes → subscriptions → users → groups.
+    Falls back to subscriptions with a tx_hash when not yet in processed_tx_hashes.
+    """
+    from renewise.config import USE_POSTGRES
+    where = "" if status_filter == "all" else f"AND s.status = '{status_filter}'"
+    query = (
+        "SELECT "
+        "  p.tx_hash, p.processed_at, "
+        "  s.id AS sub_id, s.status AS sub_status, s.price_locked_in, "
+        "  s.start_date, s.next_renewal_date, "
+        "  u.telegram_user_id, u.first_name, u.username, "
+        "  g.id AS group_id, g.chat_title, g.admin_telegram_id "
+        "FROM processed_tx_hashes p "
+        "JOIN subscriptions s ON s.id = p.sub_id "
+        "JOIN users u ON u.id = s.user_id "
+        "JOIN groups g ON g.id = s.group_id "
+        f"WHERE 1=1 {where} "
+        "ORDER BY p.processed_at DESC "
+        "LIMIT $1 OFFSET $2"
+    )
+    async with _db() as db:
+        rows = await db.fetch(query, limit, offset)
+        return [dict(r) for r in rows]
+
+
+async def get_platform_tx_count(status_filter: str = "all") -> int:
+    where = "" if status_filter == "all" else f"AND s.status = '{status_filter}'"
+    query = (
+        "SELECT COUNT(*) FROM processed_tx_hashes p "
+        "JOIN subscriptions s ON s.id = p.sub_id "
+        f"WHERE 1=1 {where}"
+    )
+    async with _db() as db:
+        return int(await db.fetchval(query) or 0)
+
+
+async def get_platform_revenue_breakdown() -> dict:
+    """
+    Per-status revenue + counts for the revenue breakdown screen.
+    Also returns all-time totals and a simple month-over-month comparison.
+    """
+    from renewise.config import USE_POSTGRES
+    async with _db() as db:
+        # All-time per-status revenue
+        rows = await db.fetch(
+            "SELECT s.status, COUNT(*) AS cnt, "
+            "COALESCE(SUM(s.price_locked_in), 0) AS revenue "
+            "FROM subscriptions s "
+            "WHERE s.status != 'pending' "
+            "GROUP BY s.status"
+        )
+        by_status = {r["status"]: {"count": int(r["cnt"]), "revenue": float(r["revenue"])} for r in rows}
+
+        # Monthly GMV — current vs previous
+        if USE_POSTGRES:
+            cur_gmv = float(await db.fetchval(
+                "SELECT COALESCE(SUM(s.price_locked_in), 0) "
+                "FROM processed_tx_hashes p JOIN subscriptions s ON s.id=p.sub_id "
+                "WHERE DATE_TRUNC('month', p.processed_at) = DATE_TRUNC('month', NOW())"
+            ) or 0)
+            prev_gmv = float(await db.fetchval(
+                "SELECT COALESCE(SUM(s.price_locked_in), 0) "
+                "FROM processed_tx_hashes p JOIN subscriptions s ON s.id=p.sub_id "
+                "WHERE DATE_TRUNC('month', p.processed_at) = "
+                "DATE_TRUNC('month', NOW() - INTERVAL '1 month')"
+            ) or 0)
+        else:
+            cur_gmv = float(await db.fetchval(
+                "SELECT COALESCE(SUM(s.price_locked_in), 0) "
+                "FROM processed_tx_hashes p JOIN subscriptions s ON s.id=p.sub_id "
+                "WHERE strftime('%Y-%m', p.processed_at) = strftime('%Y-%m', 'now')"
+            ) or 0)
+            prev_gmv = float(await db.fetchval(
+                "SELECT COALESCE(SUM(s.price_locked_in), 0) "
+                "FROM processed_tx_hashes p JOIN subscriptions s ON s.id=p.sub_id "
+                "WHERE strftime('%Y-%m', p.processed_at) = "
+                "strftime('%Y-%m', date('now','-1 month'))"
+            ) or 0)
+
+        total_tx = int(await db.fetchval("SELECT COUNT(*) FROM processed_tx_hashes") or 0)
+        total_users = int(await db.fetchval("SELECT COUNT(*) FROM users") or 0)
+        total_groups = int(await db.fetchval("SELECT COUNT(*) FROM groups") or 0)
+        active_groups = int(await db.fetchval(
+            "SELECT COUNT(*) FROM groups WHERE status='active'"
+        ) or 0)
+
+    all_time_rev = sum(v["revenue"] for v in by_status.values())
+    return {
+        "by_status":    by_status,
+        "all_time_rev": all_time_rev,
+        "cur_gmv":      cur_gmv,
+        "prev_gmv":     prev_gmv,
+        "total_tx":     total_tx,
+        "total_users":  total_users,
+        "total_groups": total_groups,
+        "active_groups": active_groups,
+    }
+
+
+async def get_admin_groups_detail(admin_telegram_id: int) -> dict:
+    """
+    Full picture of a single admin: all their groups with per-group
+    active subs, total revenue, status, and the admin's ban/suspension state.
+    """
+    async with _db() as db:
+        groups_rows = await db.fetch(
+            "SELECT g.id, g.telegram_chat_id, g.chat_title, g.status, "
+            "g.price_usd_cents, g.billing_interval_days, g.payout_wallet_address, "
+            "g.created_at, "
+            "(SELECT COUNT(*) FROM subscriptions s "
+            " WHERE s.group_id=g.id AND s.status='active') AS active_subs, "
+            "(SELECT COUNT(*) FROM subscriptions s "
+            " WHERE s.group_id=g.id AND s.status='comped') AS comped_subs, "
+            "(SELECT COALESCE(SUM(s.price_locked_in), 0) "
+            " FROM processed_tx_hashes p "
+            " JOIN subscriptions s ON s.id=p.sub_id "
+            " WHERE s.group_id=g.id) AS total_revenue "
+            "FROM groups g WHERE g.admin_telegram_id=$1 "
+            "ORDER BY g.created_at DESC",
+            admin_telegram_id,
+        )
+        groups = [dict(r) for r in groups_rows]
+
+        is_banned = bool(await db.fetchval(
+            "SELECT 1 FROM banned_admins WHERE telegram_id=$1", admin_telegram_id
+        ))
+        ban_reason = await db.fetchval(
+            "SELECT reason FROM banned_admins WHERE telegram_id=$1", admin_telegram_id
+        )
+        is_suspended = bool(await db.fetchval(
+            "SELECT 1 FROM admin_suspensions WHERE admin_telegram_id=$1", admin_telegram_id
+        ))
+        user_row = await db.fetchrow(
+            "SELECT first_name, username FROM users WHERE telegram_user_id=$1",
+            admin_telegram_id,
+        )
+
+    total_rev   = sum(float(g.get("total_revenue") or 0) for g in groups)
+    total_active = sum(int(g.get("active_subs") or 0) for g in groups)
+    return {
+        "admin_telegram_id": admin_telegram_id,
+        "first_name":   user_row["first_name"] if user_row else None,
+        "username":     user_row["username"]   if user_row else None,
+        "groups":       groups,
+        "total_groups": len(groups),
+        "total_active_subs": total_active,
+        "total_revenue": total_rev,
+        "is_banned":    is_banned,
+        "ban_reason":   ban_reason,
+        "is_suspended": is_suspended,
+    }
+
+
+async def force_cancel_subscription(sub_id: int, actor_tg_id: int) -> bool:
+    """Cancel a subscription by its DB id. Returns True if a row was updated."""
+    async with _db() as db:
+        row = await db.fetchrow(
+            "UPDATE subscriptions SET status='cancelled', updated_at=NOW() "
+            "WHERE id=$1 AND status NOT IN ('cancelled','pending') "
+            "RETURNING id, group_id",
+            sub_id,
+        )
+        if not row:
+            return False
+        await db.execute(
+            "INSERT INTO admin_audit_log (group_id, action, actor_telegram_id, details) "
+            "VALUES ($1,$2,$3,$4)",
+            row["group_id"], "force_cancel_subscription", actor_tg_id,
+            f"sub_id={sub_id}",
+        )
+        return True
+
+
+async def force_expire_subscription(sub_id: int, actor_tg_id: int) -> bool:
+    """Expire a subscription immediately. Returns True if a row was updated."""
+    async with _db() as db:
+        row = await db.fetchrow(
+            "UPDATE subscriptions SET status='expired', updated_at=NOW() "
+            "WHERE id=$1 AND status='active' "
+            "RETURNING id, group_id",
+            sub_id,
+        )
+        if not row:
+            return False
+        await db.execute(
+            "INSERT INTO admin_audit_log (group_id, action, actor_telegram_id, details) "
+            "VALUES ($1,$2,$3,$4)",
+            row["group_id"], "force_expire_subscription", actor_tg_id,
+            f"sub_id={sub_id}",
+        )
+        return True
+
+
 async def get_platform_details(platform_id: int) -> dict | None:
     async with _db() as db:
         row = await db.fetchrow("SELECT * FROM platforms WHERE id = $1", platform_id)

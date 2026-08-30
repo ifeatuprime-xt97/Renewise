@@ -60,14 +60,17 @@ async def client(conn, monkeypatch):
     """
     httpx AsyncClient wired to the FastAPI app.
 
-    - Patches queries._db to use the shared in-memory connection.
+    - Patches queries._db to use the shared in-memory connection wrapped in _SqConn.
     - Overrides get_telegram_user to return a fixed admin user (id=999).
     - Skips the lifespan (init_db / cleanup tasks) — DB is already set up.
     """
-    # Patch DB
+    from renewise.db.connection import _SqConn
+
+    # Wrap the raw aiosqlite connection in _SqConn so .fetchrow(), .fetch(),
+    # .execute(), and .fetchval() all exist on the object the app receives.
     @asynccontextmanager
     async def _fake_db():
-        yield conn
+        yield _SqConn(conn)
     monkeypatch.setattr(queries, "_db", _fake_db)
 
     # Seed a group owned by admin 999
@@ -100,9 +103,10 @@ async def client(conn, monkeypatch):
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
-# Valid testnet bounceable addresses (CRC16-verified, matches TONCENTER_TESTNET=true in .env)
-VALID_WALLET  = "kQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHTW"
-VALID_WALLET2 = "kQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWT3"
+# Valid mainnet bounceable (EQ) addresses — CRC16-verified, 48-char base64url.
+# tag=0x11 (bounceable mainnet), workchain=0x00, deterministic 32-byte payload.
+VALID_WALLET  = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAd99"
+VALID_WALLET2 = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAu8e"
 
 
 # ═════════════════════════════════════════════════════════════════════════════

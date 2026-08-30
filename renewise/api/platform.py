@@ -7,7 +7,7 @@ from cachetools import TTLCache
 from renewise.db.connection import _db
 from renewise.services.payment import generate_platform_payment_request
 
-platform_router = APIRouter(prefix="/v1")
+platform_router = APIRouter(prefix="/api/platform")
 auth_cache = TTLCache(maxsize=1000, ttl=60)
 
 async def authenticate_platform(authorization: Annotated[str, Header()]) -> dict:

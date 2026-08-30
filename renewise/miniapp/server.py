@@ -302,8 +302,6 @@ async def _refresh_group_meta_from_telegram(group_row: dict) -> dict:
 
     current_title = (group_row.get("chat_title") or "").strip()
     current_type = (group_row.get("chat_type") or "").strip()
-    if current_title and current_type:
-        return group_row
 
     try:
         import aiohttp as _aiohttp

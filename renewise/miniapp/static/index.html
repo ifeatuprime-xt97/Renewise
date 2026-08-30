@@ -4223,21 +4223,24 @@
     let currentPlatformId = null;
     let chargesPage = 0;
     const CHARGES_PER_PAGE = 20;
+    let _cachedPlatforms = [];  // module-level cache populated by loadPlatforms()
 
     async function showPlatformCharges(platformId, platformName) {
       currentPlatformId = platformId;
       chargesPage = 0;
-      document.getElementById('confirm-title').textContent = `${platformName} Dashboard`;
-      document.getElementById('confirm-message').innerHTML = `
-        <div id="dashboard-content" style="text-align:left;max-height:60vh;overflow-y:auto;padding-right:8px;">
-          <div style="text-align:center;padding:20px;color:rgba(255,255,255,.5)">Loading dashboard...</div>
+
+      // Use the existing pmt-detail-overlay as the dashboard sheet
+      const overlay  = document.getElementById('pmt-detail-overlay');
+      const sheet    = document.getElementById('pmt-detail-body');
+      const titleEl  = overlay.querySelector('h2');
+      if (titleEl) titleEl.textContent = `${platformName} Dashboard`;
+
+      sheet.innerHTML = `
+        <div id="dashboard-content" style="text-align:left;padding-right:4px">
+          <div style="text-align:center;padding:20px;color:rgba(255,255,255,.5)">Loading dashboard…</div>
         </div>
       `;
-      document.getElementById('confirm-buttons').innerHTML = `
-        <button class="btn" onclick="closeConfirm()">Back to Platforms</button>
-      `;
-      document.getElementById('confirm-modal').style.display = 'flex';
-
+      overlay.classList.add('show');
       await renderDashboard();
     }
 
@@ -4270,8 +4273,8 @@
         `;
 
         // --- 2. API Keys ---
-        // Find platform from platforms array
-        const p = platforms.find(x => x.id === currentPlatformId);
+        // Find platform from cached platforms array
+        const p = _cachedPlatforms.find(x => x.id === currentPlatformId);
         if (p) {
           const dashLiveBlock = p.publishable_key_live
             ? `<div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;word-break:break-all">
@@ -4283,7 +4286,7 @@
                 <div style="display:flex;justify-content:space-between;align-items:center">
                   <span style="font-size:11px;color:rgba(255,255,255,.5)">Secret key: shown once on generation</span>
                   <div style="display:flex;gap:6px">
-                    <button class="btn" style="padding:3px 10px;font-size:11px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.1)" onclick="document.getElementById('sb-env').value='mainnet'; App.nav('dev-sandbox')">Sandbox</button>
+                    <button class="btn" style="padding:3px 10px;font-size:11px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.1)" onclick="setSandboxEnv('live'); App.nav('dev-sandbox')">Sandbox</button>
                     <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--error)" onclick="regenerateKey('live')">Rotate</button>
                   </div>
                 </div>
@@ -4323,7 +4326,7 @@
                   <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="regenerateKey('test')">Rotate</button>
                   <button class="btn" title="Delete test keys" style="padding:5px 10px;font-size:12px;background:transparent;color:var(--destructive);border:1px solid var(--destructive);border-radius:8px;display:flex;align-items:center" onclick="deleteTestKeys(${p.id})"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' width='14' height='14'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4h6v2'/></svg></button>
                 </div>
-                <button class="btn" style="width:100%;padding:9px 12px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
+                <button class="btn" style="width:100%;padding:9px 12px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="setSandboxEnv('test'); App.nav('dev-sandbox')">Open Sandbox</button>
               </div>
 
               ${dashLiveBlock}
@@ -4849,6 +4852,7 @@
         const r = await apiFetch(`${API}/developer/platforms`, { headers: H() });
         if (!r.ok) throw new Error(r.status);
         const { platforms, total_revenue_usd_cents, total_transactions } = await r.json();
+        _cachedPlatforms = platforms || [];
 
         const devHeroCard = document.getElementById('dev-hero-card');
         if (total_revenue_usd_cents !== undefined) {
@@ -4943,7 +4947,7 @@
                 <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;white-space:nowrap" onclick="regenerateKey('test')">Rotate</button>
                 <button class="btn" title="Delete test keys" style="padding:5px 10px;font-size:12px;background:transparent;color:var(--destructive);border:1px solid var(--destructive);border-radius:8px;display:flex;align-items:center;white-space:nowrap" onclick="deleteTestKeys(${p.id})"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' width='14' height='14'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4h6v2'/></svg></button>
               </div>
-              <button class="btn" style="width:100%;padding:9px 12px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="document.getElementById('sb-env').value='testnet'; App.nav('dev-sandbox')">Open Sandbox</button>
+              <button class="btn" style="width:100%;padding:9px 12px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="setSandboxEnv('test'); App.nav('dev-sandbox')">Open Sandbox</button>
             </div>
 
             ${liveKeyBlock}
@@ -5198,46 +5202,9 @@
       }
     }
 
-    async function showPlatformCharges(platformId, platformName) {
-      document.getElementById('confirm-title').textContent = `${platformName} Charges`;
-      document.getElementById('confirm-body').innerHTML = '<div class="loading">Loading…</div>';
-      document.getElementById('confirm-overlay').classList.add('show');
-
-      try {
-        const r = await apiFetch(`${API}/developer/platforms/${platformId}/charges`, { headers: H() });
-        if (!r.ok) throw new Error(await _errDetail(r));
-        const { charges } = await r.json();
-
-        if (!charges.length) {
-          document.getElementById('confirm-body').innerHTML = '<p style="color:rgba(255,255,255,.6);text-align:center;margin:20px 0">No charges yet.</p>';
-          return;
-        }
-
-        let html = '<div style="max-height:60vh;overflow-y:auto;text-align:left;margin-top:16px">';
-        charges.forEach(c => {
-          const usd = c.amount_usd_cents ? fmtUsd(c.amount_usd_cents) : '—';
-          const icon = c.status === 'completed' ? '✅' : c.status === 'failed' ? '❌' : c.status === 'expired' ? '⏰' : '⏳';
-          html += `
-            <div style="padding:10px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:8px">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                <span style="font-weight:700">${usd}</span>
-                <span>${icon} ${c.status}</span>
-              </div>
-              <div style="font-size:11px;color:rgba(255,255,255,.5);font-family:monospace">
-                Ref: ${esc(c.external_reference)}
-              </div>
-            </div>
-          `;
-        });
-        html += '</div>';
-
-        document.getElementById('confirm-body').innerHTML = html;
-      } catch (e) {
-        document.getElementById('confirm-body').innerHTML = `<p style="color:var(--danger)">Failed to load charges.</p>`;
-      }
-    }
 
   </script>
+
 
   <script>
     // ════════════════════════════════════════════════════
