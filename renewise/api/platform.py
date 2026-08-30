@@ -1,5 +1,5 @@
 import hashlib
-from fastapi import APIRouter, Header, HTTPException, Depends
+from fastapi import APIRouter, Header, HTTPException, Depends, Request
 from pydantic import BaseModel
 from typing import Annotated
 from cachetools import TTLCache
@@ -56,6 +56,7 @@ class CreateChargeRequest(BaseModel):
 
 @platform_router.post("/charges")
 async def create_charge(
+    request: Request,
     req: CreateChargeRequest,
     platform: dict = Depends(authenticate_platform)
 ):
@@ -92,7 +93,6 @@ async def create_charge(
             platform=platform,
             charge_id=charge_id,
             price_usd_cents=req.amount_usd_cents,
-            mode=auth_mode
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -118,18 +118,18 @@ async def create_charge(
             platform["id"], "charge_created", platform["owner_telegram_id"], f"charge_id={charge_id}"
         )
 
+    base_url = str(request.base_url).rstrip('/')
     return {
         "id": charge_id,
         "external_reference": req.external_reference,
         "amount_usd_cents": req.amount_usd_cents,
         "status": "pending",
-        "payment_url": payment_req.payment_url,
-        "vault_address": payment_req.vault_address,
-        "required_nano": payment_req.required_nano
+        "checkout_url": f"{base_url}/checkout/{charge_id}"
     }
 
 @platform_router.get("/charges/{charge_id}")
 async def get_charge(
+    request: Request,
     charge_id: int,
     platform: dict = Depends(authenticate_platform)
 ):
@@ -141,13 +141,13 @@ async def get_charge(
         if not row:
             raise HTTPException(status_code=404, detail="Charge not found")
             
+        base_url = str(request.base_url).rstrip('/')
         return {
             "id": row["id"],
             "external_reference": row["external_reference"],
             "amount_usd_cents": row["amount_usd_cents"],
             "status": row["status"],
-            "vault_address": row["vault_address"],
-            "required_nano": row["required_nano_amount"],
+            "checkout_url": f"{base_url}/checkout/{row['id']}",
             "tx_hash": row["tx_hash"],
             "created_at": row["created_at"],
             "completed_at": row["completed_at"],

@@ -153,6 +153,40 @@ async def root() -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
 
 
+@app.get("/checkout/{charge_id}")
+async def checkout_ui(charge_id: int) -> FileResponse:
+    return FileResponse(_STATIC_DIR / "checkout.html")
+
+
+@app.get("/api/public/checkout/{charge_id}")
+@limiter.limit("30/minute")
+async def api_public_checkout(request: Request, charge_id: int) -> dict:
+    """Public endpoint to get charge details for the hosted checkout page."""
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        row = await db.fetchrow(
+            "SELECT * FROM platform_charges WHERE id = $1", charge_id
+        )
+        if not row:
+            raise HTTPException(status_code=404, detail="Charge not found")
+        
+        # We need the payment_url (deep link). Currently it's not stored in DB,
+        # but we can construct it if we have vault_address and required_nano.
+        vault_address = row["vault_address"]
+        required_nano = row["required_nano_amount"]
+        payment_url = f"ton://transfer/{vault_address}?amount={required_nano}" if vault_address else None
+            
+        return {
+            "id": row["id"],
+            "external_reference": row["external_reference"],
+            "amount_usd_cents": row["amount_usd_cents"],
+            "status": row["status"],
+            "vault_address": vault_address,
+            "required_nano": required_nano,
+            "payment_url": payment_url
+        }
+
+
 @app.get("/logo")
 async def logo() -> FileResponse:
     return FileResponse(_STATIC_DIR / "public" / "logo.jpeg")
@@ -903,6 +937,57 @@ async def api_developer_generate_live_keys(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/api/developer/platforms/{platform_id}/wallet")
+@limiter.limit("5/minute")
+async def api_developer_update_wallet(
+    request: Request,
+    platform_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """Updates the payout wallet for a developer platform."""
+    body = await request.json()
+    wallet_address = body.get("wallet_address")
+    passcode = body.get("passcode")
+    
+    if not wallet_address:
+        raise HTTPException(status_code=400, detail="Wallet address is required")
+        
+    telegram_user_id = user["id"]
+    await verify_platform_ownership(platform_id, telegram_user_id)
+    
+    success = await platform_svc.update_platform_wallet(platform_id, wallet_address, telegram_user_id, passcode)
+    if not success:
+        raise HTTPException(status_code=403, detail="Incorrect or missing passcode")
+        
+    return {"ok": True}
+
+@app.post("/api/developer/platforms/{platform_id}/passcode")
+@limiter.limit("5/minute")
+async def api_developer_set_passcode(
+    request: Request,
+    platform_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """Sets or updates the passcode for a developer platform."""
+    body = await request.json()
+    new_passcode = body.get("new_passcode")
+    current_passcode = body.get("current_passcode")
+    
+    if not new_passcode:
+        raise HTTPException(status_code=400, detail="New passcode is required")
+        
+    telegram_user_id = user["id"]
+    await verify_platform_ownership(platform_id, telegram_user_id)
+    
+    try:
+        success = await platform_svc.set_platform_passcode(platform_id, new_passcode, telegram_user_id, current_passcode)
+        if not success:
+            raise HTTPException(status_code=403, detail="Incorrect current passcode")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+        
+    return {"ok": True}
 
 @app.get("/api/developer/platforms/{platform_id}/charges")
 @limiter.limit("60/minute")

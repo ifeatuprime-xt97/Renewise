@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ReneWise Checkout</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    :root {
+      --bg: #090B10;
+      --surface: #121620;
+      --surface2: #1c2130;
+      --accent: #0098EA;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.6);
+      --border: rgba(255, 255, 255, 0.08);
+      --success: #2ecc71;
+      --danger: #e74c3c;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .checkout-card {
+      background: rgba(18, 22, 32, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 400px;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle glow effect behind card */
+    .checkout-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(0, 152, 234, 0.1) 0%, transparent 60%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .merchant-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .order-ref {
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--accent);
+      background: rgba(0, 152, 234, 0.1);
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .amount-usd {
+      font-size: 42px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: -1px;
+    }
+    
+    .amount-crypto {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    .qr-container {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 16px;
+      display: inline-block;
+      margin-bottom: 24px;
+    }
+
+    #qrcode img {
+      display: block;
+      margin: 0 auto;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      margin-bottom: 12px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #008be6;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .powered-by {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.7;
+    }
+    .powered-by span {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .powered-by img {
+      height: 20px;
+    }
+
+    /* Status Overlays */
+    .status-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0;
+    }
+    .status-screen.active {
+      display: flex;
+    }
+    
+    .status-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .status-success { background: rgba(46, 204, 113, 0.1); color: var(--success); }
+    .status-error { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
+
+    .loader {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 40px auto;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <div class="checkout-card">
+    
+    <div id="loading" class="loader"></div>
+    <div id="error-screen" class="status-screen" style="color:var(--danger)">Failed to load checkout details.</div>
+
+    <!-- PENDING CHECKOUT -->
+    <div id="checkout-view" style="display:none">
+      <div class="header-row">
+        <div class="merchant-name" id="merchant-name">ReneWise Merchant</div>
+        <div class="order-ref" id="order-ref">#---</div>
+      </div>
+      
+      <div class="amount-usd" id="amount-usd">$0.00</div>
+      <div class="amount-crypto" id="amount-crypto">0 TON</div>
+
+      <div class="qr-container">
+        <div id="qrcode"></div>
+      </div>
+
+      <a id="btn-tonkeeper" href="#" class="btn btn-primary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+        Open Tonkeeper
+      </a>
+      <a id="btn-wallet" href="#" class="btn btn-secondary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12l-10 10-10-10 10-10z"/><path d="M12 2v20"/></svg>
+        Telegram Wallet
+      </a>
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="success-view" class="status-screen">
+      <div class="status-icon status-success">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+      </div>
+      <h2 style="margin-bottom:8px">Payment Successful</h2>
+      <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px">Your payment has been confirmed on the blockchain.</p>
+    </div>
+
+    <!-- FAILED / EXPIRED -->
+    <div id="failed-view" class="status-screen">
+      <div class="status-icon status-error">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+      </div>
+      <h2 style="margin-bottom:8px">Payment Failed</h2>
+      <p style="color:var(--text-muted);font-size:14px" id="failed-reason">This checkout session has expired or failed.</p>
+    </div>
+
+  </div>
+
+  <div class="powered-by">
+    <span>Powered by</span>
+    <img src="/logo" alt="ReneWise Logo" style="border-radius:4px">
+    <div style="font-size:14px;font-weight:600;margin-top:2px;letter-spacing:-0.5px">ReneWise</div>
+  </div>
+
+  <script>
+    // Extract charge ID from path: /checkout/123
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const chargeId = pathParts[pathParts.length - 1];
+    
+    let pollInterval = null;
+
+    async function fetchCharge() {
+      try {
+        const res = await fetch(`/api/public/checkout/${chargeId}`);
+        if (!res.ok) throw new Error('Not found');
+        return await res.json();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function renderStatus(charge) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('checkout-view').style.display = 'none';
+      document.getElementById('success-view').classList.remove('active');
+      document.getElementById('failed-view').classList.remove('active');
+
+      if (charge.status === 'completed') {
+        document.getElementById('success-view').classList.add('active');
+        if (pollInterval) clearInterval(pollInterval);
+      } else if (charge.status === 'failed' || charge.status === 'expired') {
+        document.getElementById('failed-view').classList.add('active');
+        if (pollInterval) clearInterval(pollInterval);
+      } else {
+        document.getElementById('checkout-view').style.display = 'block';
+      }
+    }
+
+    async function init() {
+      const charge = await fetchCharge();
+      if (!charge) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error-screen').classList.add('active');
+        return;
+      }
+
+      // Populate UI
+      const amtUsd = (charge.amount_usd_cents / 100).toFixed(2);
+      const amtTon = (charge.required_nano / 1000000000).toFixed(4);
+      
+      document.getElementById('amount-usd').textContent = `$${amtUsd}`;
+      document.getElementById('amount-crypto').textContent = `${amtTon} TON`;
+      document.getElementById('order-ref').textContent = `#${charge.external_reference}`;
+      
+      // Update links
+      document.getElementById('btn-tonkeeper').href = charge.payment_url;
+      // Telegram wallet link format
+      document.getElementById('btn-wallet').href = `https://t.me/wallet?startattach=ton_transfer-${charge.vault_address}-${charge.required_nano}`;
+
+      // Generate QR Code
+      new QRCode(document.getElementById("qrcode"), {
+        text: charge.payment_url,
+        width: 200,
+        height: 200,
+        colorDark : "#0d111a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.M
+      });
+
+      renderStatus(charge);
+
+      // Start polling if pending
+      if (charge.status === 'pending') {
+        pollInterval = setInterval(async () => {
+          const updated = await fetchCharge();
+          if (updated && updated.status !== 'pending') {
+            renderStatus(updated);
+          }
+        }, 3000);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

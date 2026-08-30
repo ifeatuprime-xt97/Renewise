@@ -173,8 +173,12 @@ class _SqConn:
         await self._conn.commit()
 
     async def fetchrow(self, sql: str, *args: Any) -> Row | None:
+        stripped = sql.strip().upper()
         cur = await self._conn.execute(_to_sqlite(sql), args)
         row = await cur.fetchone()
+        # Commit after write statements (e.g. INSERT ... RETURNING id)
+        if stripped.startswith(("INSERT", "UPDATE", "DELETE", "REPLACE")):
+            await self._conn.commit()
         return _wrap(row)
 
     async def fetch(self, sql: str, *args: Any) -> list[Row]:
