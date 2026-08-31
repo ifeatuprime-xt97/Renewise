@@ -1751,6 +1751,7 @@ async def sa_callback_handler(update: Update, context):
 
     elif data.startswith("sa_platform_delete_"):
         pid = int(data.split("_")[3])
+        from renewise.superadmin.queries import get_platform_details
         p = await get_platform_details(pid)
         if not p:
             await query.answer("Platform not found.", show_alert=True)
