@@ -696,7 +696,7 @@ async def cb_final_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
             )
 
         await activate_paywall(
-            group_id, price_cents / 100.0, interval_days, wallet,
+            group_id, interval_days, wallet,
             chat_title=chat_title, invite_link=invite_link, chat_type=chat_type,
         )
         await update_group_price_usd_cents(group_id, price_cents)

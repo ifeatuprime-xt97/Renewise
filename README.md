@@ -1,18 +1,20 @@
 # ReneWise
 
-Non-custodial subscription paywall bot for Telegram groups and channels. Members pay in TON, admins receive payouts directly to their wallet — no middleman holds funds at any point.
+Non-custodial subscription paywall bot for Telegram groups and channels. Members pay in TON (GRAM), admins receive payouts directly to their wallet — no middleman holds funds at any point.
+
+See [`about.md`](about.md) for a product overview and [`DOCUMENT.md`](DOCUMENT.md) for the Terms of Service and Privacy Policy draft.
 
 ---
 
 ## How It Works
 
 1. Admin adds the bot to their group/channel as admin and runs `/createpaywall`
-2. Bot generates a unique invite link for the group
-3. Member requests to join → bot DMs them a payment link (QR code + Tonkeeper deep-link)
+2. Bot generates a unique private invite link for the group
+3. Member requests to join → bot DMs them a payment link (QR code + `ton://` deep-link)
 4. Member pays in TON → a per-subscription smart contract splits the payment atomically:
    - Admin receives their share directly to their payout wallet
    - Platform receives its fee
-   - Any overpayment > $1 USD is held in the vault for automatic refund
+   - Any overpayment > $1 USD is held in the vault for automatic trustless refund
 5. Bot detects the on-chain payment, approves the join request, and sends a welcome DM
 6. Before expiry, bot sends a renewal reminder. If not renewed, member is removed automatically.
 
@@ -42,7 +44,7 @@ cd ..
 ### 3. Configure environment
 ```bash
 cp .env.example .env
-# Fill in all values — see Environment Variables section below
+# Fill in all values — see Environment Variables below
 ```
 
 ### 4. Run everything
@@ -50,7 +52,21 @@ cp .env.example .env
 python run.py
 ```
 
-This starts the main bot, superadmin bot, and in-process payment watcher in a single process. No Redis or separate worker processes needed for development/testnet.
+This starts the main bot, superadmin bot, Mini App API, and in-process payment watcher in a single process. No Redis or separate workers needed for development or testnet.
+
+---
+
+## Bot Setup Checklist
+
+1. Create the main bot via [@BotFather](https://t.me/BotFather), copy token to `BOT_TOKEN`
+2. In BotFather → Bot Settings → Group Privacy → **Turn off**
+3. Create a second bot for superadmin, copy its token to `SUPERADMIN_BOT_TOKEN`
+4. Find your Telegram user ID (message [@userinfobot](https://t.me/userinfobot)) and add to `ALLOWED_SUPERADMIN_IDS`
+5. Set up your trigger wallet: create a fresh wallet in Tonkeeper, fund with ~2 TON for gas, copy address → `TRIGGER_WALLET` and mnemonic → `TRIGGER_MNEMONIC`
+6. Build the contract: `cd contracts && npm install && npm run build`
+7. Start: `python run.py`
+8. Add the main bot to your group/channel as admin with: **Invite Users**, **Manage Chat**, **Approve New Members**
+9. DM the main bot `/createpaywall` to run the setup wizard
 
 ---
 
@@ -60,9 +76,10 @@ This starts the main bot, superadmin bot, and in-process payment watcher in a si
 | Variable | Required | Description |
 |---|---|---|
 | `BOT_TOKEN` | ✅ | Main bot token from BotFather |
-| `DATABASE_PATH` | optional | SQLite path (default: `./data/renewise.db`) |
 | `SUPERADMIN_BOT_TOKEN` | ✅ | Separate bot token for the superadmin control panel |
 | `ALLOWED_SUPERADMIN_IDS` | ✅ | Comma-separated Telegram user IDs allowed to use superadmin bot |
+| `DATABASE_PATH` | optional | SQLite path (default: `./data/renewise.db`) |
+| `DATABASE_URL` | optional | PostgreSQL connection string — overrides `DATABASE_PATH` when set |
 
 ### TON Payments
 | Variable | Required | Description |
@@ -71,17 +88,17 @@ This starts the main bot, superadmin bot, and in-process payment watcher in a si
 | `LOG_ADDRESS` | ✅ | TON address that receives `PaymentLog` messages for off-chain indexing |
 | `TRIGGER_WALLET` | ✅ | Dedicated hot wallet address for sending `Refund{}` messages to vaults |
 | `TRIGGER_MNEMONIC` | ✅ | 24-word mnemonic for the trigger wallet (NOT the platform wallet) |
-| `OVERPAYMENT_REFUND_THRESHOLD_USD` | optional | Minimum overpayment to trigger refund flow (default: `1.00`) |
 | `BUYER_FEE_BPS` | optional | Buyer-side fee in basis points (default: `200` = 2.00%) |
 | `ADMIN_FEE_BPS` | optional | Admin-side fee in basis points (default: `330` = 3.30%) |
+| `OVERPAYMENT_REFUND_THRESHOLD_USD` | optional | Minimum overpayment to trigger refund flow (default: `1.00`) |
 
 ### Chain Watcher (TonCenter)
 | Variable | Required | Description |
 |---|---|---|
-| `TONCENTER_API_KEYS` | recommended | Comma-separated TonCenter API keys (avoids rate limits) |
+| `TONCENTER_API_KEYS` | recommended | Comma-separated TonCenter API keys for key rotation (avoids rate limits) |
 | `TONCENTER_TESTNET` | optional | Set to `true` to use testnet (default: `false`) |
 | `POLL_INTERVAL_SECONDS` | optional | How often to poll vaults for new transactions (default: `15`) |
-| `MIN_CONFIRMATIONS` | optional | Confirmations before treating tx as final (default: `1`) |
+| `MIN_CONFIRMATIONS` | optional | Confirmations before treating a tx as final (default: `1`) |
 
 ### Subscription Lifecycle
 | Variable | Required | Description |
@@ -97,19 +114,13 @@ This starts the main bot, superadmin bot, and in-process payment watcher in a si
 | `BOT_ACTIONS_CHANNEL` | optional | Redis pub/sub channel for watcher→bot actions |
 | `JOB_MAX_RETRIES` | optional | Max payment job retries (default: `3`) |
 
----
-
-## Bot Setup Checklist
-
-1. Create the main bot via [@BotFather](https://t.me/BotFather), copy token to `.env`
-2. In BotFather → Bot Settings → Group Privacy → **Turn off**
-3. Create a second bot for superadmin — copy its token as `SUPERADMIN_BOT_TOKEN`
-4. Find your Telegram user ID (message [@userinfobot](https://t.me/userinfobot)) and add to `ALLOWED_SUPERADMIN_IDS`
-5. Set up your trigger wallet: create a fresh wallet in Tonkeeper, fund with ~2 TON for gas, copy address → `TRIGGER_WALLET` and mnemonic → `TRIGGER_MNEMONIC`
-6. Build the contract: `cd contracts && npm install && npm run build`
-7. Start: `python run.py`
-8. Add the main bot to your group/channel as admin with: **Invite Users**, **Manage Chat**, **Approve New Members**
-9. DM the main bot `/createpaywall` to run the setup wizard
+### Render keep-alive (free tier)
+| Variable | Description |
+|---|---|
+| `KEEP_ALIVE` | Set to `false` to disable self-ping (default: `true` on Render) |
+| `KEEP_ALIVE_URL` | Your Render service URL — set automatically via `RENDER_EXTERNAL_URL` |
+| `KEEP_ALIVE_URLS` | Additional comma-separated URLs to ping (e.g. the Mini App) |
+| `KEEP_ALIVE_INTERVAL` | Ping interval in seconds (default: `600`) |
 
 ---
 
@@ -119,10 +130,10 @@ One vault contract is deployed per subscription (user × group pair), on first p
 
 ### Fee Model
 ```
-Buyer sends:     price + buyer_fee + gas_reserve
-Admin receives:  price - admin_fee              (direct to payout wallet)
-Platform gets:   admin_fee + buyer_fee          (to PLATFORM_WALLET)
-Vault holds:     any overpayment above required (for trustless refund)
+Buyer sends:     price + buyer_fee + gas_reserve  (0.05 TON)
+Admin receives:  price - admin_fee                (direct to payout wallet)
+Platform gets:   admin_fee + buyer_fee            (to PLATFORM_WALLET)
+Vault holds:     any overpayment above required   (for trustless refund)
 ```
 
 ### Overpayment Refund Flow
@@ -134,10 +145,10 @@ When a member sends more than the required amount:
 5. Vault verifies `sender == trigger_wallet` and releases `overage_held` to the member
 6. Member receives their TON directly from the vault — no platform private key involved
 
-**Security:** The trigger wallet only holds ~2 TON for gas. If compromised, an attacker can only trigger refunds the contract already validated — they cannot redirect funds or drain the platform wallet.
+**Security:** The trigger wallet holds only ~2 TON for gas. If compromised, an attacker can only trigger refunds the contract already validated — they cannot redirect funds or drain the platform wallet.
 
 ### Underpayment
-If a member sends less than required, the contract rejects the message with exit code 400 and TON's bounce mechanism returns most of the funds automatically. The bot additionally DMs the member explaining the shortfall.
+If a member sends less than required, the contract rejects the message with exit code 400 and TON's bounce mechanism returns most of the funds automatically. The bot DMs the member explaining the shortfall.
 
 ### Contract Messages
 | Message | Sender | Description |
@@ -157,7 +168,11 @@ python run.py
 │   ├── CallbackQueryHandlers  → pay/confirm/cancel/refund buttons
 │   └── MessageHandler         → wallet address collection for refunds
 ├── Superadmin bot (separate PTB Application)
-│   └── /start → dashboard: groups, users, fees, kill switch, refund audit
+│   └── Full platform control panel (see Superadmin Commands below)
+├── Mini App API (FastAPI — uvicorn)
+│   ├── Admin + subscriber endpoints
+│   ├── Developer Platform API  (/api/platform/*, /api/developer/*)
+│   └── Hosted checkout page    (/checkout/{charge_id})
 └── In-process payment watcher (asyncio task)
     ├── Polls TonCenter every POLL_INTERVAL_SECONDS
     ├── Detects new vault transactions
@@ -167,23 +182,85 @@ python run.py
 ```
 
 ### Production Scaling
-For production with high volume, swap the in-process watcher for the separate stack:
+For production with high volume, run each component as a separate process:
 ```bash
-# Terminal 1: Bot
+# Bot
 python -m renewise.bot
 
-# Terminal 2: RQ workers
+# RQ workers
 python -m renewise.watcher.worker --concurrency 4
 
-# Terminal 3: Webhook server (TonCenter push)
+# Webhook server (TonCenter push)
 python -m renewise.watcher.webhook
 
-# Terminal 4: Scheduler (renewal reminders + grace enforcement)
+# Scheduler (renewal reminders + grace enforcement)
 python -m renewise.watcher.scheduler
 
-# Terminal 5: Superadmin bot
+# Superadmin bot
 python -m renewise.superadmin.bot
+
+# Mini App API
+uvicorn renewise.miniapp.server:app --host 0.0.0.0 --port 8000
 ```
+
+---
+
+## Mini App API
+
+The Telegram Mini App is a FastAPI application. All endpoints require a valid Telegram `initData` Authorization header (`tma <initData>`) unless noted.
+
+### Admin / Creator endpoints
+| Endpoint | Description |
+|---|---|
+| `GET /api/my-groups` | Admin's groups with revenue summary |
+| `GET /api/my-subscriptions` | Subscriber's active subscriptions |
+| `GET /api/my-payment-history` | Subscriber's full payment history |
+| `POST /api/groups/detect` | Detect recently admin-granted chats (wizard step) |
+| `POST /api/groups/create` | Activate a new paywall |
+| `GET /api/groups/{id}/detail` | Group detail — price, wallet, members, revenue |
+| `GET /api/groups/{id}/payment-history` | Paginated payment history |
+| `GET /api/groups/{id}/payments/{sub_id}` | Full payment detail with fee breakdown |
+| `GET /api/groups/{id}/members` | Paginated member list |
+| `PUT /api/groups/{id}/price` | Update subscription price |
+| `PUT /api/groups/{id}/wallet` | Schedule a payout wallet change (24h delay) |
+| `GET /api/groups/{id}/wallet-change-pending` | Active pending wallet change (if any) |
+| `POST /api/groups/{id}/wallet-change/{change_id}/cancel` | Cancel a pending wallet change |
+| `GET /api/groups/{id}/wallet-change-history` | Full wallet change history |
+| `POST /api/groups/{id}/pause` | Pause the paywall |
+| `POST /api/groups/{id}/resume` | Resume the paywall |
+| `POST /api/groups/{id}/comp` | Comp a member (grant free access) |
+| `DELETE /api/groups/{id}` | Delete a group and all subscriber records |
+| `GET /api/search/tx?hash=` | Search subscriptions by TX hash (scoped to this admin) |
+
+### Developer Platform endpoints
+| Endpoint | Description |
+|---|---|
+| `GET /api/developer/platforms` | List the authenticated user's platforms |
+| `POST /api/developer/platforms` | Create a new platform (generates test keys) |
+| `GET /api/developer/platforms/{id}/charges` | Paginated charge list for a platform |
+| `POST /api/developer/platforms/{id}/live-keys` | Generate live (mainnet) keys |
+| `POST /api/developer/platforms/{id}/keys/regenerate` | Rotate test or live keys |
+| `PUT /api/developer/platforms/{id}/wallet` | Update platform payout wallet |
+| `POST /api/developer/platforms/{id}/passcode` | Set or change the wallet passcode |
+| `POST /api/developer/platforms/{id}/webhook` | Set or update webhook URL |
+| `POST /api/developer/platforms/{id}/webhook/rotate-secret` | Rotate webhook signing secret |
+| `DELETE /api/developer/platforms/{id}` | Delete a platform and all its data |
+| `GET /api/developer/charges` | All charges across all platforms (filterable by status) |
+| `GET /api/developer/search?q=` | Search charges by external_reference or TX hash |
+
+### External Developer API (Bearer token auth)
+| Endpoint | Description |
+|---|---|
+| `POST /api/platform/charges` | Create a charge — returns `payment_url`, `vault_address`, `checkout_url` |
+| `GET /api/platform/charges/{id}` | Get charge status and details |
+
+### Public / unauthenticated
+| Endpoint | Description |
+|---|---|
+| `GET /checkout/{charge_id}` | Hosted checkout page |
+| `GET /api/public/checkout/{charge_id}` | Charge data for the checkout page |
+| `GET /healthz` | Health check — `200 {"status":"ok"}` or `503` on DB failure |
+| `GET /api/config` | Bot username for constructing deep-links |
 
 ---
 
@@ -193,35 +270,44 @@ python -m renewise.superadmin.bot
 renewise/
 ├── bot.py                      # Main bot entry point
 ├── config.py                   # Environment variable loading
-├── run.py                      # Single-process launcher (bot + watcher)
+├── run.py                      # Single-process launcher (bot + watcher + API)
+├── api/
+│   └── platform.py             # External Developer API (Bearer token auth)
 ├── db/
-│   ├── schema.py               # Table definitions + migrations
+│   ├── schema.py               # Table definitions + migrations (SQLite + PostgreSQL)
 │   └── queries.py              # All async DB operations
 ├── handlers/
-│   ├── admin_menu.py           # /menu + admin sub-flows
+│   ├── admin_menu.py           # /menu + admin sub-flows (price, wallet, comp, etc.)
 │   ├── chat_member.py          # Bot added/removed as admin
-│   ├── create_paywall.py       # /createpaywall wizard
-│   ├── join_request.py         # Member join + payment flow
+│   ├── create_paywall.py       # /createpaywall 9-step wizard
+│   ├── join_request.py         # Member join request → payment flow
 │   └── refund.py               # Overpayment wallet collection + refund trigger
+├── miniapp/
+│   ├── server.py               # FastAPI Mini App API (all /api/* endpoints)
+│   ├── auth.py                 # Telegram initData HMAC verification
+│   └── static/
+│       ├── index.html          # Mini App frontend (creator + developer modes)
+│       └── checkout.html       # Hosted checkout page (developer charges)
 ├── services/
-│   ├── payment.py              # Payment request generation
-│   └── wallet.py               # TON address validation
+│   ├── payment.py              # Payment request generation (subscription + platform)
+│   ├── platform.py             # Platform CRUD and key management
+│   └── wallet.py               # TON address format validation
 ├── superadmin/
 │   ├── bot.py                  # Superadmin control panel bot
 │   └── queries.py              # Superadmin-specific DB queries
 ├── ton/
-│   ├── vault.py                # Off-chain address computation + message builders
+│   ├── vault.py                # Off-chain address computation + payment link builder
 │   ├── deploy.py               # Testnet deployment + split verification script
 │   └── refund_trigger.py       # Sends Refund{} to vault via trigger wallet
 ├── utils/
-│   ├── coingecko.py            # TON/USD price feed (CoinGecko + CMC fallback)
+│   ├── coingecko.py            # TON/USD price feed (CoinGecko with fallback)
 │   └── keyboards.py            # InlineKeyboardMarkup builders
 └── watcher/
     ├── inprocess_watcher.py    # Dev-mode in-process payment polling
     ├── bot_listener.py         # Redis pub/sub → bot actions bridge (production)
     ├── scheduler.py            # Renewal reminders + grace enforcement jobs
     ├── tasks.py                # RQ job definitions (production)
-    ├── toncenter.py            # TonCenter API client
+    ├── toncenter.py            # TonCenter API client with key rotation
     └── webhook.py              # TonCenter webhook receiver (production)
 
 contracts/
@@ -229,6 +315,10 @@ contracts/
 ├── tests/
 │   └── PaymentVault.spec.ts    # Contract test suite
 └── build/                      # Compiled contract (generated by npm run build)
+
+deploy/
+├── renewise-bot.service        # systemd unit — bot + watcher
+└── renewise-api.service        # systemd unit — Mini App API
 ```
 
 ---
@@ -238,30 +328,46 @@ contracts/
 ```sql
 groups                  one row per Telegram group/channel
 users                   one row per Telegram user
-subscriptions           one row per (user, group) pair — status + vault address
+subscriptions           one row per (user, group) pair — status, vault address, renewal dates
 vault_registry          vault_address → (subscription, user, group) mapping
-processed_tx_hashes     idempotency table — prevents double-processing
+processed_tx_hashes     idempotency table — prevents double-processing of transactions
 overpayment_refunds     refund lifecycle: pending_wallet → pending_send → sent
-admin_audit_log         append-only log of all admin and platform actions
+admin_audit_log         append-only log of all admin and platform events
 platform_config         global fee defaults + payments kill switch
+pending_wallet_changes  delayed wallet updates (24h hold with cancel window)
+platforms               developer API platforms (keys, wallet, webhook config)
+platform_charges        individual charges created via the Developer API
+webhook_endpoints       per-platform webhook configuration
+webhook_deliveries      delivery log with retry tracking
+platform_audit_log      per-platform audit trail
 ```
 
 ---
 
-## Admin Commands (Main Bot)
+## Commands
 
+### Main bot
 | Command | Description |
 |---|---|
-| `/start` | Dashboard — manage groups and subscriptions |
+| `/start` | Welcome screen; handles `renew_`, `reminders`, `support` deep-links |
 | `/createpaywall` | Launch the paywall setup wizard (DM only) |
 | `/menu` | Open the admin management menu (DM only) |
 
-## Superadmin Commands
-
+### Superadmin bot
 | Command | Description |
 |---|---|
-| `/start` | Platform overview — groups, revenue, users |
-| `/pendingrefunds` | View overpayment refund audit log + trigger wallet status |
+| `/start` | Platform dashboard — stats, kill switch, trigger wallet status |
+| `/overview` | Monthly GMV, fee revenue, active admins and subscribers |
+| `/groups` | Paginated group directory |
+| `/lookup <term>` | Search by TX hash or Telegram user ID |
+| `/pendingrefunds` | Overpayment refund queue |
+| `/txfeed` | Platform-wide transaction feed (filterable) |
+| `/revenue` | Revenue breakdown (all-time, MoM, by status) |
+| `/announce` | Broadcast to all users / admins / active subscribers |
+| `/msgadmin <id> <text>` | DM an admin via the main bot |
+| `/auditlog` | Recent platform audit events |
+| `/killswitch` | Pause or resume all payment processing |
+| `/help` | Command list |
 
 ---
 
@@ -278,12 +384,11 @@ pytest renewise/ton/tests/test_vault.py -v
 python -m renewise.ton.deploy
 ```
 
-
 ---
 
-## Production Deployment — Process Supervision
+## Production Deployment
 
-The project has no external process manager dependency, but you **must** run the two processes under something that restarts them automatically. A crashed bot means no subscription activations, no renewal enforcement, and no refunds until it's manually restarted.
+The project has no external process manager dependency, but you **must** run the two core processes under something that restarts them automatically. A crashed bot means no subscription activations, no renewal enforcement, and no refunds until manually restarted.
 
 ### What runs where
 
@@ -297,7 +402,6 @@ The project has no external process manager dependency, but you **must** run the
 Two unit files are provided in `deploy/`:
 
 ```bash
-# Copy unit files
 sudo cp deploy/renewise-bot.service /etc/systemd/system/
 sudo cp deploy/renewise-api.service /etc/systemd/system/
 
@@ -305,57 +409,38 @@ sudo cp deploy/renewise-api.service /etc/systemd/system/
 sudo nano /etc/systemd/system/renewise-bot.service
 sudo nano /etc/systemd/system/renewise-api.service
 
-# Enable and start
 sudo systemctl daemon-reload
 sudo systemctl enable renewise-bot renewise-api
 sudo systemctl start renewise-bot renewise-api
 
-# Check status
+# Check status / follow logs
 sudo systemctl status renewise-bot renewise-api
-
-# Follow logs
 journalctl -u renewise-bot -f
 journalctl -u renewise-api -f
 ```
 
-Both units use `Restart=always` with a 5-second delay and a 5-restart-in-60-seconds burst limit, after which systemd stops trying and pages the admin.
+Both units use `Restart=always` with a 5-second restart delay.
 
 ### Health check
-
-The Mini App API exposes an unauthenticated health endpoint:
 
 ```bash
 curl -sf http://localhost:8000/healthz
 # → {"status": "ok"}
 ```
 
-Returns `200 {"status":"ok"}` when the process is alive and SQLite is reachable.
-Returns `503 {"status":"error","detail":"..."}` if the DB connectivity check fails.
+Returns `200 {"status":"ok"}` when the process is alive and the DB is reachable. Returns `503` if the DB check fails. Wire this into any uptime monitor.
 
-Wire this into any uptime monitor (UptimeRobot, Better Uptime, Grafana, etc.) to get alerted if the API goes down.
+### Render (free tier)
 
-### Render (free web service)
-
-Render spins down free web services after 15 minutes with no inbound HTTP. Telegram polling does not count, so `python run.py` now binds `$PORT` and self-pings `RENDER_EXTERNAL_URL/health` every 10 minutes.
+Render spins down free web services after 15 minutes with no inbound HTTP. Telegram polling is outbound and does not count, so `python run.py` self-pings `RENDER_EXTERNAL_URL/health` every 10 minutes to stay awake. `PORT` and `RENDER_EXTERNAL_URL` are set by Render automatically.
 
 ```bash
-# Bot process liveness (auto-started on Render)
 curl -sf https://YOUR-SERVICE.onrender.com/health
 # → {"status":"ok","service":"renewise-bot"}
 ```
 
-`PORT` and `RENDER_EXTERNAL_URL` are set by Render — no extra config needed. To also keep the Mini App awake, set `KEEP_ALIVE_URLS` to its `/healthz` URL. Set `KEEP_ALIVE=false` to disable self-ping (the `/health` server still binds `$PORT`).
+To also keep the Mini App API awake, set `KEEP_ALIVE_URLS=https://your-api.onrender.com/healthz`.
 
-### SQLite concurrency note
+### SQLite concurrency
 
-See the note in `config.py` — WAL mode is enabled, but SQLite has a single-writer ceiling. Monitor your logs for `database is locked` errors under load; if they appear, migrating to PostgreSQL is the next step.
-
-### Checking if processes are alive (no uptime monitor)
-
-```bash
-# Quick liveness check
-systemctl is-active renewise-bot renewise-api
-
-# Check bot process is polling (look for last Telegram API call in logs)
-journalctl -u renewise-bot --since "5 minutes ago" | grep -i "polling\|telegram"
-```
+WAL mode is enabled by default. SQLite has a single-writer ceiling — monitor logs for `database is locked` errors under load. If they appear consistently, migrating to PostgreSQL (set `DATABASE_URL`) is the next step.

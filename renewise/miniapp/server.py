@@ -169,13 +169,17 @@ async def api_public_checkout(request: Request, charge_id: int) -> dict:
         )
         if not row:
             raise HTTPException(status_code=404, detail="Charge not found")
-        
-        # We need the payment_url (deep link). Currently it's not stored in DB,
-        # but we can construct it if we have vault_address and required_nano.
+
         vault_address = row["vault_address"]
         required_nano = row["required_nano_amount"]
-        payment_url = f"ton://transfer/{vault_address}?amount={required_nano}" if vault_address else None
-            
+        # Use the stored payment_url which includes the full StateInit payload,
+        # required for deploy-on-first-message. Fall back to a basic transfer
+        # link only for legacy rows that predate this column.
+        payment_url = row["payment_url"] or (
+            f"ton://transfer/{vault_address}?amount={required_nano}"
+            if vault_address else None
+        )
+
         return {
             "id": row["id"],
             "external_reference": row["external_reference"],
@@ -786,7 +790,6 @@ async def api_groups_create(
 
     await queries.activate_paywall(
         group_id=group_id,
-        price=price_usd,
         billing_interval_days=body.billing_interval_days,
         payout_wallet_address=body.wallet_address,
         chat_title=chat_title,
@@ -1181,7 +1184,6 @@ async def api_group_detail(
                         # Persist both fields so future calls are instant
                         await queries.activate_paywall(
                             group_id=group_id,
-                            price=group.get("price") or 0,
                             billing_interval_days=group.get("billing_interval_days") or 30,
                             payout_wallet_address=group.get("payout_wallet_address") or "",
                             chat_title=chat_title,
@@ -1216,7 +1218,6 @@ async def api_group_detail(
         "invite_link":           group.get("invite_link"),
         "active_members":        active_count,
         "revenue_usd_cents":     revenue_usd_cents,
-        "revenue_nano":          0,  # deprecated — use revenue_usd_cents
     }
 
 
@@ -1420,6 +1421,36 @@ async def api_cancel_wallet_change(
         {"change_id": change_id, "cancelled_wallet": change["new_wallet_address"]},
     )
     return {"ok": True, "change_id": change_id, "status": "cancelled"}
+
+
+# ── GET /api/groups/{group_id}/wallet-change-pending ─────────────────────────
+
+@app.get("/api/groups/{group_id}/wallet-change-pending")
+@limiter.limit("60/minute")
+async def api_wallet_change_pending(
+    request: Request,
+    group_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Returns the active pending wallet change for a group (if any).
+    Returns {"pending": null} when no pending change exists.
+    """
+    telegram_user_id = user["id"]
+    await verify_admin_or_403(telegram_user_id, group_id)
+
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        row = await db.fetchrow(
+            "SELECT id, new_wallet_address, activates_at, requested_at FROM pending_wallet_changes "
+            "WHERE group_id = $1 AND status = 'pending' ORDER BY requested_at DESC LIMIT 1",
+            group_id,
+        )
+    if not row:
+        return {"pending": None}
+    r = dict(row)
+    r["change_id"] = r.pop("id")
+    return {"pending": r}
 
 
 # ── GET /api/groups/{group_id}/wallet-change-history ─────────────────────────
@@ -1642,3 +1673,141 @@ async def api_terms_accept(
     log.info("ToS accepted via Mini App: user=%d at=%s", telegram_user_id, safe_at)
 
     return {"ok": True, "accepted_at": accepted_at}
+
+
+# ── GET /api/search/tx ────────────────────────────────────────────────────────
+
+@app.get("/api/search/tx")
+@limiter.limit("30/minute")
+async def api_search_tx(
+    request: Request,
+    hash: str,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Admin TX-hash search.
+
+    Looks up a subscription by its on-chain TX hash, scoped strictly to groups
+    owned by the authenticated user. Returns the full payment-detail shape
+    (same fields as GET /api/groups/{group_id}/payments/{sub_id}) so the
+    frontend can render it with the existing PmtDetail sheet.
+    """
+    tx_hash = hash.strip()
+    if not tx_hash or len(tx_hash) < 16:
+        raise HTTPException(status_code=400, detail="Provide a valid TX hash")
+
+    telegram_user_id = user["id"]
+
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        # Find the subscription by tx hash, then verify the group belongs to this admin
+        row = await db.fetchrow(
+            """
+            SELECT s.id, s.status, s.price_locked_in, s.start_date,
+                   s.next_renewal_date, s.last_payment_tx_hash,
+                   s.vault_address, s.required_nano_amount, s.amount_paid_so_far,
+                   s.created_at, s.updated_at,
+                   u.telegram_user_id, u.first_name, u.username,
+                   g.chat_title, g.billing_interval_days, g.id AS group_id,
+                   g.admin_telegram_id
+            FROM subscriptions s
+            JOIN users u ON u.id = s.user_id
+            JOIN groups g ON g.id = s.group_id
+            WHERE (s.last_payment_tx_hash = $1
+                   OR s.id IN (
+                       SELECT sub_id FROM processed_tx_hashes WHERE tx_hash = $1
+                   ))
+              AND g.admin_telegram_id = $2
+            LIMIT 1
+            """,
+            tx_hash, telegram_user_id,
+        )
+
+    if not row:
+        return {"found": False, "result": None}
+
+    result = dict(row)
+    result.pop("admin_telegram_id", None)
+    tx = result.get("last_payment_tx_hash")
+    result["tonviewer_url"] = f"https://tonviewer.com/{tx}" if tx else None
+    nano = result.get("required_nano_amount")
+    result["required_ton"] = round(nano / 1e9, 9) if nano else None
+
+    from renewise.db.queries import get_global_fees
+    global_buyer_bps, global_admin_bps = await get_global_fees()
+    group_row = await queries.get_group_by_id(result["group_id"])
+    admin_fee_bps = (
+        group_row["admin_fee_bps"]
+        if group_row and group_row["admin_fee_bps"] is not None
+        else global_admin_bps
+    )
+    buyer_fee_bps = (
+        group_row["buyer_fee_bps"]
+        if group_row and group_row["buyer_fee_bps"] is not None
+        else global_buyer_bps
+    )
+    result["admin_fee_pct"]    = admin_fee_bps / 100.0
+    result["buyer_fee_pct"]    = buyer_fee_bps / 100.0
+    result["platform_fee_pct"] = (admin_fee_bps + buyer_fee_bps) / 100.0
+    if nano:
+        result["admin_payout_ton"] = round((nano / 1e9) * (1 - admin_fee_bps / 10000.0), 9)
+    else:
+        result["admin_payout_ton"] = None
+
+    return {"found": True, "result": result}
+
+
+# ── GET /api/developer/search ─────────────────────────────────────────────────
+
+@app.get("/api/developer/search")
+@limiter.limit("30/minute")
+async def api_developer_search(
+    request: Request,
+    q: str,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Developer charge search.
+
+    Searches platform_charges by external_reference (exact) or tx_hash
+    (exact), scoped to platforms owned by the authenticated user. Returns
+    all matching charges with the full charge shape (same as GET
+    /api/platform/charges/{id}) plus platform_name for display.
+    """
+    query_str = q.strip()
+    if not query_str or len(query_str) < 3:
+        raise HTTPException(status_code=400, detail="Query must be at least 3 characters")
+
+    telegram_user_id = user["id"]
+
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        rows = await db.fetch(
+            """
+            SELECT pc.id, pc.external_reference, pc.mode, pc.amount_usd_cents,
+                   pc.status, pc.vault_address, pc.payment_url, pc.required_nano_amount,
+                   pc.tx_hash, pc.created_at, pc.completed_at,
+                   p.platform_name
+            FROM platform_charges pc
+            JOIN platforms p ON p.id = pc.platform_id
+            WHERE p.owner_telegram_id = $1
+              AND (pc.external_reference = $2 OR pc.tx_hash = $2)
+            ORDER BY pc.created_at DESC
+            LIMIT 20
+            """,
+            telegram_user_id, query_str,
+        )
+
+    if not rows:
+        return {"found": False, "results": []}
+
+    base_url = str(request.base_url).rstrip('/')
+    results = []
+    for row in rows:
+        r = dict(row)
+        r["required_nano"] = r.pop("required_nano_amount", None)
+        r["checkout_url"] = f"{base_url}/checkout/{r['id']}"
+        results.append(r)
+
+    return {"found": True, "results": results}
+

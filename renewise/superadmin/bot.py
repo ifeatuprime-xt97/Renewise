@@ -454,6 +454,7 @@ async def show_sa_payment_history(update: Update, context, group_id: int, page: 
         text = "\n".join(lines)
 
     # Per-subscription manage buttons (superadmin power actions)
+    kb = []
     for r in rows:
         if r.get("status") not in ("pending",):
             sub_name = html.escape(r.get("first_name") or str(r["telegram_user_id"]))[:14]
@@ -468,7 +469,6 @@ async def show_sa_payment_history(update: Update, context, group_id: int, page: 
     if (offset + LIMIT) < total:
         nav.append(InlineKeyboardButton("Next ➡️", callback_data=f"sa_pmthist_{group_id}_{page + 1}"))
 
-    kb = []
     if nav:
         kb.append(nav)
     kb.append([InlineKeyboardButton("🔙 Back to Group", callback_data=f"sa_group_{group_id}")])

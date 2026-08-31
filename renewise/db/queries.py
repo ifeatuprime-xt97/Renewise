@@ -54,7 +54,6 @@ async def get_groups_for_admin(admin_telegram_id: int) -> list[Row]:
 
 async def activate_paywall(
     group_id: int,
-    price: float,
     billing_interval_days: int,
     payout_wallet_address: str,
     chat_title: str | None = None,
@@ -63,7 +62,7 @@ async def activate_paywall(
 ) -> None:
     async with _db() as db:
         await db.execute(
-            "UPDATE groups SET price=0, billing_interval_days=$1, "
+            "UPDATE groups SET billing_interval_days=$1, "
             "payout_wallet_address=$2, status='active', "
             "chat_title=COALESCE($3, chat_title), "
             "invite_link=COALESCE($4, invite_link), "
@@ -393,7 +392,7 @@ async def get_user_subscriptions(telegram_user_id: int) -> list[Row]:
         return await db.fetch(
             "SELECT s.id AS subscription_id, s.status AS subscription_status, "
             "s.price_locked_in, s.start_date, s.next_renewal_date, "
-            "g.id AS group_id, g.chat_title, g.price AS group_price, "
+            "g.id AS group_id, g.chat_title, "
             "g.price_usd_cents, g.billing_interval_days "
             "FROM subscriptions s "
             "JOIN users u ON u.id = s.user_id "
@@ -478,7 +477,7 @@ async def get_upcoming_renewals(group_id: int, limit: int = 5) -> list[Row]:
 async def get_subscription_by_vault(vault_address: str) -> Row | None:
     async with _db() as db:
         return await db.fetchrow(
-            "SELECT s.*, g.price, g.billing_interval_days, u.telegram_user_id "
+            "SELECT s.*, g.billing_interval_days, u.telegram_user_id "
             "FROM subscriptions s "
             "JOIN groups g ON s.group_id = g.id "
             "JOIN users u ON s.user_id = u.id "

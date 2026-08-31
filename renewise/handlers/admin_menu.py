@@ -910,16 +910,52 @@ async def cb_member_kick(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
     )
 
 
-# ── Settings stub ─────────────────────────────────────────────────────────────
+# ── Settings ──────────────────────────────────────────────────────────────────
 
 async def cb_settings(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(
-        "⚙️ <b>Settings</b>\n\nUse the menu options to update price, wallet, or pause the group.",
-        parse_mode="HTML",
-        reply_markup=main_menu_kb(),
+    group = await _require_group(update, ctx, action="menu:settings")
+    if not group:
+        return
+
+    try:
+        chat = await ctx.bot.get_chat(group["telegram_chat_id"])
+        title = html.escape(chat.title or str(group["telegram_chat_id"]))
+    except Exception:
+        title = str(group["telegram_chat_id"])
+
+    usd = (group.get("price_usd_cents") or 0) / 100.0
+    interval = group.get("billing_interval_days", 30)
+    wallet = group.get("payout_wallet_address") or "Not set"
+    wallet_disp = f"{wallet[:8]}…{wallet[-5:]}" if len(wallet) > 16 else wallet
+    status = group.get("status", "active")
+    status_icon = "✅ Active" if status == "active" else ("⏸ Paused" if status == "paused" else f"❄️ {status.title()}")
+
+    text = (
+        f"⚙️ <b>Settings — {title}</b>\n\n"
+        f"💰 Price:        <b>${usd:.2f} USD</b> / {interval} days\n"
+        f"👛 Wallet:       <code>{wallet_disp}</code>\n"
+        f"📶 Status:       {status_icon}\n"
+        f"📅 Billing:      every {interval} days\n\n"
+        "Tap an action below to change a setting:"
     )
+
+    kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("💰 Update Price",  callback_data=f"grpsel:{group['id']}:menu:update_price"),
+            InlineKeyboardButton("👛 Update Wallet", callback_data=f"grpsel:{group['id']}:menu:update_wallet"),
+        ],
+        [
+            InlineKeyboardButton(
+                "⏸ Pause" if status == "active" else "▶️ Resume",
+                callback_data=f"grpsel:{group['id']}:menu:pause",
+            ),
+        ],
+        [InlineKeyboardButton("◀️ Back", callback_data=f"grpsel:{group['id']}:menu:home")],
+    ])
+
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
 
 
 # ── Payment History (paginated) ───────────────────────────────────────────────────────────

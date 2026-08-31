@@ -110,10 +110,12 @@ async def create_charge(
         await db.execute(
             """
             UPDATE platform_charges 
-            SET vault_address = $1, required_nano_amount = $2, buyer_fee_bps = $3, platform_fee_bps = $4
-            WHERE id = $5
+            SET vault_address = $1, required_nano_amount = $2, buyer_fee_bps = $3, platform_fee_bps = $4,
+                payment_url = $5
+            WHERE id = $6
             """,
-            payment_req.vault_address, payment_req.required_nano, buyer_fee, admin_fee, charge_id
+            payment_req.vault_address, payment_req.required_nano, buyer_fee, admin_fee,
+            payment_req.payment_url, charge_id
         )
         
         # Audit
@@ -127,6 +129,9 @@ async def create_charge(
         "id": charge_id,
         "external_reference": req.external_reference,
         "amount_usd_cents": req.amount_usd_cents,
+        "required_nano": payment_req.required_nano,
+        "vault_address": payment_req.vault_address,
+        "payment_url": payment_req.payment_url,
         "status": "pending",
         "checkout_url": f"{base_url}/checkout/{charge_id}"
     }
@@ -150,6 +155,9 @@ async def get_charge(
             "id": row["id"],
             "external_reference": row["external_reference"],
             "amount_usd_cents": row["amount_usd_cents"],
+            "required_nano": row["required_nano_amount"],
+            "vault_address": row["vault_address"],
+            "payment_url": row["payment_url"],
             "status": row["status"],
             "checkout_url": f"{base_url}/checkout/{row['id']}",
             "tx_hash": row["tx_hash"],

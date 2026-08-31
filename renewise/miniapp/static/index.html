@@ -2111,9 +2111,32 @@
     <div class="section-hdr" style="margin-bottom:8px">
       <h1 class="page-title">API Charges</h1>
     </div>
-    <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.4">
+    <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px;line-height:1.4">
       All charges across every app, newest first.
     </p>
+
+    <!-- Charge search -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1;position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"
+          width="16" height="16"
+          style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input id="dev-search-input" type="text" placeholder="Reference ID or TX hash…"
+          style="width:100%;padding:10px 12px 10px 36px;background:var(--surface2);
+                 border:1px solid var(--glass-border);border-radius:var(--r-xs);
+                 color:#fff;font-size:13.5px;outline:none"
+          onkeydown="if(event.key==='Enter')searchDevCharges()">
+      </div>
+      <button onclick="searchDevCharges()"
+        style="flex-shrink:0;padding:10px 16px;background:var(--accent);color:#fff;
+               border:none;border-radius:var(--r-xs);font-size:13px;font-weight:700;cursor:pointer">
+        Search
+      </button>
+    </div>
+    <div id="dev-search-result" style="margin-bottom:10px"></div>
+
     <!-- Status filter tabs -->
     <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px">
       <button id="dev-tab-all" class="dev-tab active" onclick="setDevChargesTab('all')">All</button>
@@ -2251,7 +2274,7 @@
           </tr>
           <tr>
             <td><code>payment_url</code></td>
-            <td>ton:// deep-link — show this to the user</td>
+            <td>ton:// deep-link show this to the user</td>
           </tr>
           <tr>
             <td><code>required_nano_amount</code></td>
@@ -2946,7 +2969,30 @@ http_response_code(200);</pre>
         Manage
       </button>
     </div>
-    <h1 class="page-title" id="history-title" style="margin-bottom:18px">Payment History</h1>
+    <h1 class="page-title" id="history-title" style="margin-bottom:12px">Payment History</h1>
+
+    <!-- TX hash search -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <div style="flex:1;position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"
+          width="16" height="16"
+          style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input id="history-search-input" type="text" placeholder="Search by TX hash…"
+          style="width:100%;padding:10px 12px 10px 36px;background:var(--surface2);
+                 border:1px solid var(--glass-border);border-radius:var(--r-xs);
+                 color:#fff;font-size:13.5px;outline:none"
+          onkeydown="if(event.key==='Enter')searchTx()">
+      </div>
+      <button onclick="searchTx()"
+        style="flex-shrink:0;padding:10px 16px;background:var(--accent);color:#fff;
+               border:none;border-radius:var(--r-xs);font-size:13px;font-weight:700;cursor:pointer">
+        Search
+      </button>
+    </div>
+    <div id="history-search-result" style="margin-bottom:12px"></div>
+
     <div class="glass" style="padding:4px 16px">
       <div id="history-list">
         <div class="loading">Loading…</div>
@@ -3295,6 +3341,22 @@ http_response_code(200);</pre>
     </div>
     <h1 class="page-title" style="margin-bottom:6px">Update Wallet</h1>
     <p id="wallet-current-label" style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px"></p>
+
+    <!-- Shown when a pending wallet change is active -->
+    <div id="wallet-pending-banner" style="display:none;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);border-radius:16px;padding:16px;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(251,191,36,.9)" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style="font-size:13px;font-weight:700;color:rgba(251,191,36,.9)">Wallet Change Pending</span>
+      </div>
+      <p style="font-size:12.5px;color:rgba(255,255,255,.65);margin:0 0 4px">Changing to:</p>
+      <p id="wallet-pending-addr" style="font-size:12px;font-family:monospace;color:#fff;word-break:break-all;margin:0 0 10px"></p>
+      <p id="wallet-pending-eta" style="font-size:12px;color:rgba(255,255,255,.5);margin:0 0 12px"></p>
+      <button id="wallet-cancel-btn" class="btn" style="width:100%;padding:10px;font-size:13px;background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.25);color:var(--danger);border-radius:12px" onclick="cancelPendingWallet()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        Cancel This Change
+      </button>
+    </div>
+
     <div class="glass" style="padding:20px">
       <div class="field">
         <label>TON Payout Wallet Address</label>
@@ -3738,6 +3800,9 @@ http_response_code(200);</pre>
         const tx = d.last_payment_tx_hash || null;
         const txS = tx ? `${tx.slice(0, 16)}…` : '—';
         const tonReq = d.required_ton != null ? `${d.required_ton} TON` : '—';
+        const paidSoFar = (d.amount_paid_so_far != null && d.amount_paid_so_far > 0)
+          ? `${(d.amount_paid_so_far / 1e9).toFixed(9)} TON`
+          : null;
         const start = d.start_date || '—';
         const renew = d.next_renewal_date || '—';
         const created = (d.created_at || '').slice(0, 16);
@@ -3748,6 +3813,7 @@ http_response_code(200);</pre>
           ['Status', pill(d.status)],
           ['Price Paid', `<b>${price}</b> / ${interval}`],
           ['TON Required', tonReq],
+          ...(paidSoFar ? [['Paid So Far', `<span style="color:var(--warn)">${paidSoFar}</span>`]] : []),
           ...(d.admin_payout_ton != null ? [
             ['Platform Fee', `${(d.platform_fee_pct || 5.3).toFixed(2)}% (buyer ${(d.buyer_fee_pct || 2).toFixed(2)}% + admin ${(d.admin_fee_pct || 3.3).toFixed(2)}%)`],
             ['Your Payout', `<b style="color:var(--success)">${d.admin_payout_ton} TON</b>`],
@@ -4269,7 +4335,14 @@ http_response_code(200);</pre>
         document.getElementById('mgmt-payments').onclick = () => loadHistory(groupId, g.chat_title || 'Network');
         document.getElementById('mgmt-members').onclick = () => openMembers(groupId);
         document.getElementById('mgmt-price').onclick = () => openPricePage(groupId, g.price_usd_cents);
-        document.getElementById('mgmt-wallet').onclick = () => openWalletPage(groupId, g.payout_wallet_address);
+        document.getElementById('mgmt-wallet').onclick = async () => {
+          let pending = null;
+          try {
+            const pr = await apiFetch(`${API}/groups/${groupId}/wallet-change-pending`, { headers: H() });
+            if (pr.ok) { const pd = await pr.json(); pending = pd.pending; }
+          } catch (_) {}
+          openWalletPage(groupId, g.payout_wallet_address, pending);
+        };
         document.getElementById('mgmt-comp').onclick = () => openCompPage(groupId);
         document.getElementById('mgmt-pause').onclick = () => doPauseResume(groupId, _manageGroupData ? _manageGroupData.status : status, g.chat_title);
         document.getElementById('mgmt-delete').onclick = () => openDeletePage(groupId, g.chat_title || 'Network');
@@ -4286,7 +4359,10 @@ http_response_code(200);</pre>
     document.getElementById('history-back-btn').onclick = () => App.nav('manage');
 
     async function loadHistory(groupId, groupTitle) {
+      _historyGroupId = groupId;
       document.getElementById('history-title').textContent = groupTitle || 'Payment History';
+      document.getElementById('history-search-input').value = '';
+      document.getElementById('history-search-result').innerHTML = '';
       App.nav('history');
       const el = document.getElementById('history-list');
       el.innerHTML = skeletonCards(3);
@@ -4322,6 +4398,64 @@ http_response_code(200);</pre>
         });
       } catch (e) {
         el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load payments.</p></div>`;
+      }
+    }
+
+    let _historyGroupId = null;
+
+    async function searchTx() {
+      const hash = document.getElementById('history-search-input').value.trim();
+      const resultEl = document.getElementById('history-search-result');
+      if (!hash) { resultEl.innerHTML = ''; return; }
+
+      resultEl.innerHTML = `<div style="font-size:13px;color:rgba(255,255,255,.5);padding:8px 0">Searching…</div>`;
+      try {
+        const r = await apiFetch(`${API}/search/tx?hash=${encodeURIComponent(hash)}`, { headers: H() });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const { found, result } = await r.json();
+
+        if (!found || !result) {
+          resultEl.innerHTML = `
+            <div style="background:rgba(255,92,92,.07);border:1px solid rgba(255,92,92,.2);
+                        border-radius:var(--r-xs);padding:14px 16px;font-size:13px;color:rgba(255,255,255,.65)">
+              No transaction found for this hash in your networks.
+            </div>`;
+          return;
+        }
+
+        // Show the result as a tappable card that opens PmtDetail
+        const price = (result.price_locked_in != null && result.price_locked_in < 1000)
+          ? `$${Number(result.price_locked_in).toFixed(2)}`
+          : result.price_locked_in ? `${(result.price_locked_in / 1e9).toFixed(4)} TON` : '—';
+        const tx = result.last_payment_tx_hash || '';
+        const txS = tx ? tx.slice(0, 14) + '…' : '—';
+
+        resultEl.innerHTML = `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                      color:rgba(255,255,255,.4);margin-bottom:6px">Search result</div>`;
+
+        const card = document.createElement('div');
+        card.className = 'hist-item';
+        card.style.cssText = 'cursor:pointer;-webkit-tap-highlight-color:transparent;margin-bottom:0';
+        card.onclick = () => PmtDetail.show(result.group_id, result.id, result);
+        card.innerHTML = `
+          <div class="hist-left">
+            <span class="hist-name">${esc(result.first_name || 'User')}${result.username ? ` <span style="color:rgba(255,255,255,.45);font-weight:500">@${esc(result.username)}</span>` : ''}</span>
+            <span class="hist-date">${esc(result.chat_title || '—')} · ${esc(result.start_date || 'N/A')}</span>
+            <span class="hist-hash">${txS}</span>
+          </div>
+          <div class="hist-right">
+            <span class="hist-price">${price}</span>
+            ${pill(result.status)}
+          </div>`;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'glass';
+        wrapper.style.cssText = 'padding:4px 16px;border-radius:var(--r-xs)';
+        wrapper.appendChild(card);
+        resultEl.appendChild(wrapper);
+      } catch (e) {
+        resultEl.innerHTML = `<div style="font-size:13px;color:var(--danger);padding:8px 0">${esc(String(e.message || e))}</div>`;
       }
     }
 
@@ -4421,7 +4555,12 @@ http_response_code(200);</pre>
     // ════════════════════════════════════════════════════
     // UPDATE WALLET PAGE
     // ════════════════════════════════════════════════════
-    function openWalletPage(groupId, currentWallet) {
+    let _walletGroupId = null;
+    let _walletPendingChangeId = null;
+
+    function openWalletPage(groupId, currentWallet, pendingChange) {
+      _walletGroupId = groupId;
+      _walletPendingChangeId = null;
       document.getElementById('wallet-current-label').textContent =
         currentWallet ? `Current: ${currentWallet.slice(0, 10)}…${currentWallet.slice(-6)}` : 'No wallet set yet';
       document.getElementById('wallet-input').value = currentWallet || '';
@@ -4431,7 +4570,44 @@ http_response_code(200);</pre>
       document.getElementById('wallet-submit-btn').innerHTML =
         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
       document.getElementById('wallet-submit-btn').setAttribute('data-gid', groupId);
+
+      // Show pending-change banner if one exists
+      const banner = document.getElementById('wallet-pending-banner');
+      if (pendingChange && pendingChange.change_id) {
+        _walletPendingChangeId = pendingChange.change_id;
+        const addr = pendingChange.new_wallet || pendingChange.new_wallet_address || '';
+        const eta  = pendingChange.activates_at || '';
+        document.getElementById('wallet-pending-addr').textContent = addr;
+        document.getElementById('wallet-pending-eta').textContent  = eta ? `Activates: ${eta.slice(0, 16).replace('T', ' ')} UTC` : '';
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+
       App.nav('wallet');
+    }
+
+    async function cancelPendingWallet() {
+      if (!_walletGroupId || !_walletPendingChangeId) return;
+      const confirmed = await Confirm.show('Cancel Wallet Change?',
+        'Your payout wallet will remain unchanged.');
+      if (!confirmed) return;
+      const btn = document.getElementById('wallet-cancel-btn');
+      btn.disabled = true; btn.textContent = 'Cancelling…';
+      try {
+        const r = await apiFetch(`${API}/groups/${_walletGroupId}/wallet-change/${_walletPendingChangeId}/cancel`, {
+          method: 'POST', headers: H()
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        document.getElementById('wallet-pending-banner').style.display = 'none';
+        _walletPendingChangeId = null;
+        document.getElementById('wallet-result').innerHTML = alertHtml('Wallet change cancelled. Your current wallet is unchanged.', 'success');
+      } catch (e) {
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Cancel This Change`;
+        document.getElementById('wallet-result').innerHTML = alertHtml(String(e.message || e), 'error');
+      }
     }
 
     async function submitWallet() {
@@ -4448,16 +4624,34 @@ http_response_code(200);</pre>
           method: 'PUT', headers: H(), body: JSON.stringify({ wallet_address: addr })
         });
         if (!r.ok) throw new Error(await _errDetail(r));
+        const data = await r.json();
         WebApp.HapticFeedback.notificationOccurred('success');
-        document.getElementById('wallet-result').innerHTML = alertHtml('Wallet updated successfully.', 'success');
-        document.getElementById('wallet-current-label').textContent = `Current: ${addr.slice(0, 10)}…${addr.slice(-6)}`;
+
+        // Show the pending-change banner with cancel option
+        if (data.change_id) {
+          _walletPendingChangeId = data.change_id;
+          const eta = data.activates_at || '';
+          document.getElementById('wallet-pending-addr').textContent = addr;
+          document.getElementById('wallet-pending-eta').textContent = eta
+            ? `Activates: ${eta.slice(0, 16).replace('T', ' ')} UTC`
+            : `Activates in ${data.delay_hours || 24} hours`;
+          document.getElementById('wallet-pending-banner').style.display = 'block';
+          document.getElementById('wallet-cancel-btn').disabled = false;
+          document.getElementById('wallet-cancel-btn').innerHTML =
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Cancel This Change`;
+        }
+
+        document.getElementById('wallet-result').innerHTML = alertHtml(
+          `Change scheduled — activates in ${data.delay_hours || 24} hours. You can cancel it above before it takes effect.`,
+          'success'
+        );
+        document.getElementById('wallet-current-label').textContent = `Current: ${addr.slice(0, 10)}…${addr.slice(-6)} (pending)`;
         if (_manageGroupData) {
           _manageGroupData.payout_wallet_address = addr;
-          // Refresh the detail card wallet row without reloading the full page
           const walletVal = document.querySelector('#manage-detail-card .ico-wallet')?.closest('.data-row')?.querySelector('.value');
           if (walletVal) {
             const short = addr.length > 16 ? addr.slice(0, 8) + '\u2026' + addr.slice(-5) : addr;
-            walletVal.textContent = short;
+            walletVal.textContent = short + ' (pending)';
           }
         }
         btn.disabled = false;
@@ -5063,6 +5257,11 @@ http_response_code(200);</pre>
         const btn = document.getElementById(`dev-tab-${t}`);
         if (btn) btn.classList.toggle('active', t === tab);
       });
+      // Clear search state when switching tabs
+      const si = document.getElementById('dev-search-input');
+      const sr = document.getElementById('dev-search-result');
+      if (si) si.value = '';
+      if (sr) sr.innerHTML = '';
       loadDevCharges();
     }
 
@@ -5081,36 +5280,75 @@ http_response_code(200);</pre>
           return;
         }
 
-        const statusDotColor = { completed: 'var(--success)', pending: '#fbbf24', expired: 'rgba(255,255,255,.3)', failed: 'var(--danger)' };
         const wrapper = document.createElement('div');
         wrapper.className = 'glass';
         wrapper.style.cssText = 'border-radius:var(--r-sm);padding:4px 16px';
-
-        charges.forEach(c => {
-          const row = document.createElement('div');
-          row.className = 'charge-row';
-          row.onclick = () => {
-            const explorer = c.mode === 'test' ? 'testnet.tonscan.org' : 'tonscan.org';
-            if (c.tx_hash) WebApp.openLink(`https://${explorer}/tx/${c.tx_hash}`);
-          };
-          const date = new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-          row.innerHTML = `
-            <div class="charge-status-dot" style="background:${statusDotColor[c.status] || 'rgba(255,255,255,.3)'}"></div>
-            <div class="charge-body">
-              <div class="charge-ref">${esc(c.platform_name || 'App')} · <span style="color:rgba(255,255,255,.5);font-weight:600">${esc(c.external_reference)}</span></div>
-              <div class="charge-meta">${date}${c.tx_hash ? ' · <span style="color:var(--accent)">TX ↗</span>' : ''}</div>
-            </div>
-            <div>
-              <div class="charge-amount">${fmtUsd(c.amount_usd_cents)}</div>
-              <div class="charge-mode-badge ${c.mode}">${c.mode}</div>
-            </div>
-          `;
-          wrapper.appendChild(row);
-        });
+        charges.forEach(c => wrapper.appendChild(_renderChargeCard(c)));
         el.innerHTML = '';
         el.appendChild(wrapper);
       } catch (e) {
         el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load charges.</p></div>`;
+      }
+    }
+
+    // ── Developer charge search ───────────────────────────────────────────────
+
+    function _renderChargeCard(c) {
+      const statusDotColor = { completed: 'var(--success)', pending: '#fbbf24', expired: 'rgba(255,255,255,.3)', failed: 'var(--danger)' };
+      const date = new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const explorer = c.mode === 'test' ? 'testnet.tonscan.org' : 'tonscan.org';
+      const row = document.createElement('div');
+      row.className = 'charge-row';
+      row.onclick = () => { if (c.tx_hash) WebApp.openLink(`https://${explorer}/tx/${c.tx_hash}`); };
+      row.innerHTML = `
+        <div class="charge-status-dot" style="background:${statusDotColor[c.status] || 'rgba(255,255,255,.3)'}"></div>
+        <div class="charge-body">
+          <div class="charge-ref">${esc(c.platform_name || 'App')} · <span style="color:rgba(255,255,255,.5);font-weight:600">${esc(c.external_reference)}</span></div>
+          <div class="charge-meta">${date}${c.tx_hash ? ' · <span style="color:var(--accent)">TX ↗</span>' : ''}</div>
+        </div>
+        <div>
+          <div class="charge-amount">${fmtUsd(c.amount_usd_cents)}</div>
+          <div class="charge-mode-badge ${c.mode}">${c.mode}</div>
+        </div>`;
+      return row;
+    }
+
+    async function searchDevCharges() {
+      const query = document.getElementById('dev-search-input').value.trim();
+      const resultEl = document.getElementById('dev-search-result');
+      if (!query) { resultEl.innerHTML = ''; return; }
+
+      resultEl.innerHTML = `<div style="font-size:13px;color:rgba(255,255,255,.5);padding:6px 0">Searching…</div>`;
+      try {
+        const r = await apiFetch(`${API}/developer/search?q=${encodeURIComponent(query)}`, { headers: H() });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const { found, results } = await r.json();
+
+        if (!found || !results.length) {
+          resultEl.innerHTML = `
+            <div style="background:rgba(255,92,92,.07);border:1px solid rgba(255,92,92,.2);
+                        border-radius:var(--r-xs);padding:14px 16px;font-size:13px;color:rgba(255,255,255,.65)">
+              No charge found for <code style="color:var(--accent)">${esc(query)}</code>.
+              Try the full external_reference or the complete TX hash.
+            </div>`;
+          return;
+        }
+
+        // Build result list using the same charge-row component as the main list
+        const label = document.createElement('div');
+        label.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.4);margin-bottom:6px';
+        label.textContent = `${results.length} result${results.length !== 1 ? 's' : ''}`;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'glass';
+        wrapper.style.cssText = 'border-radius:var(--r-xs);padding:4px 16px';
+        results.forEach(c => wrapper.appendChild(_renderChargeCard(c)));
+
+        resultEl.innerHTML = '';
+        resultEl.appendChild(label);
+        resultEl.appendChild(wrapper);
+      } catch (e) {
+        resultEl.innerHTML = `<div style="font-size:13px;color:var(--danger);padding:6px 0">${esc(String(e.message || e))}</div>`;
       }
     }
 

@@ -211,6 +211,7 @@ CREATE TABLE IF NOT EXISTS platform_charges (
     amount_usd_cents INTEGER NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','completed','expired','failed')),
     vault_address TEXT,
+    payment_url TEXT,
     buyer_fee_bps INTEGER,
     platform_fee_bps INTEGER,
     tx_hash TEXT,
@@ -457,6 +458,7 @@ async def init_db() -> None:
                 status               TEXT NOT NULL DEFAULT 'pending'
                                      CHECK(status IN ('pending','completed','expired','failed')),
                 vault_address        TEXT,
+                payment_url          TEXT,
                 buyer_fee_bps        INTEGER,
                 platform_fee_bps     INTEGER,
                 tx_hash              TEXT,
