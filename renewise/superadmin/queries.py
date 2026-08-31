@@ -566,3 +566,46 @@ async def get_platform_details(platform_id: int) -> dict | None:
             "WHERE platform_id = $1 AND status = 'completed'", platform_id
         ) or 0) / 100.0
         return platform
+
+
+async def delete_platform(platform_id: int, actor_tg_id: int) -> bool:
+    """
+    Hard-delete a platform and all its related data:
+    webhook_deliveries → webhook_endpoints → platform_charges → platform_audit_log → platforms.
+    Returns True if a platform row was actually deleted.
+    """
+    async with _db() as db:
+        exists = await db.fetchval(
+            "SELECT 1 FROM platforms WHERE id = $1", platform_id
+        )
+        if not exists:
+            return False
+
+        # Cascade order: child tables first
+        await db.execute(
+            "DELETE FROM webhook_deliveries "
+            "WHERE webhook_endpoint_id IN "
+            "(SELECT id FROM webhook_endpoints WHERE platform_id = $1)",
+            platform_id,
+        )
+        await db.execute(
+            "DELETE FROM webhook_endpoints WHERE platform_id = $1", platform_id
+        )
+        await db.execute(
+            "DELETE FROM platform_charges WHERE platform_id = $1", platform_id
+        )
+        await db.execute(
+            "DELETE FROM platform_audit_log WHERE platform_id = $1", platform_id
+        )
+        await db.execute(
+            "DELETE FROM platforms WHERE id = $1", platform_id
+        )
+        # Global audit log entry so the action is traceable
+        await db.execute(
+            "INSERT INTO admin_audit_log (action, actor_telegram_id, details) "
+            "VALUES ($1, $2, $3)",
+            "platform_deleted",
+            actor_tg_id,
+            f"platform_id={platform_id}",
+        )
+    return True

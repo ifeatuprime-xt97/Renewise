@@ -15,6 +15,10 @@ async def authenticate_platform(authorization: Annotated[str, Header()]) -> dict
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     
     secret_key = authorization[7:]
+
+    # Reject blank or clearly invalid keys immediately (e.g. after test key deletion)
+    if not secret_key or len(secret_key) < 8:
+        raise HTTPException(status_code=401, detail="Invalid API key")
     
     if secret_key in auth_cache:
         platform = auth_cache[secret_key]

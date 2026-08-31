@@ -1604,6 +1604,246 @@
     .text-green {
       color: rgba(100, 240, 160, 0.95);
     }
+
+    /* ══════════════════════════════════════════════════
+       DEVELOPER UI
+    ══════════════════════════════════════════════════ */
+
+    /* Status filter tabs on API Charges page */
+    .dev-tab {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      border-radius: 40px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.6);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, color .15s, border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .dev-tab.active {
+      background: rgba(0,152,234,.18);
+      border-color: rgba(0,152,234,.4);
+      color: var(--accent);
+    }
+
+    /* Compact platform card */
+    .plat-card {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: var(--r);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .plat-card-header {
+      display: flex;
+      align-items: center;
+      padding: 16px 18px;
+      gap: 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .plat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: rgba(0,152,234,.15);
+      border: 1px solid rgba(0,152,234,.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .plat-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .plat-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .plat-meta {
+      font-size: 12px;
+      color: rgba(255,255,255,.45);
+      margin-top: 2px;
+    }
+
+    .plat-rev {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--accent);
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .plat-rev-label {
+      font-size: 10.5px;
+      color: rgba(255,255,255,.35);
+      font-weight: 600;
+      text-align: right;
+      letter-spacing: .3px;
+    }
+
+    /* Per-app action grid */
+    .dev-app-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .dev-app-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px 10px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: var(--r-sm);
+      color: #fff;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: background .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .dev-app-btn:active { background: rgba(255,255,255,.1); }
+
+    .dev-app-btn-ico {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dev-app-btn-ico svg {
+      stroke: #fff;
+    }
+
+    /* Charge row in API Charges page */
+    .charge-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .charge-row:last-child { border-bottom: none; }
+
+    .charge-row:active { opacity: .75; }
+
+    .charge-status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .charge-body { flex: 1; min-width: 0; }
+
+    .charge-ref {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .charge-meta {
+      font-size: 11.5px;
+      color: rgba(255,255,255,.45);
+      margin-top: 2px;
+    }
+
+    .charge-amount {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .charge-mode-badge {
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      padding: 2px 6px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-top: 3px;
+    }
+
+    .charge-mode-badge.test {
+      background: rgba(251,191,36,.15);
+      color: #fbbf24;
+    }
+
+    .charge-mode-badge.live {
+      background: rgba(74,222,128,.15);
+      color: #4ade80;
+    }
+
+    /* ── Code example blocks ── */
+    .code-lang-btn {
+      padding: 5px 13px;
+      border-radius: 40px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.55);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .code-lang-btn.active {
+      background: rgba(0,152,234,.18);
+      border-color: rgba(0,152,234,.4);
+      color: var(--accent);
+    }
+
+    .code-block {
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 8px 0 16px;
+      font-size: 11px;
+      line-height: 1.7;
+      color: rgba(255,255,255,.82);
+      white-space: pre;
+      overflow-x: auto;
+      font-family: 'Courier New', 'Menlo', 'Monaco', monospace;
+      -webkit-overflow-scrolling: touch;
+    }
   </style>
 </head>
 
@@ -1809,36 +2049,60 @@
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Developer
+     PAGE — Developer Dashboard
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-dev-dashboard">
-    <div class="section-hdr" style="margin-bottom:8px">
-      <h1 class="page-title">Developer Apps</h1>
-      <button class="btn-link" onclick="openCreatePlatform()">+ App</button>
+    <div class="section-hdr" style="margin-bottom:16px">
+      <h1 class="page-title">My Apps</h1>
+      <button class="btn-link" onclick="openCreatePlatform()" style="font-weight:800;font-size:14px;display:flex;align-items:center;gap:4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New App
+      </button>
     </div>
-    <p style="font-size:13px;color:rgb(255, 255, 255);margin-bottom:16px;line-height:1.4">
-      Integrate Renewise billing directly into your own Telegram app.
-    </p>
 
-    <!-- Developer Dashboard Card -->
-    <div class="admin-card" id="dev-hero-card" style="display:none; margin-bottom:24px;">
-      <div class="admin-card-title">Global API Revenue</div>
-      <div class="admin-stats">
-        <div style="padding: 10px 0 20px; text-align: center;">
-          <div class="admin-stat-value hero" id="dev-total-revenue">
-            <span class="hero-symbol">$</span>0<span class="hero-cents">.00</span>
-          </div>
+    <!-- Compact stats banner — shown only when platforms exist -->
+    <div id="dev-stats-bar" style="display:none;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:var(--r-sm);padding:14px 18px;margin-bottom:20px;display:none">
+      <div style="display:flex;gap:0">
+        <div style="flex:1;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--accent)" id="dev-total-revenue-v2">$0.00</div>
+          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">API Revenue</div>
         </div>
-        <div class="admin-sub-stats">
-          <div class="admin-sub-stat">
-            <div class="sub-stat-val" id="dev-total-transactions">0</div>
-            <div class="sub-stat-label">Transactions</div>
-          </div>
+        <div style="width:1px;background:rgba(255,255,255,.07);margin:2px 0"></div>
+        <div style="flex:1;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#fff" id="dev-total-transactions-v2">0</div>
+          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Charges</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,.07);margin:2px 0"></div>
+        <div style="flex:1;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:#fff" id="dev-apps-count">0</div>
+          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Apps</div>
         </div>
       </div>
     </div>
 
+    <!-- Keep legacy IDs for backward-compat with existing JS that writes to them -->
+    <div id="dev-hero-card" style="display:none">
+      <div id="dev-total-revenue" style="display:none"></div>
+      <div id="dev-total-transactions" style="display:none"></div>
+    </div>
+
     <div id="platforms-list">
+      <div class="loading">Loading…</div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Per-App Management (slide-in sub-page)
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-dev-app">
+    <div class="back-row">
+      <button class="back-btn" onclick="App.nav('dev-dashboard')">
+        <svg viewBox="0 0 24 24" fill="none"><polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5"/></svg>
+        My Apps
+      </button>
+    </div>
+    <h1 class="page-title" id="dev-app-title" style="margin-bottom:18px">App</h1>
+    <div id="dev-app-content">
       <div class="loading">Loading…</div>
     </div>
   </section>
@@ -1847,9 +2111,17 @@
     <div class="section-hdr" style="margin-bottom:8px">
       <h1 class="page-title">API Charges</h1>
     </div>
-    <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px;line-height:1.4">
-      Global feed of charges across all your apps.
+    <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.4">
+      All charges across every app, newest first.
     </p>
+    <!-- Status filter tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px">
+      <button id="dev-tab-all" class="dev-tab active" onclick="setDevChargesTab('all')">All</button>
+      <button id="dev-tab-completed" class="dev-tab" onclick="setDevChargesTab('completed')">✅ Completed</button>
+      <button id="dev-tab-pending" class="dev-tab" onclick="setDevChargesTab('pending')">⏳ Pending</button>
+      <button id="dev-tab-expired" class="dev-tab" onclick="setDevChargesTab('expired')">⏰ Expired</button>
+      <button id="dev-tab-failed" class="dev-tab" onclick="setDevChargesTab('failed')">❌ Failed</button>
+    </div>
     <div id="dev-subs-list">
       <div class="loading">Loading…</div>
     </div>
@@ -1857,32 +2129,21 @@
 
   <section class="page" id="page-dev-settings">
     <div class="section-hdr" style="margin-bottom:8px">
-      <h1 class="page-title">Dev Settings</h1>
+      <h1 class="page-title">API Docs</h1>
     </div>
-    <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px;line-height:1.4">
-      API documentation and webhook configuration.
-    </p>
 
-    <!-- ── Switch Mode Toggle ─────────────────────────────────────────── -->
-    <div class="glass"
-      style="border-radius:var(--r);overflow:hidden;margin-bottom:20px;padding:12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer"
-      onclick="switchAppMode('creator')">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div
-          style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:var(--accent)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
-        </div>
-        <div>
-          <div style="font-weight:700;font-size:14px">Switch to Creator Mode</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.5)">Manage groups, channels & subs</div>
-        </div>
-      </div>
-      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2.5" width="20" height="20">
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
+    <!-- Quick-action strip -->
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button class="btn" onclick="App.nav('dev-sandbox')"
+        style="flex:1;background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);font-size:13px;padding:10px 8px;border-radius:var(--r-sm)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex-shrink:0"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+        Open Sandbox
+      </button>
+      <button class="btn" onclick="switchAppMode('creator')"
+        style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:13px;padding:10px 8px;border-radius:var(--r-sm)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex-shrink:0"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Creator Mode
+      </button>
     </div>
 
 
@@ -2151,6 +2412,190 @@
         <code>POST /charges</code> — 60/min &nbsp;|&nbsp; <code>GET /charges/:id</code> — 60/min<br>
         <code>POST /keys/regenerate</code> — 5/min &nbsp;|&nbsp; <code>POST /webhook</code> — 10/min
       </div>
+
+      <!-- Code Examples -->
+      <div class="settings-row accordion-trigger no-border" style="cursor:pointer" onclick="toggleAcc(this)">
+        <div class="sr-left">
+          <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg></div>
+          <div>
+            <div class="sr-label">Code Examples</div>
+            <div class="sr-sub">Python, Node.js, curl, PHP</div>
+          </div>
+        </div>
+        <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg></div>
+      </div>
+      <div class="accordion-content no-border" style="padding-left:16px">
+
+        <!-- Language tab strip -->
+        <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+          <button class="code-lang-btn active" id="lang-btn-python" onclick="switchCodeLang('python')">Python</button>
+          <button class="code-lang-btn" id="lang-btn-node"   onclick="switchCodeLang('node')">Node.js</button>
+          <button class="code-lang-btn" id="lang-btn-curl"   onclick="switchCodeLang('curl')">curl</button>
+          <button class="code-lang-btn" id="lang-btn-php"    onclick="switchCodeLang('php')">PHP</button>
+        </div>
+
+        <!-- ── Python ── -->
+        <div id="code-python">
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a charge</b>
+          <pre class="code-block">import httpx
+
+SECRET = "sk_test_…"
+BASE   = "https://&lt;your-renewise-host&gt;"
+
+resp = httpx.post(
+    f"{BASE}/api/platform/charges",
+    headers={"Authorization": f"Bearer {SECRET}"},
+    json={
+        "amount_usd_cents": 999,
+        "external_reference": "order_001",
+    },
+)
+charge = resp.json()
+payment_url = charge["checkout_url"]  # show this to the user</pre>
+
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Poll for completion</b>
+          <pre class="code-block">charge_id = charge["id"]
+
+status_resp = httpx.get(
+    f"{BASE}/api/platform/charges/{charge_id}",
+    headers={"Authorization": f"Bearer {SECRET}"},
+)
+print(status_resp.json()["status"])  # pending | completed | expired | failed</pre>
+
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Verify a webhook</b>
+          <pre class="code-block">import hmac, hashlib
+
+def verify_webhook(secret: str, body: bytes, header_sig: str) -> bool:
+    expected = hmac.new(
+        secret.encode(), body, hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, header_sig)</pre>
+        </div>
+
+        <!-- ── Node.js ── -->
+        <div id="code-node" style="display:none">
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a charge</b>
+          <pre class="code-block">const SECRET = "sk_test_…";
+const BASE   = "https://&lt;your-renewise-host&gt;";
+
+const res = await fetch(`${BASE}/api/platform/charges`, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${SECRET}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    amount_usd_cents: 999,
+    external_reference: "order_001",
+  }),
+});
+const charge = await res.json();
+const paymentUrl = charge.checkout_url; // show this to the user</pre>
+
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Poll for completion</b>
+          <pre class="code-block">const statusRes = await fetch(
+  `${BASE}/api/platform/charges/${charge.id}`,
+  { headers: { Authorization: `Bearer ${SECRET}` } }
+);
+const { status } = await statusRes.json();
+console.log(status); // pending | completed | expired | failed</pre>
+
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Verify a webhook (Express)</b>
+          <pre class="code-block">import crypto from "node:crypto";
+
+function verifyWebhook(secret, rawBody, headerSig) {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
+  return crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(headerSig)
+  );
+}
+
+// In your Express handler:
+app.post("/webhook", express.raw({ type: "*/*" }), (req, res) => {
+  const sig = req.headers["renewise-signature"];
+  if (!verifyWebhook(process.env.WHSEC, req.body, sig)) {
+    return res.sendStatus(400);
+  }
+  const event = JSON.parse(req.body);
+  if (event.status === "completed") {
+    // fulfil the order
+  }
+  res.sendStatus(200);
+});</pre>
+        </div>
+
+        <!-- ── curl ── -->
+        <div id="code-curl" style="display:none">
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a charge</b>
+          <pre class="code-block">curl -X POST https://&lt;host&gt;/api/platform/charges \
+  -H "Authorization: Bearer sk_test_…" \
+  -H "Content-Type: application/json" \
+  -d '{"amount_usd_cents":999,"external_reference":"order_001"}'</pre>
+
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Get charge status</b>
+          <pre class="code-block">curl https://&lt;host&gt;/api/platform/charges/&lt;charge_id&gt; \
+  -H "Authorization: Bearer sk_test_…"</pre>
+
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Rotate your secret key</b>
+          <pre class="code-block">curl -X POST https://&lt;host&gt;/api/developer/platforms/&lt;id&gt;/keys/regenerate \
+  -H "Authorization: tma &lt;initData&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{"mode":"test"}'</pre>
+        </div>
+
+        <!-- ── PHP ── -->
+        <div id="code-php" style="display:none">
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a charge</b>
+          <pre class="code-block">&lt;?php
+$secret = 'sk_test_…';
+$base   = 'https://&lt;your-renewise-host&gt;';
+
+$ch = curl_init("$base/api/platform/charges");
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER =&gt; true,
+    CURLOPT_POST           =&gt; true,
+    CURLOPT_HTTPHEADER     =&gt; [
+        "Authorization: Bearer $secret",
+        "Content-Type: application/json",
+    ],
+    CURLOPT_POSTFIELDS =&gt; json_encode([
+        'amount_usd_cents'   =&gt; 999,
+        'external_reference' =&gt; 'order_001',
+    ]),
+]);
+$charge     = json_decode(curl_exec($ch), true);
+$paymentUrl = $charge['checkout_url']; // show this to the user</pre>
+
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Verify a webhook</b>
+          <pre class="code-block">function verifyWebhook(string $secret, string $body, string $headerSig): bool {
+    $expected = hash_hmac('sha256', $body, $secret);
+    return hash_equals($expected, $headerSig);
+}
+
+// In your handler:
+$body      = file_get_contents('php://input');
+$headerSig = $_SERVER['HTTP_RENEWISE_SIGNATURE'] ?? '';
+
+if (!verifyWebhook($_ENV['WHSEC'], $body, $headerSig)) {
+    http_response_code(400);
+    exit;
+}
+$event = json_decode($body, true);
+if ($event['status'] === 'completed') {
+    // fulfil the order
+}
+http_response_code(200);</pre>
+        </div>
+
+      </div><!-- /code examples -->
 
     </div><!-- /API docs accordion -->
   </section>
@@ -3112,7 +3557,7 @@
     // ════════════════════════════════════════════════════
     // Navigation
     // ════════════════════════════════════════════════════
-    const PAGES = ['dashboard', 'dev-dashboard', 'dev-subs', 'dev-settings', 'dev-sandbox', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
+    const PAGES = ['dashboard', 'dev-dashboard', 'dev-app', 'dev-subs', 'dev-settings', 'dev-sandbox', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
     const NAV_PAGES = ['dashboard', 'subs', 'settings', 'dev-dashboard', 'dev-subs', 'dev-settings'];
 
     // Returns the current app mode ('creator' or 'developer')
@@ -3185,7 +3630,7 @@
           const el = document.getElementById('nav-' + t);
           if (el) el.classList.toggle('active', t === page);
         });
-        const subPages = ['history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
+        const subPages = ['history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete', 'dev-app'];
         const bnc = document.getElementById('bottom-nav-creator');
         const bnd = document.getElementById('bottom-nav-dev');
 
@@ -3439,6 +3884,18 @@
     function alertHtml(msg, type = 'error') {
       const iconMap = { error: 'alert', success: 'check', info: 'alert' };
       return `<div class="alert alert-${type}">${ico(iconMap[type] || 'alert', 16)}<span>${esc(msg)}</span></div>`;
+    }
+
+    // ════════════════════════════════════════════════════
+    // Code examples language switcher
+    // ════════════════════════════════════════════════════
+    function switchCodeLang(lang) {
+      ['python', 'node', 'curl', 'php'].forEach(l => {
+        const panel = document.getElementById('code-' + l);
+        const btn   = document.getElementById('lang-btn-' + l);
+        if (panel) panel.style.display = l === lang ? 'block' : 'none';
+        if (btn)   btn.classList.toggle('active', l === lang);
+      });
     }
   </script>
 
@@ -4596,44 +5053,62 @@
     }
 
     // ════════════════════════════════════════════════════
-    // DEVELOPER — Platforms & API Keys
+    // DEVELOPER — API Charges feed
     // ════════════════════════════════════════════════════
+    let _devChargesFilter = 'all';
+
+    function setDevChargesTab(tab) {
+      _devChargesFilter = tab;
+      ['all','completed','pending','expired','failed'].forEach(t => {
+        const btn = document.getElementById(`dev-tab-${t}`);
+        if (btn) btn.classList.toggle('active', t === tab);
+      });
+      loadDevCharges();
+    }
+
     async function loadDevCharges() {
       const el = document.getElementById('dev-subs-list');
       if (!el) return;
       el.innerHTML = skeletonCards(3);
       try {
-        const r = await apiFetch(`${API}/developer/charges`, { headers: H() });
+        const url = `${API}/developer/charges` + (_devChargesFilter !== 'all' ? `?status=${_devChargesFilter}` : '');
+        const r = await apiFetch(url, { headers: H() });
         if (!r.ok) throw new Error();
         const { charges } = await r.json();
 
         if (!charges || !charges.length) {
-          el.innerHTML = `<div class="empty">${ico('hash', 40)}<p>No API charges yet.</p></div>`;
+          el.innerHTML = `<div class="empty">${ico('credit', 40)}<p>No charges${_devChargesFilter !== 'all' ? ` with status "${_devChargesFilter}"` : ''} yet.</p></div>`;
           return;
         }
 
-        el.innerHTML = '';
+        const statusDotColor = { completed: 'var(--success)', pending: '#fbbf24', expired: 'rgba(255,255,255,.3)', failed: 'var(--danger)' };
+        const wrapper = document.createElement('div');
+        wrapper.className = 'glass';
+        wrapper.style.cssText = 'border-radius:var(--r-sm);padding:4px 16px';
+
         charges.forEach(c => {
-          const card = document.createElement('div');
-          card.className = 'glass sub-card';
-          card.style.marginBottom = '10px';
-          const usd = fmtUsd(c.amount_usd_cents);
-          const icon = c.status === 'completed' ? '✅' : c.status === 'expired' ? '⏰' : c.status === 'failed' ? '❌' : '⏳';
-          card.innerHTML = `
-            <div class="sub-hdr" style="margin-bottom:6px">
-              <span class="sub-name" style="font-size:15px">${esc(c.platform_name || 'App')}</span>
-              <span style="font-size:18px">${icon}</span>
+          const row = document.createElement('div');
+          row.className = 'charge-row';
+          row.onclick = () => {
+            const explorer = c.mode === 'test' ? 'testnet.tonscan.org' : 'tonscan.org';
+            if (c.tx_hash) WebApp.openLink(`https://${explorer}/tx/${c.tx_hash}`);
+          };
+          const date = new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          row.innerHTML = `
+            <div class="charge-status-dot" style="background:${statusDotColor[c.status] || 'rgba(255,255,255,.3)'}"></div>
+            <div class="charge-body">
+              <div class="charge-ref">${esc(c.platform_name || 'App')} · <span style="color:rgba(255,255,255,.5);font-weight:600">${esc(c.external_reference)}</span></div>
+              <div class="charge-meta">${date}${c.tx_hash ? ' · <span style="color:var(--accent)">TX ↗</span>' : ''}</div>
             </div>
-            <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px">
-              ${usd}<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.5)">/charge</span>
-            </div>
-            <div style="font-size:12px;color:rgba(255,255,255,.45);display:flex;flex-direction:column;gap:4px">
-              <div>Ref: <code style="color:var(--accent)">${esc(c.external_reference)}</code></div>
-              <div>📅 ${c.created_at.slice(0, 16).replace('T', ' ')}</div>
+            <div>
+              <div class="charge-amount">${fmtUsd(c.amount_usd_cents)}</div>
+              <div class="charge-mode-badge ${c.mode}">${c.mode}</div>
             </div>
           `;
-          el.appendChild(card);
+          wrapper.appendChild(row);
         });
+        el.innerHTML = '';
+        el.appendChild(wrapper);
       } catch (e) {
         el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load charges.</p></div>`;
       }
@@ -4854,128 +5329,307 @@
         const { platforms, total_revenue_usd_cents, total_transactions } = await r.json();
         _cachedPlatforms = platforms || [];
 
-        const devHeroCard = document.getElementById('dev-hero-card');
-        if (total_revenue_usd_cents !== undefined) {
-          devHeroCard.style.display = 'block';
-          const revUsd = fmtUsd(total_revenue_usd_cents);
-          const match = revUsd.match(/^\$(\d+)\.(\d{2})$/);
-          if (match) {
-            document.getElementById('dev-total-revenue').innerHTML = `<span class="hero-symbol">$</span>${match[1]}<span class="hero-cents">.${match[2]}</span>`;
-          } else {
-            document.getElementById('dev-total-revenue').innerHTML = revUsd;
+        // Update compact stats bar
+        const statsBar = document.getElementById('dev-stats-bar');
+        if (platforms.length) {
+          if (statsBar) {
+            statsBar.style.display = 'block';
+            document.getElementById('dev-total-revenue-v2').textContent = fmtUsd(total_revenue_usd_cents || 0);
+            document.getElementById('dev-total-transactions-v2').textContent = total_transactions || 0;
+            document.getElementById('dev-apps-count').textContent = platforms.length;
           }
-          document.getElementById('dev-total-transactions').textContent = total_transactions || 0;
+          // Keep legacy hidden elements in sync (sandbox reads from these)
+          const legacyRev = document.getElementById('dev-total-revenue');
+          const legacyTx  = document.getElementById('dev-total-transactions');
+          if (legacyRev) legacyRev.textContent = fmtUsd(total_revenue_usd_cents || 0);
+          if (legacyTx)  legacyTx.textContent  = total_transactions || 0;
         }
 
         if (!platforms.length) {
+          if (statsBar) statsBar.style.display = 'none';
           el.innerHTML = `
-            <div class="empty">
-              ${ico('plus', 40)}
-              <p style="margin-bottom:12px">No apps created yet.</p>
-              <button class="btn btn-primary" style="font-size:14px;padding:10px 24px;border-radius:24px" onclick="openCreatePlatform()">Create App</button>
+            <div class="glass" style="padding:32px 20px;text-align:center">
+              <div style="width:56px;height:56px;border-radius:16px;background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="26" height="26">
+                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                </svg>
+              </div>
+              <h2 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">Build with Renewise</h2>
+              <p style="font-size:13.5px;color:rgba(255,255,255,.55);margin-bottom:20px;line-height:1.6">
+                Integrate TON payments into your own Telegram bot or Mini App using the Renewise Payments API.
+              </p>
+              <button class="btn btn-primary" style="border-radius:var(--r-sm)" onclick="openCreatePlatform()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create First App
+              </button>
+              <button class="btn" onclick="App.nav('dev-settings')"
+                style="margin-top:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:13px">
+                View API Docs →
+              </button>
             </div>`;
           return;
         }
 
         el.innerHTML = '';
         for (const p of platforms) {
+          const rev      = p.revenue_usd_cents || 0;
+          const txCount  = p.transactions_count || 0;
+          const hasWallet = !!p.wallet_address;
+          const hasLive   = !!p.publishable_key_live;
+          const statusColor = p.status === 'active' ? 'var(--success)' : 'var(--danger)';
+
+          // Environment badge
+          const envBadge = hasLive
+            ? `<span style="background:rgba(74,222,128,.15);color:#4ade80;font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:20px">LIVE</span>`
+            : `<span style="background:rgba(251,191,36,.15);color:#fbbf24;font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:20px">TESTNET</span>`;
+
+          // Wallet warning
+          const walletWarn = !hasWallet
+            ? `<div style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--warn);margin-top:6px">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                 No payout wallet — charges will fail
+               </div>`
+            : '';
+
           const card = document.createElement('div');
-          card.className = 'glass sub-card';
-          card.style.marginBottom = '14px';
-
-          const wallet = p.wallet_address ? `${p.wallet_address.slice(0, 10)}…${p.wallet_address.slice(-6)}` : 'Not set';
-          const pk_live = p.publishable_key_live;
-          const pk_test = p.publishable_key_test;
-          const sk_test = p.secret_key_test;
-          const rev = p.revenue_usd_cents || 0;
-          const txCount = p.transactions_count || 0;
-
-          // Live key block: show if generated, else show a "Generate" button
-          const liveKeyBlock = pk_live
-            ? `<div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px;word-break:break-all">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                  <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Live Keys (Mainnet)</div>
-                  <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="copyInviteLink('${pk_live}')">Copy pk</button>
-                </div>
-                <code style="color:var(--accent);font-size:12px">${pk_live}</code>
-                <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
-                  <span style="font-size:12px;color:rgba(255,255,255,.6)">Secret key: shown once on generation</span>
-                  <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--error)" onclick="regenerateKey('live')">Rotate</button>
-                </div>
-              </div>`
-            : `<div style="background:linear-gradient(180deg, rgba(0,152,234,.08) 0%, rgba(0,152,234,.02) 100%); border:1px solid rgba(0,152,234,.3); border-radius:16px; padding:20px; margin-bottom:12px; text-align:center; position:relative; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1)">
-                <div style="position:absolute; top:-20px; left:50%; transform:translateX(-50%); width:100px; height:40px; background:var(--accent); filter:blur(40px); opacity:0.3; border-radius:50%"></div>
-                <div style="display:flex; justify-content:center; align-items:center; width:40px; height:40px; background:rgba(0,152,234,.15); border-radius:12px; margin:0 auto 12px auto; border:1px solid rgba(0,152,234,.3)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-                </div>
-                <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px; text-shadow:0 1px 2px rgba(0,0,0,.5)">Go Live on Mainnet</div>
-                <div style="font-size:12px; color:rgba(255,255,255,.6); margin-bottom:16px; line-height:1.5; max-width:280px; margin-left:auto; margin-right:auto">
-                  Your app is currently running in Testnet mode. Generate Live Keys to start accepting real TON payments.
-                </div>
-                <button class="btn" style="background:linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%); color:#fff; font-weight:800; font-size:13px; padding:10px 24px; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(0,152,234,.2), inset 0 1px 0 rgba(255,255,255,.3)" onclick="generateLiveKeys(${p.id})">
-                  Generate Live Keys
-                </button>
-              </div>`;
-
+          card.className = 'plat-card';
           card.innerHTML = `
-            <div class="sub-hdr" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-              <span class="sub-name" style="font-size:17px;font-weight:700">${esc(p.platform_name)}</span>
-              ${pill(p.status)}
-            </div>
-
-            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,0.05)">
+            <div class="plat-card-header" onclick="openDevApp(${p.id})">
+              <div class="plat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="22" height="22">
+                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                </svg>
+              </div>
+              <div class="plat-info">
+                <div class="plat-name">${esc(p.platform_name)}</div>
+                <div class="plat-meta" style="display:flex;align-items:center;gap:6px;margin-top:4px">
+                  ${envBadge}
+                  <span style="color:${statusColor};font-size:10.5px;font-weight:700">● ${p.status.toUpperCase()}</span>
+                </div>
+                ${walletWarn}
+              </div>
               <div>
-                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:700;letter-spacing:.5px">Revenue</div>
-                <div style="font-size:15px;font-weight:700;color:var(--accent)">${fmtUsd(rev)}</div>
+                <div class="plat-rev">${fmtUsd(rev)}</div>
+                <div class="plat-rev-label">${txCount} tx</div>
               </div>
-              <div style="text-align:right">
-                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:700;letter-spacing:.5px">Transactions</div>
-                <div style="font-size:14px;font-weight:600">${txCount}</div>
-              </div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2.5" width="18" height="18" style="flex-shrink:0">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
             </div>
-
-            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:14px;margin-bottom:8px">
-              <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Test Keys · Testnet</div>
-              <code style="color:var(--accent);font-size:12px;display:block;word-break:break-all;margin-bottom:6px">${pk_test}</code>
-              <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-                <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;white-space:nowrap" onclick="copyInviteLink('${pk_test}')">Copy pk</button>
-              </div>
-              <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:6px">Secret Key</div>
-              <code style="font-size:11px;color:rgba(255,255,255,.7);display:block;word-break:break-all;margin-bottom:6px">${sk_test}</code>
-              <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;align-items:center">
-                <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;white-space:nowrap" onclick="copyInviteLink('${sk_test}')">Copy sk</button>
-                <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;white-space:nowrap" onclick="regenerateKey('test')">Rotate</button>
-                <button class="btn" title="Delete test keys" style="padding:5px 10px;font-size:12px;background:transparent;color:var(--destructive);border:1px solid var(--destructive);border-radius:8px;display:flex;align-items:center;white-space:nowrap" onclick="deleteTestKeys(${p.id})"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' width='14' height='14'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4h6v2'/></svg></button>
-              </div>
-              <button class="btn" style="width:100%;padding:9px 12px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="setSandboxEnv('test'); App.nav('dev-sandbox')">Open Sandbox</button>
+            <div style="display:flex;gap:0;border-top:1px solid rgba(255,255,255,.06)">
+              <button style="flex:1;padding:11px 8px;background:none;border:none;border-right:1px solid rgba(255,255,255,.06);color:var(--accent);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"
+                onclick="openDevApp(${p.id})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Manage
+              </button>
+              <button style="flex:1;padding:11px 8px;background:none;border:none;border-right:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.75);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"
+                onclick="showPlatformCharges(${p.id}, '${esc(p.platform_name)}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Charges
+              </button>
+              <button style="flex:1;padding:11px 8px;background:none;border:none;color:rgba(255,255,255,.75);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"
+                onclick="setSandboxEnv('test'); _sandboxSelectPlatform(${p.id}); App.nav('dev-sandbox')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+                Sandbox
+              </button>
             </div>
-
-            ${liveKeyBlock}
-
-            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-              <div>
-                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:700;letter-spacing:.5px">Payout Wallet</div>
-                <div style="font-size:13px;font-family:monospace">${wallet}</div>
-              </div>
-              <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="promptPlatformWallet(${p.id}, ${!!p.wallet_address})">Edit</button>
-            </div>
-
-            <div style="background:rgba(0,0,0,.2);border-radius:12px;padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-              <div>
-                <div style="color:rgba(255,255,255,.5);font-size:11px;text-transform:uppercase;margin-bottom:2px;font-weight:700;letter-spacing:.5px">Security</div>
-                <div style="font-size:13px;">${p.wallet_passcode_hash ? 'Passkey Enabled' : 'No Passkey'}</div>
-              </div>
-              <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="promptPlatformPasscode(${p.id}, ${!!p.wallet_passcode_hash})">${p.wallet_passcode_hash ? 'Change' : 'Set'}</button>
-            </div>
-            
-            <button class="btn" style="background:var(--surface2);width:100%" onclick="showPlatformCharges(${p.id}, '${esc(p.platform_name)}')">
-              View Charges
-            </button>
           `;
           el.appendChild(card);
         }
       } catch (e) {
         el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load apps.</p></div>`;
+      }
+    }
+
+    // ── Helper: pre-select a platform in the sandbox ──────────────────────────
+    function _sandboxSelectPlatform(platformId) {
+      const sel = document.getElementById('sandbox-app-select');
+      if (!sel) return;
+      for (const opt of sel.options) {
+        if (String(opt.value) === String(platformId)) { sel.value = opt.value; break; }
+      }
+    }
+
+    // ── Per-app management page ───────────────────────────────────────────────
+    async function openDevApp(platformId) {
+      currentPlatformId = platformId;
+      chargesPage = 0;
+      const p = _cachedPlatforms.find(x => x.id === platformId);
+      const title = p ? esc(p.platform_name) : 'App';
+      document.getElementById('dev-app-title').textContent = p ? p.platform_name : 'App';
+      App.nav('dev-app');
+      await _renderDevApp(platformId);
+    }
+
+    async function _renderDevApp(platformId) {
+      const container = document.getElementById('dev-app-content');
+      container.innerHTML = skeletonCards(3);
+      try {
+        const r = await apiFetch(`${API}/developer/platforms/${platformId}/charges?limit=5`, { headers: H() });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const data = await r.json();
+        const p = _cachedPlatforms.find(x => x.id === platformId);
+        if (!p) { container.innerHTML = `<div class="empty">${ico('alert',40)}<p>App not found.</p></div>`; return; }
+
+        const wallet = p.wallet_address ? `${p.wallet_address.slice(0,10)}…${p.wallet_address.slice(-6)}` : 'Not set';
+        const hasLive = !!p.publishable_key_live;
+        const s = data.stats || {};
+
+        // ── Stats strip ───────────────────────────────────────────────────────
+        let html = `
+          <div style="display:flex;gap:0;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:var(--r-sm);overflow:hidden;margin-bottom:18px">
+            <div style="flex:1;padding:14px 0;text-align:center">
+              <div style="font-size:20px;font-weight:800;color:var(--accent)">$${(s.total_volume_usd||0).toFixed(2)}</div>
+              <div style="font-size:10.5px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Volume</div>
+            </div>
+            <div style="width:1px;background:rgba(255,255,255,.07)"></div>
+            <div style="flex:1;padding:14px 0;text-align:center">
+              <div style="font-size:20px;font-weight:800;color:#fff">${s.total_charges||0}</div>
+              <div style="font-size:10.5px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Charges</div>
+            </div>
+            <div style="width:1px;background:rgba(255,255,255,.07)"></div>
+            <div style="flex:1;padding:14px 0;text-align:center">
+              <div style="font-size:20px;font-weight:800;color:#fff">${(s.success_rate_pct||0).toFixed(0)}%</div>
+              <div style="font-size:10.5px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Success</div>
+            </div>
+          </div>
+        `;
+
+        // ── Action grid ───────────────────────────────────────────────────────
+        html += `<div class="dev-app-grid">
+          <button class="dev-app-btn" onclick="showPlatformCharges(${p.id},'${esc(p.platform_name)}')">
+            <span class="dev-app-btn-ico" style="background:rgba(0,152,234,.15)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </span>All Charges
+          </button>
+          <button class="dev-app-btn" onclick="setSandboxEnv('test');_sandboxSelectPlatform(${p.id});App.nav('dev-sandbox')">
+            <span class="dev-app-btn-ico" style="background:rgba(74,222,128,.1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" width="20" height="20"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+            </span>Sandbox
+          </button>
+          <button class="dev-app-btn" onclick="promptPlatformWallet(${p.id},${!!p.wallet_address})">
+            <span class="dev-app-btn-ico" style="background:rgba(139,63,216,.15)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ac4ff9" stroke-width="2" width="20" height="20"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H8L4 7h16l-4-4z"/><circle cx="17" cy="13" r="1" fill="#ac4ff9"/></svg>
+            </span>Wallet
+          </button>
+          <button class="dev-app-btn" onclick="${hasLive ? `generateLiveKeys(${p.id})` : `generateLiveKeys(${p.id})`}" ${hasLive ? 'style="opacity:.5;pointer-events:none"' : ''}>
+            <span class="dev-app-btn-ico" style="background:${hasLive ? 'rgba(74,222,128,.1)' : 'rgba(0,152,234,.12)'}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="${hasLive ? '#4ade80' : 'var(--accent)'}" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>${hasLive ? 'Live ✓' : 'Go Live'}
+          </button>
+        </div>`;
+
+        // ── Keys ──────────────────────────────────────────────────────────────
+        html += `
+          <div class="glass" style="border-radius:var(--r-sm);overflow:hidden;margin-bottom:14px">
+            <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Test Keys · Testnet</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <code style="flex:1;font-size:11px;color:var(--accent);word-break:break-all;min-width:0">${p.publishable_key_test}</code>
+                <button onclick="copyInviteLink('${p.publishable_key_test}')" style="flex-shrink:0;background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;white-space:nowrap">Copy pk</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <code style="flex:1;font-size:11px;color:rgba(255,255,255,.65);word-break:break-all;min-width:0">${p.secret_key_test}</code>
+                <div style="display:flex;gap:5px;flex-shrink:0">
+                  <button onclick="copyInviteLink('${p.secret_key_test}')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer">Copy sk</button>
+                  <button onclick="currentPlatformId=${p.id};regenerateKey('test')" style="background:transparent;border:1px solid rgba(255,92,92,.3);color:var(--danger);border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer">Rotate</button>
+                </div>
+              </div>
+            </div>
+            ${hasLive ? `
+            <div style="padding:14px 16px">
+              <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Live Keys · Mainnet</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <code style="flex:1;font-size:11px;color:var(--accent);word-break:break-all;min-width:0">${p.publishable_key_live}</code>
+                <div style="display:flex;gap:5px;flex-shrink:0">
+                  <button onclick="copyInviteLink('${p.publishable_key_live}')" style="background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer">Copy pk</button>
+                  <button onclick="currentPlatformId=${p.id};regenerateKey('live')" style="background:transparent;border:1px solid rgba(255,92,92,.3);color:var(--danger);border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer">Rotate</button>
+                </div>
+              </div>
+              <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:6px">Secret key is hidden — shown only once on generation.</div>
+            </div>` : `
+            <div style="padding:16px;background:linear-gradient(135deg,rgba(0,152,234,.06),transparent)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:700;color:#fff">Ready for Mainnet</div>
+                  <div style="font-size:11.5px;color:rgba(255,255,255,.45);margin-top:2px">Generate live keys when you're ready to accept real TON.</div>
+                </div>
+                <button onclick="generateLiveKeys(${p.id})" style="flex-shrink:0;background:var(--accent);border:none;color:#fff;border-radius:10px;font-family:inherit;font-size:12px;font-weight:800;padding:8px 14px;cursor:pointer">Go Live</button>
+              </div>
+            </div>`}
+          </div>
+        `;
+
+        // ── Payout wallet + security ──────────────────────────────────────────
+        html += `
+          <div class="glass" style="border-radius:var(--r-sm);overflow:hidden;margin-bottom:14px">
+            <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Payout Wallet</div>
+                <div style="font-size:13px;font-family:monospace;color:${p.wallet_address ? '#fff' : 'var(--warn)'}">${p.wallet_address ? wallet : '⚠ Not set — charges will fail'}</div>
+              </div>
+              <button onclick="promptPlatformWallet(${p.id},${!!p.wallet_address})"
+                style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;flex-shrink:0;margin-left:12px">
+                ${p.wallet_address ? 'Change' : 'Set'}
+              </button>
+            </div>
+            <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Passkey</div>
+                <div style="font-size:13px;color:#fff">${p.wallet_passcode_hash ? '🔒 Enabled' : 'Not set'}</div>
+              </div>
+              <button onclick="promptPlatformPasscode(${p.id},${!!p.wallet_passcode_hash})"
+                style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;flex-shrink:0;margin-left:12px">
+                ${p.wallet_passcode_hash ? 'Change' : 'Set'}
+              </button>
+            </div>
+          </div>
+        `;
+
+        // ── Webhook ───────────────────────────────────────────────────────────
+        const w = data.webhook;
+        html += `
+          <div class="glass" style="border-radius:var(--r-sm);overflow:hidden;margin-bottom:14px">
+            <div style="padding:14px 16px;${w ? 'border-bottom:1px solid rgba(255,255,255,.06)' : ''}">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Webhook</div>
+                <button onclick="currentPlatformId=${p.id};promptWebhook()" style="background:rgba(0,152,234,.1);border:1px solid rgba(0,152,234,.2);color:var(--accent);border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;padding:3px 10px;cursor:pointer">${w ? 'Edit URL' : 'Configure'}</button>
+              </div>
+              <div style="font-size:13px;color:${w ? '#fff' : 'rgba(255,255,255,.35)'}">
+                ${w ? esc(w.url) : 'No webhook endpoint configured.'}
+              </div>
+              ${w ? `<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:6px;display:flex;align-items:center;gap:8px">
+                Secret: <code style="font-family:monospace">${w.secret_preview}</code>
+                <button onclick="currentPlatformId=${p.id};rotateWebhookSecret()" style="background:none;border:none;color:rgba(255,255,255,.4);font-family:inherit;font-size:11px;cursor:pointer;text-decoration:underline">rotate</button>
+              </div>` : ''}
+            </div>
+            ${w && w.recent_deliveries && w.recent_deliveries.length ? `
+            <div style="padding:10px 16px">
+              <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;margin-bottom:6px">Recent Deliveries</div>
+              ${w.recent_deliveries.slice(0,3).map(d => `
+                <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;border-bottom:1px solid rgba(255,255,255,.04)">
+                  <span style="color:${d.status==='success'?'var(--success)':'var(--danger)'};font-weight:700">${d.status.toUpperCase()} · HTTP ${d.response_status_code||'ERR'}</span>
+                  <span style="color:rgba(255,255,255,.4)">Charge #${d.charge_id}</span>
+                </div>`).join('')}
+            </div>` : ''}
+          </div>
+        `;
+
+        // ── Delete test keys ──────────────────────────────────────────────────
+        html += `
+          <button class="btn" onclick="deleteTestKeys(${p.id})"
+            style="background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.2);color:var(--danger);margin-top:4px;font-size:13px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            Delete Test Keys
+          </button>
+        `;
+
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = `<div class="empty">${ico('alert',40)}<p>Failed to load app details.</p></div>`;
       }
     }
 

@@ -45,6 +45,7 @@ from renewise.superadmin.queries import (
     get_platform_revenue_breakdown,
     get_admin_groups_detail,
     force_cancel_subscription, force_expire_subscription,
+    delete_platform,
 )
 from renewise.watcher.toncenter import fetch_single_transaction, extract_in_msg_value
 from renewise.watcher.db import is_tx_processed
@@ -328,6 +329,9 @@ async def show_platform_details(update: Update, context, platform_id: int):
     if p["status"] != "revoked":
         keyboard.append([InlineKeyboardButton("🚫 Revoke Keys", callback_data=f"sa_revoke_{p['id']}")])
 
+    keyboard.append([
+        InlineKeyboardButton("🗑 Delete Platform", callback_data=f"sa_platform_delete_{p['id']}"),
+    ])
     keyboard.append([InlineKeyboardButton("🔙 Back to List",    callback_data="sa_platformpage_0")])
     keyboard.append([InlineKeyboardButton("◀️ Main Menu",       callback_data="sa_home_main")])
 
@@ -1744,6 +1748,51 @@ async def sa_callback_handler(update: Update, context):
         await revoke_platform(pid, user_id)
         await show_platform_details(update, context, pid)
         await query.answer("Platform keys revoked.", show_alert=True)
+
+    elif data.startswith("sa_platform_delete_"):
+        pid = int(data.split("_")[3])
+        p = await get_platform_details(pid)
+        if not p:
+            await query.answer("Platform not found.", show_alert=True)
+            await show_platforms_page(update, context, 0)
+            return
+        name = html.escape(p["platform_name"])
+        charges = p.get("total_charges", 0)
+        await query.edit_message_text(
+            f"🗑 <b>Delete Platform #{pid} — {name}?</b>\n\n"
+            f"This will permanently remove:\n"
+            f"• All API keys (test and live)\n"
+            f"• All {charges} charge record(s)\n"
+            f"• All webhook endpoints and delivery logs\n\n"
+            f"<b>This cannot be undone.</b>",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("🗑 Yes, Delete", callback_data=f"sa_platform_delete_confirm_{pid}"),
+                    InlineKeyboardButton("❌ Cancel",       callback_data=f"sa_platform_{pid}"),
+                ],
+                [InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
+            ]),
+        )
+        await query.answer()
+
+    elif data.startswith("sa_platform_delete_confirm_"):
+        pid = int(data.split("_")[4])
+        deleted = await delete_platform(pid, user_id)
+        if deleted:
+            await query.answer("Platform deleted.", show_alert=True)
+            # Invalidate auth cache for this platform's keys
+            try:
+                from renewise.api.platform import auth_cache
+                stale = [k for k, v in list(auth_cache.items()) if isinstance(v, dict) and v.get("id") == pid]
+                for k in stale:
+                    auth_cache.pop(k, None)
+            except Exception:
+                pass
+            await show_platforms_page(update, context, 0)
+        else:
+            await query.answer("Platform not found — may have already been deleted.", show_alert=True)
+            await show_platforms_page(update, context, 0)
 
     # ── groups paging ─────────────────────────────────────────────────────────
     elif data.startswith("sa_page_"):

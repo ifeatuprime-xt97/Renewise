@@ -590,15 +590,32 @@ async def init_db() -> None:
             # ── chat_type on groups (channel vs group/supergroup) ───────────────
             "ALTER TABLE groups ADD COLUMN chat_type TEXT NOT NULL DEFAULT 'group'",
             # ── sub_id on processed_tx_hashes (Fix 1 — schema/watcher drift) ──
-            # watcher/db.py previously added this via a separate ALTER TABLE in
-            # migrate(); moving it here ensures it exists regardless of which
-            # process (bot, miniapp, or watcher) starts first.
             "ALTER TABLE processed_tx_hashes ADD COLUMN sub_id INTEGER",
+            # ── Platform columns (may be missing on pre-platform DBs) ──────────
+            "ALTER TABLE platforms ADD COLUMN wallet_address TEXT",
+            "ALTER TABLE platforms ADD COLUMN wallet_passcode_hash TEXT",
+            "ALTER TABLE platforms ADD COLUMN publishable_key_live TEXT",
+            "ALTER TABLE platforms ADD COLUMN secret_key_live_hash TEXT",
         ):
             try:
                 await db.execute(migration)
             except aiosqlite.OperationalError:
-                pass  # column already exists — safe to ignore
+                pass  # column/table already exists — safe to ignore
+
+        # ── Platform tables (idempotent CREATE TABLE IF NOT EXISTS) ───────────
+        # Run separately because these are full DDL statements, not ALTER TABLE.
+        # Safe to re-run — IF NOT EXISTS makes them no-ops on existing DBs.
+        for stmt in (
+            CREATE_PLATFORMS,
+            CREATE_PLATFORM_CHARGES,
+            CREATE_WEBHOOK_ENDPOINTS,
+            CREATE_WEBHOOK_DELIVERIES,
+            CREATE_PLATFORM_AUDIT_LOG,
+        ):
+            try:
+                await db.execute(stmt)
+            except aiosqlite.OperationalError:
+                pass
 
         # Seed env defaults into id=1 row only when the operator hasn't yet
         # set an explicit override (i.e. columns are still NULL after migration).
