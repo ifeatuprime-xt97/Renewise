@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS groups (
     price_usd_cents       INTEGER NOT NULL DEFAULT 0,
     billing_interval_days INTEGER NOT NULL DEFAULT 30,
     payout_wallet_address TEXT,
+    wallet_passcode_hash  TEXT,
     buyer_fee_bps         INTEGER,
     admin_fee_bps         INTEGER,
     invite_link           TEXT,
@@ -197,6 +198,8 @@ CREATE TABLE IF NOT EXISTS platforms (
     secret_key_test TEXT NOT NULL,
     wallet_address TEXT,
     wallet_passcode_hash TEXT,
+    buyer_fee_bps INTEGER,
+    admin_fee_bps INTEGER,
     status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','revoked')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
@@ -288,6 +291,7 @@ async def init_db() -> None:
                 price_usd_cents       INTEGER NOT NULL DEFAULT 0,
                 billing_interval_days INTEGER NOT NULL DEFAULT 30,
                 payout_wallet_address TEXT,
+                wallet_passcode_hash  TEXT,
                 buyer_fee_bps         INTEGER,
                 admin_fee_bps         INTEGER,
                 invite_link           TEXT,
@@ -443,6 +447,8 @@ async def init_db() -> None:
                 secret_key_test      TEXT NOT NULL,
                 wallet_address       TEXT,
                 wallet_passcode_hash TEXT,
+                buyer_fee_bps        INTEGER,
+                admin_fee_bps        INTEGER,
                 status               TEXT NOT NULL DEFAULT 'active'
                                      CHECK(status IN ('active','revoked')),
                 created_at           TIMESTAMPTZ DEFAULT NOW()
@@ -598,6 +604,11 @@ async def init_db() -> None:
             "ALTER TABLE platforms ADD COLUMN wallet_passcode_hash TEXT",
             "ALTER TABLE platforms ADD COLUMN publishable_key_live TEXT",
             "ALTER TABLE platforms ADD COLUMN secret_key_live_hash TEXT",
+            # ── Group wallet passkey (protect payout wallet changes) ───────────
+            "ALTER TABLE groups ADD COLUMN wallet_passcode_hash TEXT",
+            # ── Per-platform fee overrides ─────────────────────────────────────
+            "ALTER TABLE platforms ADD COLUMN buyer_fee_bps INTEGER",
+            "ALTER TABLE platforms ADD COLUMN admin_fee_bps INTEGER",
         ):
             try:
                 await db.execute(migration)

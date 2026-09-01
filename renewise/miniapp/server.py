@@ -324,7 +324,6 @@ async def _refresh_group_meta_from_telegram(group_row: dict) -> dict:
                 if current_title != new_title or current_type != new_type:
                     await queries.activate_paywall(
                         group_id=group_row["id"],
-                        price=group_row.get("price") or 0,
                         billing_interval_days=group_row.get("billing_interval_days") or 30,
                         payout_wallet_address=group_row.get("payout_wallet_address") or "",
                         chat_title=new_title,
@@ -396,6 +395,8 @@ async def api_my_payment_history(
     Returns confirmed payments across all groups, newest first.
     No fee-split data — members only see what they paid.
     """
+    limit = min(limit, 200)
+    offset = max(offset, 0)
     telegram_user_id = user["id"]
     rows, total = await queries.get_user_payment_history(telegram_user_id, offset=offset, limit=limit)
     history = []
@@ -501,6 +502,8 @@ async def api_group_payment_history(
     limit: int = 5,
 ) -> dict:
     telegram_user_id = user["id"]
+    limit = min(limit, 200)
+    offset = max(offset, 0)
     await verify_admin_or_403(telegram_user_id, group_id)
 
     rows, total_count = await queries.get_payment_history(
@@ -886,12 +889,18 @@ async def api_developer_platforms_get(
 async def api_developer_charges_global(
     request: Request,
     user: Annotated[dict, Depends(get_telegram_user)],
+    status: str | None = None,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
 ) -> dict:
     """Retrieves paginated API charges across all platforms owned by the user."""
+    limit = min(limit, 200)
+    offset = max(offset, 0)
+    _valid_statuses = {"pending", "completed", "expired", "failed"}
+    if status is not None and status not in _valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(sorted(_valid_statuses))}")
     telegram_user_id = user["id"]
-    charges = await platform_svc.get_all_user_platform_charges(telegram_user_id, limit=limit, offset=offset)
+    charges = await platform_svc.get_all_user_platform_charges(telegram_user_id, status=status, limit=limit, offset=offset)
     return {"charges": charges}
 
 @app.post("/api/developer/platforms")
@@ -1001,6 +1010,11 @@ async def api_developer_platform_charges(
     offset: int = 0
 ) -> dict:
     """Retrieves paginated charges for a platform and basic aggregate stats."""
+    limit = min(limit, 200)
+    offset = max(offset, 0)
+    _valid_statuses = {"pending", "completed", "expired", "failed"}
+    if status is not None and status not in _valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(sorted(_valid_statuses))}")
     telegram_user_id = user["id"]
     await verify_platform_ownership(platform_id, telegram_user_id)
     
@@ -1142,6 +1156,7 @@ class UpdatePriceRequest(BaseModel):
 
 class UpdateWalletRequest(BaseModel):
     wallet_address: str
+    passcode: str | None = None
 
 
 class CompMemberRequest(BaseModel):
@@ -1218,6 +1233,8 @@ async def api_group_detail(
         "invite_link":           group.get("invite_link"),
         "active_members":        active_count,
         "revenue_usd_cents":     revenue_usd_cents,
+        # Boolean so the hash is never exposed to the client
+        "has_wallet_passcode":   bool(group.get("wallet_passcode_hash")),
     }
 
 
@@ -1233,6 +1250,8 @@ async def api_group_members(
     limit: int = 20,
 ) -> dict:
     telegram_user_id = user["id"]
+    limit = min(limit, 200)
+    offset = max(offset, 0)
     await verify_admin_or_403(telegram_user_id, group_id)
 
     members = await queries.get_members_page(group_id, offset, limit)
@@ -1337,6 +1356,11 @@ async def api_group_update_wallet(
     if not await validate_ton_address(body.wallet_address):
         raise HTTPException(status_code=422, detail="Invalid TON wallet address format")
 
+    # Passkey check — required when a passkey is already set on this group.
+    # First-time wallet setup has no passkey, so it passes through freely.
+    if not await queries.check_group_wallet_passcode(group_id, body.passcode):
+        raise HTTPException(status_code=403, detail="Incorrect or missing passkey")
+
     old_wallet = group.get("payout_wallet_address")
     now_utc = datetime.now(timezone.utc)
     activates_at_str = (now_utc + timedelta(hours=WALLET_CHANGE_DELAY_HOURS)).strftime("%Y-%m-%d %H:%M:%S")
@@ -1380,6 +1404,42 @@ async def api_group_update_wallet(
             "You'll be notified via the bot."
         ),
     }
+
+
+# ── POST /api/groups/{group_id}/passcode ─────────────────────────────────────
+
+@app.post("/api/groups/{group_id}/passcode")
+@limiter.limit("5/minute")
+async def api_group_set_passcode(
+    request: Request,
+    group_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Set or change the 4-digit passkey that protects wallet changes for a group.
+
+    - First time (no passkey set): only new_passcode required.
+    - Changing: current_passcode must match the stored hash.
+    Returns 400 for invalid format, 403 for wrong current passkey.
+    """
+    telegram_user_id = user["id"]
+    await verify_admin_or_403(telegram_user_id, group_id)
+
+    body = await request.json()
+    new_passcode     = body.get("new_passcode", "")
+    current_passcode = body.get("current_passcode") or None
+
+    try:
+        success = await queries.set_group_passcode(
+            group_id, new_passcode, telegram_user_id, current_passcode
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not success:
+        raise HTTPException(status_code=403, detail="Incorrect current passkey")
+
+    return {"ok": True}
 
 
 # ── POST /api/groups/{group_id}/wallet-change/{change_id}/cancel ─────────────

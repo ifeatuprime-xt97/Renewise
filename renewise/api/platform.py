@@ -100,12 +100,27 @@ async def create_charge(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=503,
+            detail="Payment contract not compiled. Run: cd contracts && npm install && npm run build",
+        )
+    except Exception as e:
+        import logging as _logging
+        _logging.getLogger(__name__).exception("Payment link generation failed for charge %s", charge_id)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Payment link generation failed ({type(e).__name__}). Check server logs.",
+        )
         
     # Update charge with vault details
     async with _db() as db:
-        # Get global fees used during generation (for auditing/accounting)
+        # Store the effective fees actually used for this charge (per-platform
+        # override if set, otherwise global defaults).
         from renewise.db.queries import get_global_fees
-        buyer_fee, admin_fee = await get_global_fees()
+        global_buyer, global_admin = await get_global_fees()
+        buyer_fee = platform.get("buyer_fee_bps") if platform.get("buyer_fee_bps") is not None else global_buyer
+        admin_fee = platform.get("admin_fee_bps") if platform.get("admin_fee_bps") is not None else global_admin
         
         await db.execute(
             """

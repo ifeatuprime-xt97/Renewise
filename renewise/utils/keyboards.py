@@ -194,13 +194,14 @@ def network_detail_kb(group_id: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton("👛 Update Wallet", callback_data=f"grpsel:{gid}:menu:update_wallet"),
+            InlineKeyboardButton("🔑 Passkey",       callback_data=f"grpsel:{gid}:menu:set_passkey"),
+        ],
+        [
             InlineKeyboardButton("⏸ Pause/Resume",  callback_data=f"grpsel:{gid}:menu:pause"),
-        ],
-        [
             InlineKeyboardButton("🎁 Comp a Member", callback_data=f"grpsel:{gid}:menu:comp"),
-            InlineKeyboardButton("👥 View Members",  callback_data=f"grpsel:{gid}:menu:members"),
         ],
         [
+            InlineKeyboardButton("👥 View Members",  callback_data=f"grpsel:{gid}:menu:members"),
             InlineKeyboardButton("💳 Payment History", callback_data=f"grpsel:{gid}:menu:payment_history"),
         ],
         [

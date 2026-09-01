@@ -33,9 +33,12 @@ log = logging.getLogger(__name__)
 # ── conversation states ───────────────────────────────────────────────────────
 AWAIT_NEW_PRICE, AWAIT_PRICE_CONFIRM = range(2)
 AWAIT_NEW_WALLET = 10
+AWAIT_WALLET_PIN = 11
 AWAIT_COMP_USERNAME = 20
 AWAIT_SUPPORT_MSG = 30
 AWAIT_DELETE_CONFIRM_NAME = 40
+AWAIT_GROUP_PASSKEY_NEW = 50
+AWAIT_GROUP_PASSKEY_CURRENT = 51
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -362,9 +365,13 @@ async def cb_update_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
     if not group:
         return ConversationHandler.END
     ctx.user_data["wallet_group"] = group  # type: ignore[index]
+
+    has_passkey = bool(group.get("wallet_passcode_hash"))
+    passcode_line = "🔒 A passkey is required to confirm." if has_passkey else ""
+
     await query.edit_message_text(
         f"Current wallet: <code>{group['payout_wallet_address'] or 'not set'}</code>\n\n"
-        "Send your new GRAM wallet address:",
+        f"Send your new GRAM wallet address:{f'  {passcode_line}' if passcode_line else ''}",
         parse_mode="HTML",
         reply_markup=cancel_input_kb(),
     )
@@ -381,23 +388,67 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return AWAIT_NEW_WALLET
 
+    group = ctx.user_data.get("wallet_group")  # type: ignore[union-attr]
+
+    # If a passkey is set on this group, we need to verify it before scheduling.
+    # Store the validated address and ask for the PIN.
+    if group.get("wallet_passcode_hash"):
+        ctx.user_data["wallet_pending_address"] = address  # type: ignore[index]
+        await update.message.reply_text(
+            "🔒 <b>Passkey required</b>\n\n"
+            "Send your 4-digit wallet passkey to confirm this change:",
+            parse_mode="HTML",
+            reply_markup=cancel_input_kb(),
+        )
+        return AWAIT_WALLET_PIN
+
+    # No passkey — schedule immediately
+    return await _schedule_wallet_change(update, ctx, group, address)
+
+
+async def msg_wallet_pin(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    """Receive the 4-digit PIN, verify it, then schedule the wallet change."""
+    pin = update.message.text.strip()
+    group   = ctx.user_data.get("wallet_group")  # type: ignore[union-attr]
+    address = ctx.user_data.pop("wallet_pending_address", None)  # type: ignore[union-attr]
+
+    if not group or not address:
+        await update.message.reply_text("❌ Session expired. Please start over.")
+        return ConversationHandler.END
+
+    # Verify PIN against the stored hash
+    ok = await queries.check_group_wallet_passcode(group["id"], pin)
+    if not ok:
+        await update.message.reply_text(
+            "❌ Incorrect passkey. Please try again:",
+            parse_mode="HTML",
+            reply_markup=cancel_input_kb(),
+        )
+        # Restore the pending address so the admin can try the PIN again
+        ctx.user_data["wallet_pending_address"] = address  # type: ignore[index]
+        return AWAIT_WALLET_PIN
+
+    return await _schedule_wallet_change(update, ctx, group, address)
+
+
+async def _schedule_wallet_change(
+    update: Update,
+    ctx: ContextTypes.DEFAULT_TYPE,
+    group: dict,
+    address: str,
+) -> int:
+    """Shared logic: create the pending wallet change row and notify the admin."""
     from datetime import datetime, timezone, timedelta
     from renewise.config import WALLET_CHANGE_DELAY_HOURS
 
-    group = ctx.user_data.get("wallet_group")  # type: ignore[union-attr]
-    admin_id = update.effective_user.id
+    admin_id  = update.effective_user.id
     old_wallet = group.get("payout_wallet_address")
 
-    # Compute activates_at as an ISO datetime string (UTC)
-    now_utc = datetime.now(timezone.utc)
+    now_utc      = datetime.now(timezone.utc)
     activates_at = now_utc + timedelta(hours=WALLET_CHANGE_DELAY_HOURS)
     activates_at_str = activates_at.strftime("%Y-%m-%d %H:%M:%S")
 
-    # 3a — insert pending row (supersedes any existing pending change)
     superseded = await queries.get_superseded_pending_wallet_change(group["id"], admin_id)
-    # We capture the superseded row BEFORE creating the new one, because
-    # create_pending_wallet_change cancels the old row atomically.
-    # But we need to fetch it after the cancel, so we do it in two steps:
 
     change_id = await queries.create_pending_wallet_change(
         group_id=group["id"],
@@ -407,48 +458,36 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         activates_at=activates_at_str,
     )
 
-    # Log auto-cancellation of any superseded pending change
     superseded_row = await queries.get_superseded_pending_wallet_change(group["id"], admin_id)
     if superseded_row and superseded_row["id"] != change_id:
         await queries.audit(
-            group["id"],
-            "wallet_change_auto_cancelled",
-            admin_id,
+            group["id"], "wallet_change_auto_cancelled", admin_id,
             {
                 "superseded_change_id": superseded_row["id"],
-                "superseded_wallet": superseded_row["new_wallet_address"],
-                "reason": "new_request_submitted",
+                "superseded_wallet":    superseded_row["new_wallet_address"],
+                "reason":               "new_request_submitted",
             },
         )
 
-    # 3c — log the new request
     await queries.audit(
-        group["id"],
-        "wallet_change_requested",
-        admin_id,
+        group["id"], "wallet_change_requested", admin_id,
         {"change_id": change_id, "new_wallet": address},
     )
 
     ctx.user_data.pop("wallet_group", None)  # type: ignore[union-attr]
 
-    # Resolve human-readable group title for the DM
     try:
         chat = await ctx.bot.get_chat(group["telegram_chat_id"])
         group_title = chat.title or str(group["telegram_chat_id"])
     except Exception:
         group_title = str(group["telegram_chat_id"])
 
-    short_new = f"{address[:6]}...{address[-4:]}" if len(address) > 12 else address
-
-    # 3b — immediate DM alert with cancel button
-    # send_message to the admin's Telegram DM (they're already in a private chat
-    # with the bot, so this arrives right here in the same conversation)
     await update.message.reply_text(
         f"⚠️ <b>Wallet change scheduled</b>\n\n"
         f"Your payout wallet for <b>{group_title}</b> is scheduled to change to:\n"
         f"<code>{address}</code>\n\n"
         f"This will take effect in <b>{WALLET_CHANGE_DELAY_HOURS} hours</b>.\n\n"
-        f"If this wasn't you, tap below to cancel immediately.",
+        "If this wasn't you, tap below to cancel immediately.",
         parse_mode="HTML",
         reply_markup=wallet_change_alert_kb(change_id),
     )
@@ -525,6 +564,123 @@ def build_update_wallet_handler() -> ConversationHandler:
         entry_points=[CallbackQueryHandler(cb_update_wallet, pattern=r"^(menu:update_wallet|grpsel:\d+:menu:update_wallet)$")],
         states={
             AWAIT_NEW_WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, msg_new_wallet)],
+            AWAIT_WALLET_PIN: [MessageHandler(filters.TEXT & ~filters.COMMAND, msg_wallet_pin)],
+        },
+        fallbacks=[
+            CommandHandler("cancel", lambda u, c: ConversationHandler.END),
+            CallbackQueryHandler(cb_cancel_input, pattern=r"^input:cancel$"),
+        ],
+        per_chat=True,
+        per_user=True,
+    )
+
+
+# ── Set / Change Group Wallet Passkey ─────────────────────────────────────────
+
+async def cb_set_group_passkey(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    """Entry point for the passkey setup flow from /menu → Settings → Set Passkey."""
+    query = update.callback_query
+    await query.answer()
+    group = await _require_group(update, ctx, action="menu:set_passkey")
+    if not group:
+        return ConversationHandler.END
+    ctx.user_data["passkey_group"] = group  # type: ignore[index]
+    has_existing = bool(group.get("wallet_passcode_hash"))
+    ctx.user_data["passkey_has_existing"] = has_existing  # type: ignore[index]
+
+    if has_existing:
+        await query.edit_message_text(
+            "🔑 <b>Change Wallet Passkey</b>\n\nSend your <b>current</b> 4-digit passkey:",
+            parse_mode="HTML",
+            reply_markup=cancel_input_kb(),
+        )
+        return AWAIT_GROUP_PASSKEY_CURRENT
+    else:
+        await query.edit_message_text(
+            "🔑 <b>Set Wallet Passkey</b>\n\n"
+            "Create a 4-digit PIN that will be required to change your payout wallet.\n\n"
+            "Send your new 4-digit passkey:",
+            parse_mode="HTML",
+            reply_markup=cancel_input_kb(),
+        )
+        return AWAIT_GROUP_PASSKEY_NEW
+
+
+async def msg_passkey_current(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    """Receive the current passkey when changing an existing one."""
+    pin = update.message.text.strip()
+    group = ctx.user_data.get("passkey_group")  # type: ignore[union-attr]
+    if not group:
+        return ConversationHandler.END
+
+    ok = await queries.check_group_wallet_passcode(group["id"], pin)
+    if not ok:
+        await update.message.reply_text(
+            "❌ Incorrect passkey. Please try again:",
+            parse_mode="HTML",
+            reply_markup=cancel_input_kb(),
+        )
+        return AWAIT_GROUP_PASSKEY_CURRENT
+
+    ctx.user_data["passkey_current"] = pin  # type: ignore[index]
+    await update.message.reply_text(
+        "✅ Current passkey verified.\n\nNow send your <b>new</b> 4-digit passkey:",
+        parse_mode="HTML",
+        reply_markup=cancel_input_kb(),
+    )
+    return AWAIT_GROUP_PASSKEY_NEW
+
+
+async def msg_passkey_new(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    """Receive and save the new 4-digit passkey."""
+    pin = update.message.text.strip()
+    group   = ctx.user_data.pop("passkey_group", None)  # type: ignore[union-attr]
+    current = ctx.user_data.pop("passkey_current", None)  # type: ignore[union-attr]
+    ctx.user_data.pop("passkey_has_existing", None)  # type: ignore[union-attr]
+
+    if not group:
+        return ConversationHandler.END
+
+    try:
+        success = await queries.set_group_passcode(
+            group["id"], pin, update.effective_user.id, current
+        )
+    except ValueError as e:
+        await update.message.reply_text(
+            f"❌ {e}  Please send exactly 4 digits:",
+            parse_mode="HTML",
+            reply_markup=cancel_input_kb(),
+        )
+        # Restore so the conversation can retry
+        ctx.user_data["passkey_group"] = group  # type: ignore[index]
+        if current:
+            ctx.user_data["passkey_current"] = current  # type: ignore[index]
+        return AWAIT_GROUP_PASSKEY_NEW
+
+    if not success:
+        await update.message.reply_text(
+            "❌ Incorrect current passkey. Passkey not changed.",
+            parse_mode="HTML",
+            reply_markup=network_detail_kb(group["id"]),
+        )
+        return ConversationHandler.END
+
+    await update.message.reply_text(
+        "🔒 <b>Passkey saved.</b>\n\n"
+        "Your payout wallet is now protected. You'll need this passkey "
+        "to authorize any future wallet changes.",
+        parse_mode="HTML",
+        reply_markup=network_detail_kb(group["id"]),
+    )
+    return ConversationHandler.END
+
+
+def build_set_group_passkey_handler() -> ConversationHandler:
+    return ConversationHandler(
+        entry_points=[CallbackQueryHandler(cb_set_group_passkey, pattern=r"^(menu:set_passkey|grpsel:\d+:menu:set_passkey)$")],
+        states={
+            AWAIT_GROUP_PASSKEY_CURRENT: [MessageHandler(filters.TEXT & ~filters.COMMAND, msg_passkey_current)],
+            AWAIT_GROUP_PASSKEY_NEW:     [MessageHandler(filters.TEXT & ~filters.COMMAND, msg_passkey_new)],
         },
         fallbacks=[
             CommandHandler("cancel", lambda u, c: ConversationHandler.END),
@@ -931,11 +1087,14 @@ async def cb_settings(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     wallet_disp = f"{wallet[:8]}…{wallet[-5:]}" if len(wallet) > 16 else wallet
     status = group.get("status", "active")
     status_icon = "✅ Active" if status == "active" else ("⏸ Paused" if status == "paused" else f"❄️ {status.title()}")
+    has_passkey = bool(group.get("wallet_passcode_hash"))
+    passkey_line = "🔒 Set" if has_passkey else "Not set"
 
     text = (
         f"⚙️ <b>Settings — {title}</b>\n\n"
         f"💰 Price:        <b>${usd:.2f} USD</b> / {interval} days\n"
         f"👛 Wallet:       <code>{wallet_disp}</code>\n"
+        f"🔑 Passkey:      {passkey_line}\n"
         f"📶 Status:       {status_icon}\n"
         f"📅 Billing:      every {interval} days\n\n"
         "Tap an action below to change a setting:"
@@ -945,6 +1104,12 @@ async def cb_settings(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         [
             InlineKeyboardButton("💰 Update Price",  callback_data=f"grpsel:{group['id']}:menu:update_price"),
             InlineKeyboardButton("👛 Update Wallet", callback_data=f"grpsel:{group['id']}:menu:update_wallet"),
+        ],
+        [
+            InlineKeyboardButton(
+                "🔑 Change Passkey" if has_passkey else "🔑 Set Passkey",
+                callback_data=f"grpsel:{group['id']}:menu:set_passkey",
+            ),
         ],
         [
             InlineKeyboardButton(
@@ -1289,3 +1454,4 @@ def register_menu_callbacks(app) -> None:
     app.add_handler(build_comp_handler())
     app.add_handler(build_support_handler())
     app.add_handler(build_delete_network_handler())
+    app.add_handler(build_set_group_passkey_handler())

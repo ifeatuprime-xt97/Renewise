@@ -1,6 +1,16 @@
 from __future__ import annotations
 from typing import Any
+import bcrypt
 from renewise.db.connection import _db, Row
+
+
+# ── passkey helpers (shared by group and platform wallet protection) ──────────
+
+def _hash_passcode(passcode: str) -> str:
+    return bcrypt.hashpw(passcode.encode(), bcrypt.gensalt()).decode()
+
+def _verify_passcode(passcode: str, hashed: str) -> bool:
+    return bcrypt.checkpw(passcode.encode(), hashed.encode())
 
 
 # ── groups ────────────────────────────────────────────────────────────────────
@@ -90,6 +100,63 @@ async def update_group_wallet(group_id: int, wallet: str) -> None:
         await db.execute(
             "UPDATE groups SET payout_wallet_address=$1 WHERE id=$2", wallet, group_id
         )
+
+
+async def set_group_passcode(
+    group_id: int,
+    new_passcode: str,
+    actor_id: int,
+    current_passcode: str | None = None,
+) -> bool:
+    """
+    Set or change the 4-digit wallet passkey for a group.
+    - First time: no current_passcode required.
+    - Changing: current_passcode must match the stored bcrypt hash.
+    Returns True on success, False if current_passcode is wrong.
+    Raises ValueError if new_passcode is not exactly 4 digits.
+    """
+    if not (new_passcode.isdigit() and len(new_passcode) == 4):
+        raise ValueError("Passkey must be exactly 4 digits")
+
+    async with _db() as db:
+        row = await db.fetchrow(
+            "SELECT wallet_passcode_hash FROM groups WHERE id=$1", group_id
+        )
+        if not row:
+            return False
+
+        existing_hash = row["wallet_passcode_hash"]
+        if existing_hash:
+            if not current_passcode or not _verify_passcode(current_passcode, existing_hash):
+                await audit(group_id, "group_passcode_change_failed", actor_id)
+                return False
+
+        new_hash = _hash_passcode(new_passcode)
+        await db.execute(
+            "UPDATE groups SET wallet_passcode_hash=$1 WHERE id=$2", new_hash, group_id
+        )
+        action = "group_passcode_changed" if existing_hash else "group_passcode_set"
+        await audit(group_id, action, actor_id)
+        return True
+
+
+async def check_group_wallet_passcode(group_id: int, passcode: str | None) -> bool:
+    """
+    Return True if:
+      - No passkey is set on the group (first-time wallet setup), OR
+      - A passkey is set and passcode matches.
+    Returns False if a passkey is set but passcode is wrong/missing.
+    """
+    async with _db() as db:
+        row = await db.fetchrow(
+            "SELECT wallet_passcode_hash FROM groups WHERE id=$1", group_id
+        )
+        if not row:
+            return False
+        existing_hash = row["wallet_passcode_hash"]
+        if not existing_hash:
+            return True   # no passkey set — first wallet change is always allowed
+        return bool(passcode and _verify_passcode(passcode, existing_hash))
 
 
 async def update_group_invite_link(group_id: int, invite_link: str) -> None:

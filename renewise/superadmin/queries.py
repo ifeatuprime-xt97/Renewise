@@ -196,6 +196,31 @@ async def get_group_fee_config(group_id: int) -> dict | None:
         return dict(row) if row else None
 
 
+async def set_platform_fees(
+    platform_id: int, buyer_fee_bps: int, admin_fee_bps: int, actor_tg_id: int
+) -> None:
+    """Set per-platform fee overrides. NULL means fall back to global defaults."""
+    async with _db() as db:
+        await db.execute(
+            "UPDATE platforms SET buyer_fee_bps=$1, admin_fee_bps=$2 WHERE id=$3",
+            buyer_fee_bps, admin_fee_bps, platform_id,
+        )
+        await db.execute(
+            "INSERT INTO platform_audit_log (platform_id, action, actor_telegram_id, details) "
+            "VALUES ($1,$2,$3,$4)",
+            platform_id, "fee_override", actor_tg_id,
+            f"buyer_fee_bps={buyer_fee_bps} admin_fee_bps={admin_fee_bps}",
+        )
+
+
+async def get_platform_fee_config(platform_id: int) -> dict | None:
+    async with _db() as db:
+        row = await db.fetchrow(
+            "SELECT buyer_fee_bps, admin_fee_bps FROM platforms WHERE id=$1", platform_id
+        )
+        return dict(row) if row else None
+
+
 # ── banned / active admins ────────────────────────────────────────────────────
 
 async def get_active_admins_page(limit: int, offset: int) -> list[dict]:

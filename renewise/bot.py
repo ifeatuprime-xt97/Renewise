@@ -27,40 +27,46 @@ log = logging.getLogger(__name__)
 
 # ── Terms of Service text (condensed for Telegram) ────────────────────────────
 _TERMS_TEXT = (
-    "📋 <b>Renewise Terms of Service & Privacy Policy</b>\n\n"
+    "📋 <b>Renewise — Terms of Service & Privacy Policy</b>\n\n"
 
     "<b>What Renewise does</b>\n"
-    "Renewise lets Telegram group and channel admins charge for membership. "
-    "Payments are made in GRAM (TON) directly to a smart contract that splits "
-    "funds between the admin and Renewise's platform fee in one atomic transaction.\n\n"
+    "Renewise lets Telegram group and channel admins charge for membership in GRAM (TON). "
+    "Payments go directly to a smart contract that atomically splits funds between the admin "
+    "and Renewise's platform fee no middleman ever holds your money.\n\n"
 
-    "<b>Non-custodial</b>\n"
+    "<b>Non-custodial architecture</b>\n"
     "Renewise never holds admin or member funds. Completed on-chain splits are final and "
-    "cannot be reversed. Overpayments above $1.00 USD are automatically "
-    "refunded to the member's TON wallet on request.\n\n"
+    "irreversible. Overpayments are automatically detected and refunded to the member's "
+    "TON wallet on request.\n\n"
+
+    "<b>Payout wallet security</b>\n"
+    "You can protect your payout wallet with a 4-digit passkey. Once set, any wallet "
+    "change requires your passkey to proceed.\n\n"
 
     "<b>Fees</b>\n"
-    "A 2.00% buyer fee is added to the subscription price the member pays, and a 3.30% "
-    "admin fee is deducted from the admin's payout. Both are shown before any payment.\n\n"
+    "A <b>2.00% buyer fee</b> is added to the subscription price the member pays. "
+    "A <b>3.30% admin fee</b> is deducted from your payout. "
+    "Both fees are shown before any payment is made.\n\n"
 
     "<b>Data we store</b>\n"
-    "Your Telegram user ID, first name, username, subscription records, and "
-    "payment transaction hashes. We do not store private keys or wallet seeds. "
+    "Your Telegram user ID, first name, username, subscription records, "
+    "payment transaction hashes, and payout wallet address (admins only). "
+    "We do not store private keys or wallet seed phrases. "
     "On-chain data is publicly visible on the TON blockchain by its nature.\n\n"
 
     "<b>Data we share</b>\n"
-    "Only with TonCenter (on-chain verification) and CoinGecko (exchange rates). "
+    "Only with TonCenter (on-chain transaction verification) and CoinGecko (live exchange rates). "
     "We never sell your data.\n\n"
 
     "<b>Your rights</b>\n"
-    "You may request access to or deletion of your off-chain data at any time "
-    "by contacting support. On-chain data is immutable.\n\n"
+    "You may request access to or deletion of your off-chain personal data at any time "
+    "by contacting support. On-chain transaction data is immutable and cannot be deleted.\n\n"
 
     "<b>Age</b>\n"
-    "You must be 18 or older to use this service.\n\n"
+    "You must be 18 or older (or the age of majority in your jurisdiction) to use this service.\n\n"
 
-    "By tapping <b>✅ I Agree</b> you confirm you have read and accept these "
-    "terms. Tap <b>❌ Decline</b> to exit without proceeding."
+    "By tapping <b>✅ I Agree</b> you confirm you have read and accept these terms. "
+    "Tap <b>❌ Decline</b> to exit without proceeding."
 )
 
 def _terms_kb() -> InlineKeyboardMarkup:
@@ -85,7 +91,7 @@ async def _show_terms(update: Update) -> None:
 
 
 async def cb_terms_accept(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """User tapped ✅ I Agree — record acceptance then continue to normal /start flow."""
+    """User tapped ✅ I Agree record acceptance then continue to normal /start flow."""
     query = update.callback_query
     await query.answer("Terms accepted ✅")
 
@@ -111,7 +117,7 @@ async def cb_terms_accept(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 async def cb_terms_decline(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """User tapped ❌ Decline — acknowledge and do nothing else."""
+    """User tapped ❌ Decline acknowledge and do nothing else."""
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
@@ -162,7 +168,7 @@ async def post_init(app: Application) -> None:
 
     if not _TM or not _TW:
         log.warning(
-            "⚠️  TRIGGER_MNEMONIC/TRIGGER_WALLET not set — refund auto-trigger DISABLED. "
+            "⚠️  TRIGGER_MNEMONIC/TRIGGER_WALLET not set refund auto-trigger DISABLED. "
             "Overpayments will queue as pending_send and need manual superadmin processing."
         )
         await _send_sa_alert(
@@ -180,7 +186,7 @@ async def post_init(app: Application) -> None:
                 log.warning("Could not fetch trigger wallet balance at startup (TonCenter error).")
             elif _balance < _TW_CRITICAL:
                 log.error(
-                    "🔴 TRIGGER WALLET CRITICAL: %.6f TON — refunds will fail immediately!", _balance
+                    "🔴 TRIGGER WALLET CRITICAL: %.6f TON refunds will fail immediately!", _balance
                 )
                 await _send_sa_alert(
                     f"🔴 <b>Trigger Wallet CRITICAL</b>\n\n"
@@ -191,7 +197,7 @@ async def post_init(app: Application) -> None:
                 )
             elif _balance < _TW_LOW:
                 log.warning(
-                    "🟡 TRIGGER WALLET LOW: %.6f TON — consider topping up soon.", _balance
+                    "🟡 TRIGGER WALLET LOW: %.6f TON consider topping up soon.", _balance
                 )
                 await _send_sa_alert(
                     f"🟡 <b>Trigger Wallet Low</b>\n\n"
@@ -218,7 +224,7 @@ async def post_init(app: Application) -> None:
         app.bot_data["listener_task"] = start_bot_listener(app)
         log.info("Bot listener started (Redis connected).")
     except Exception:
-        log.info("Redis not available — bot listener skipped (in-process watcher handles payments).")
+        log.info("Redis not available bot listener skipped (in-process watcher handles payments).")
 
     # Standalone `python -m renewise.bot` on Render: bind $PORT + self-ping.
     # No-op when run.py already started keep-alive, or when PORT / URLs are unset.
@@ -328,9 +334,9 @@ async def _send_renewal_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE, 
             f"<b>Amount to send:</b>\n"
             f"<code>{exact_ton:.9f} TON</code>\n\n"
             f"Choose how to pay:\n"
-            f"• <b>Telegram Wallet</b> — tap the button below, instant.\n"
-            f"• <b>Other TON Wallet</b> — tap the button below, opens your installed TON wallet app.\n"
-            f"• <b>Scan QR code</b> — use a TON wallet on a second device.\n\n"
+            f"• <b>Telegram Wallet</b> tap the button below, instant.\n"
+            f"• <b>Other TON Wallet</b> tap the button below, opens your installed TON wallet app.\n"
+            f"• <b>Scan QR code</b> use a TON wallet on a second device.\n\n"
             f"⚠️ <b>A TON wallet is required to pay.</b>\n\n"
             f"<i>Your subscription will automatically extend once the transaction confirms.</i>"
         )
@@ -376,7 +382,7 @@ async def _send_renewal_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE, 
 
     except Exception as e:
         log.error("Error generating renewal link for user_id=%s group_id=%s: %s", user_telegram_id, group_id, e)
-        msg = "Something went wrong generating your renewal link — please try again or use /menu."
+        msg = "Something went wrong generating your renewal link please try again or use /menu."
         if update.callback_query:
             await update.callback_query.edit_message_text(msg)
         else:
@@ -610,10 +616,16 @@ async def _start_inner(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         ])
         await _reply(
             "👋 <b>Welcome to Renewise!</b>\n\n"
-            "I turn your Telegram group or channel into a paid community "
-            "members pay in GRAM, you get paid directly, no middleman holding your funds.\n\n"
-            "👨‍💻 <b>For Developers:</b> You can also use my Developer API to accept TON payments in your own apps and websites.\n\n"
-            "Use the <b>Menu Button</b> (bottom left) to open the Mini App and get started!",
+            "Turn your Telegram group or channel into a paid community "
+            "members pay in GRAM (TON), payouts go directly to your wallet, "
+            "no middleman holds your money.\n\n"
+            "🔒 <b>Your wallet is yours.</b> Set a 4-digit passkey to protect "
+            "payout wallet changes after setup.\n\n"
+            "💳 <b>Fees:</b> 2.00% buyer fee + 3.30% admin fee, always shown before any payment.\n\n"
+            "👨‍💻 <b>For Developers:</b> Accept TON payments in your own app or bot "
+            "using the Renewise Payments API.\n\n"
+            "Tap <b>Set Up My First Paywall</b> to get started, "
+            "or open the Mini App from the menu button.",
             parse_mode="HTML",
             reply_markup=kb,
         )

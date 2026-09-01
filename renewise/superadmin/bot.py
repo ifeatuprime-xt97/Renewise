@@ -33,6 +33,7 @@ from renewise.superadmin.queries import (
     search_by_tx_hash, search_by_user_id,
     audit_manual_recheck, get_vault_by_tx_hash, get_tx_processed_status,
     set_group_fees, get_group_fee_config,
+    set_platform_fees, get_platform_fee_config,
     get_groups_page, get_total_groups_count,
     get_users_page, get_total_users_count,
     get_group_details, set_group_status,
@@ -176,7 +177,7 @@ async def show_main_menu(update: Update, context):
         ],
     ]
     # Clear all multi-step flow state
-    for key in ("fee_group_id", "sa_price_group_id", "sa_price_pending_cents",
+    for key in ("fee_group_id", "fee_platform_id", "sa_price_group_id", "sa_price_pending_cents",
                 "msg_admin_target", "msg_user_target", "reply_target",
                 "lookup_pending", "global_fee_pending", "announce_pending",
                 "announce_confirm_text", "announce_confirm_audience"):
@@ -308,6 +309,7 @@ async def show_platforms_page(update: Update, context, page: int):
 
 async def show_platform_details(update: Update, context, platform_id: int):
     from renewise.superadmin.queries import get_platform_details
+    from renewise.db.queries import get_global_fees
     p = await get_platform_details(platform_id)
     if not p:
         await update.callback_query.edit_message_text("Platform not found.")
@@ -316,6 +318,14 @@ async def show_platform_details(update: Update, context, platform_id: int):
     name = html.escape(p["platform_name"])
     pk_test = p.get('publishable_key_test', 'N/A')
     pk_live = p.get('publishable_key_live') or 'Not generated'
+
+    # Fee display — show per-platform override if set, else "global default"
+    global_buyer, global_admin = await get_global_fees()
+    p_buyer = p.get("buyer_fee_bps")
+    p_admin = p.get("admin_fee_bps")
+    buyer_disp = f"{p_buyer} bps ({p_buyer/100:.2f}%) ✏️" if p_buyer is not None else f"{global_buyer} bps (global default)"
+    admin_disp = f"{p_admin} bps ({p_admin/100:.2f}%) ✏️" if p_admin is not None else f"{global_admin} bps (global default)"
+
     text = (
         f"📡 <b>Platform #{p['id']} — {name}</b>\n\n"
         f"<b>Owner ID:</b>  <code>{p['owner_telegram_id']}</code>\n"
@@ -323,12 +333,15 @@ async def show_platform_details(update: Update, context, platform_id: int):
         f"<b>Live Key:</b>   <code>{pk_live}</code>\n"
         f"<b>Status:</b>    {p['status'].upper()}\n\n"
         f"🔌 <b>Total Charges:</b> {p.get('total_charges', 0)}\n"
-        f"💰 <b>Total Revenue:</b>  ${p.get('revenue_usd', 0):.2f} USD\n"
+        f"💰 <b>Total Revenue:</b>  ${p.get('revenue_usd', 0):.2f} USD\n\n"
+        f"⚙️ <b>Buyer fee:</b>  {buyer_disp}\n"
+        f"⚙️ <b>Admin fee:</b>  {admin_disp}\n"
     )
     keyboard = []
     if p["status"] != "revoked":
         keyboard.append([InlineKeyboardButton("🚫 Revoke Keys", callback_data=f"sa_revoke_{p['id']}")])
 
+    keyboard.append([InlineKeyboardButton("⚙️ Override Fees", callback_data=f"sa_pfees_{p['id']}")])
     keyboard.append([
         InlineKeyboardButton("🗑 Delete Platform", callback_data=f"sa_platform_delete_{p['id']}"),
     ])
@@ -1559,6 +1572,36 @@ async def cancelfees_cmd(update: Update, context):
     context.user_data.pop("fee_group_id", None)
     await update.message.reply_text("Fee override cancelled.")
 
+
+async def platform_fee_text_handler(update: Update, context):
+    """Handles typed buyer_bps admin_bps input for per-platform fee overrides."""
+    platform_id = context.user_data.pop("fee_platform_id", None)
+    if platform_id is None:
+        return
+    parts = update.message.text.strip().split()
+    if len(parts) != 2 or not all(p.isdigit() for p in parts):
+        await update.message.reply_text(
+            "❌ Send exactly two integers: <code>buyer_bps admin_bps</code>\nExample: <code>150 280</code>",
+            parse_mode="HTML",
+        )
+        context.user_data["fee_platform_id"] = platform_id
+        return
+    buyer_bps, admin_bps = int(parts[0]), int(parts[1])
+    if not (0 <= buyer_bps <= 2000 and 0 <= admin_bps <= 2000):
+        await update.message.reply_text("❌ Values must be 0–2000 bps each.")
+        context.user_data["fee_platform_id"] = platform_id
+        return
+    await update.message.reply_text(
+        f"⚠️ <b>Confirm fee override for Platform {platform_id}</b>\n\n"
+        f"Buyer: <b>{buyer_bps} bps ({buyer_bps / 100:.2f}%)</b>\n"
+        f"Admin: <b>{admin_bps} bps ({admin_bps / 100:.2f}%)</b>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("✅ Confirm", callback_data=f"sa_pfees_confirm_{platform_id}_{buyer_bps}_{admin_bps}"),
+            InlineKeyboardButton("❌ Cancel",  callback_data=f"sa_platform_{platform_id}"),
+        ]]),
+    )
+
 # ── Update price text handler ─────────────────────────────────────────────────
 
 async def sa_price_text_handler(update: Update, context):
@@ -1663,6 +1706,8 @@ async def _multiplex_text_handler(update: Update, context):
     """Single TEXT handler — delegates to whichever multi-step flow is active."""
     if "fee_group_id" in context.user_data:
         await fee_text_handler(update, context)
+    elif "fee_platform_id" in context.user_data:
+        await platform_fee_text_handler(update, context)
     elif "sa_price_group_id" in context.user_data:
         await sa_price_text_handler(update, context)
     elif "msg_admin_target" in context.user_data:
@@ -2242,6 +2287,38 @@ async def sa_callback_handler(update: Update, context):
                 parse_mode="HTML",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("❌ Cancel", callback_data=f"sa_cancelfees_{gid}"),
+                     InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
+                ]),
+            )
+        await query.answer()
+
+    # ── platform fee override ─────────────────────────────────────────────────
+    elif data.startswith("sa_pfees_"):
+        parts = data.split("_")
+        if parts[2] == "confirm":
+            pid       = int(parts[3])
+            buyer_bps = int(parts[4])
+            admin_bps = int(parts[5])
+            await set_platform_fees(pid, buyer_bps, admin_bps, user_id)
+            await query.answer("Platform fees updated.", show_alert=True)
+            await show_platform_details(update, context, pid)
+        else:
+            pid   = int(parts[2])
+            fees  = await get_platform_fee_config(pid)
+            from renewise.db.queries import get_global_fees
+            gb, ga = await get_global_fees()
+            cur_buyer = fees["buyer_fee_bps"] if fees and fees["buyer_fee_bps"] is not None else gb
+            cur_admin = fees["admin_fee_bps"] if fees and fees["admin_fee_bps"] is not None else ga
+            context.user_data["fee_platform_id"] = pid
+            await query.edit_message_text(
+                f"⚙️ <b>Fee Override Platform {pid}</b>\n\n"
+                f"Current: buyer <b>{cur_buyer} bps ({cur_buyer/100:.2f}%)</b> | "
+                f"admin <b>{cur_admin} bps ({cur_admin/100:.2f}%)</b>\n\n"
+                "Reply with two integers: <code>buyer_bps admin_bps</code>  e.g. <code>150 280</code>"
+                "\nRange: 0–2000 each. Send <code>0 0</code> to remove all fees for this platform.",
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("❌ Cancel", callback_data=f"sa_platform_{pid}"),
                      InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")],
                 ]),
             )

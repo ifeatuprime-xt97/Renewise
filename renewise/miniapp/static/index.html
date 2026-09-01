@@ -2191,13 +2191,13 @@
       <div class="accordion-content">
         <b>1️⃣ Create an app</b><br>
         Tap <b>+ App</b> above. Test keys are generated immediately and always visible in your dashboard. Live (Mainnet)
-        keys are opt-in — generate them when you're ready for real payments.<br><br>
+        keys are opt-in generate them when you're ready for real payments.<br><br>
         <b>2️⃣ Create a charge from your server</b><br>
         <code
           style="font-size:11px;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;display:block;margin:6px 0;word-break:break-all">POST https://&lt;host&gt;/api/platform/charges<br>Authorization: Bearer sk_test_…<br>Content-Type: application/json<br><br>{"amount_usd_cents": 999, "external_reference": "order_001"}</code>
         <b>3️⃣ Show the payment link to your user</b><br>
         Use the <code>payment_url</code> (a <code>ton://</code> deep-link) from the response. Show it as a button inside
-        Telegram or render it as a QR code — <b>never expose the raw vault address</b>.
+        Telegram or render it as a QR code <b>never expose the raw vault address</b>.
       </div>
 
       <!-- Authentication -->
@@ -2917,7 +2917,7 @@ http_response_code(200);</pre>
         The service is provided "as is." Renewise is not liable for blockchain outages, wallet failures, or third-party
         service issues.<br><br>
 
-        <b>8. Privacy — What We Collect</b><br>
+        <b>8. Privacy What We Collect</b><br>
         We store your Telegram user ID, first name, username, subscription records, and payment transaction hashes. We
         do <b>not</b> store private keys, seed phrases, or message content outside bot interactions. On-chain data is
         public by nature.<br><br>
@@ -3371,6 +3371,23 @@ http_response_code(200);</pre>
       </button>
     </div>
     <div id="wallet-result" style="margin-top:14px"></div>
+
+    <!-- Passkey section — always visible so admin can set/change it -->
+    <div class="glass" style="padding:16px;margin-top:14px;border-radius:var(--r-sm)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:13px;font-weight:700">Wallet Passkey</div>
+          <div id="wallet-passkey-sub" style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Not set — anyone can change wallet</div>
+        </div>
+        <button id="wallet-passkey-btn"
+          onclick="submitGroupPasscode()"
+          style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#fff;
+                 border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;
+                 padding:6px 14px;cursor:pointer;flex-shrink:0;margin-left:12px">
+          Set
+        </button>
+      </div>
+    </div>
   </section>
 
   <!-- ════════════════════════════════════════════════════
@@ -3902,18 +3919,58 @@ http_response_code(200);</pre>
 
     function fmtUsd(cents) { return '$' + (cents / 100).toFixed(2); }
 
+    // ── Animated success toast ────────────────────────────────────────────────
+    // Light-weight floating pill that animates in from the bottom, holds for
+    // ~1.4 s, then fades out and removes itself. Supports an optional icon
+    // prefix — pass a checkmark, emoji, or leave blank.
+    function showSuccessToast(msg = '✓ Done', { color = 'var(--accent)', duration = 1400 } = {}) {
+      // Remove any existing toast so rapid calls don't stack
+      document.querySelectorAll('.__success-toast').forEach(el => el.remove());
+
+      const toast = document.createElement('div');
+      toast.className = '__success-toast';
+      toast.textContent = msg;
+      toast.style.cssText = [
+        'position:fixed',
+        'bottom:100px',
+        'left:50%',
+        'transform:translateX(-50%) translateY(16px)',
+        `background:${color}`,
+        'color:#fff',
+        'padding:10px 22px',
+        'border-radius:40px',
+        'font-size:14px',
+        'font-weight:700',
+        'z-index:9999',
+        'pointer-events:none',
+        'white-space:nowrap',
+        'box-shadow:0 6px 24px rgba(0,0,0,.35)',
+        'opacity:0',
+        'transition:opacity .18s ease, transform .18s ease',
+      ].join(';');
+
+      document.body.appendChild(toast);
+
+      // Trigger slide-in on next frame
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          toast.style.opacity = '1';
+          toast.style.transform = 'translateX(-50%) translateY(0)';
+        });
+      });
+
+      // Fade out and remove
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(10px)';
+      }, duration);
+      setTimeout(() => toast.remove(), duration + 320);
+    }
+
     function copyInviteLink(link) {
       const done = () => {
         WebApp.HapticFeedback.notificationOccurred('success');
-        const badge = document.createElement('span');
-        badge.textContent = '✓ Copied!';
-        badge.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);' +
-          'background:var(--accent);color:#fff;padding:7px 20px;border-radius:40px;' +
-          'font-size:13px;font-weight:700;z-index:9999;pointer-events:none;' +
-          'box-shadow:0 4px 16px rgba(0,152,234,.4)';
-        document.body.appendChild(badge);
-        setTimeout(() => { badge.style.transition = 'opacity .3s'; badge.style.opacity = '0'; }, 1300);
-        setTimeout(() => badge.remove(), 1600);
+        showSuccessToast('✓ Copied!');
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(link).then(done).catch(() => WebApp.openTelegramLink(link));
@@ -4341,7 +4398,7 @@ http_response_code(200);</pre>
             const pr = await apiFetch(`${API}/groups/${groupId}/wallet-change-pending`, { headers: H() });
             if (pr.ok) { const pd = await pr.json(); pending = pd.pending; }
           } catch (_) {}
-          openWalletPage(groupId, g.payout_wallet_address, pending);
+          openWalletPage(groupId, g.payout_wallet_address, pending, g.has_wallet_passcode);
         };
         document.getElementById('mgmt-comp').onclick = () => openCompPage(groupId);
         document.getElementById('mgmt-pause').onclick = () => doPauseResume(groupId, _manageGroupData ? _manageGroupData.status : status, g.chat_title);
@@ -4557,10 +4614,13 @@ http_response_code(200);</pre>
     // ════════════════════════════════════════════════════
     let _walletGroupId = null;
     let _walletPendingChangeId = null;
+    let _walletHasPasscode = false;
 
-    function openWalletPage(groupId, currentWallet, pendingChange) {
+    function openWalletPage(groupId, currentWallet, pendingChange, hasPasscode) {
       _walletGroupId = groupId;
       _walletPendingChangeId = null;
+      _walletHasPasscode = !!hasPasscode;
+
       document.getElementById('wallet-current-label').textContent =
         currentWallet ? `Current: ${currentWallet.slice(0, 10)}…${currentWallet.slice(-6)}` : 'No wallet set yet';
       document.getElementById('wallet-input').value = currentWallet || '';
@@ -4570,6 +4630,14 @@ http_response_code(200);</pre>
       document.getElementById('wallet-submit-btn').innerHTML =
         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
       document.getElementById('wallet-submit-btn').setAttribute('data-gid', groupId);
+
+      // Update passkey status row
+      const sub = document.getElementById('wallet-passkey-sub');
+      const btn = document.getElementById('wallet-passkey-btn');
+      if (sub) sub.textContent = _walletHasPasscode
+        ? '🔒 Set — required to change wallet'
+        : 'Not set — anyone can change wallet';
+      if (btn) btn.textContent = _walletHasPasscode ? 'Change' : 'Set';
 
       // Show pending-change banner if one exists
       const banner = document.getElementById('wallet-pending-banner');
@@ -4614,16 +4682,42 @@ http_response_code(200);</pre>
       const groupId = parseInt(document.getElementById('wallet-submit-btn').getAttribute('data-gid'), 10);
       const addr = document.getElementById('wallet-input').value.trim();
       if (!addr) { document.getElementById('wallet-err').textContent = 'Enter a wallet address'; return; }
-      const confirmed = await Confirm.show('Update Payout Wallet?',
-        'Future payouts will go to the new address. Double-check it is correct before confirming.');
-      if (!confirmed) return;
+
+      // If a passkey is set, collect it via PIN modal before confirming
+      let passcode = null;
+      if (_walletHasPasscode) {
+        const result = await showPinModal({
+          title: 'Confirm Wallet Change',
+          subtitle: 'Enter your 4-digit passkey to authorize this wallet update.',
+          fields: [{ id: 'pin', label: 'Passkey', placeholder: '••••' }],
+          submitLabel: 'Confirm',
+        });
+        if (!result) return; // user cancelled
+        passcode = result.pin;
+      } else {
+        const confirmed = await Confirm.show('Update Payout Wallet?',
+          'Future payouts will go to the new address. Double-check it is correct before confirming.');
+        if (!confirmed) return;
+      }
+
       const btn = document.getElementById('wallet-submit-btn');
       btn.disabled = true; btn.textContent = 'Saving…';
       try {
         const r = await apiFetch(`${API}/groups/${groupId}/wallet`, {
-          method: 'PUT', headers: H(), body: JSON.stringify({ wallet_address: addr })
+          method: 'PUT', headers: H(),
+          body: JSON.stringify({ wallet_address: addr, passcode: passcode || null })
         });
-        if (!r.ok) throw new Error(await _errDetail(r));
+        if (!r.ok) {
+          const msg = await _errDetail(r);
+          // Make wrong-passkey errors obvious
+          const friendly = (msg.toLowerCase().includes('passkey') || msg.includes('403'))
+            ? 'Incorrect passkey. Please try again.'
+            : msg;
+          document.getElementById('wallet-err').textContent = friendly;
+          btn.disabled = false;
+          btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
+          return;
+        }
         const data = await r.json();
         WebApp.HapticFeedback.notificationOccurred('success');
 
@@ -4660,6 +4754,51 @@ http_response_code(200);</pre>
         document.getElementById('wallet-err').textContent = String(e.message || e);
         btn.disabled = false;
         btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
+      }
+    }
+
+    async function submitGroupPasscode() {
+      if (!_walletGroupId) return;
+      const fields = _walletHasPasscode
+        ? [
+            { id: 'current', label: 'Current Passkey', placeholder: '••••' },
+            { id: 'new',     label: 'New Passkey',     placeholder: '••••' },
+          ]
+        : [{ id: 'new', label: 'New 4-digit Passkey', placeholder: '••••' }];
+
+      const result = await showPinModal({
+        title: _walletHasPasscode ? 'Change Passkey' : 'Set Wallet Passkey',
+        subtitle: 'Required to authorize future wallet changes.',
+        fields,
+        submitLabel: 'Save Passkey',
+      });
+      if (!result) return;
+
+      try {
+        const r = await apiFetch(`${API}/groups/${_walletGroupId}/passcode`, {
+          method: 'POST',
+          headers: H(),
+          body: JSON.stringify({
+            new_passcode:     result.new,
+            current_passcode: result.current || null,
+          }),
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        showSuccessToast('🔒 Passkey set');
+        _walletHasPasscode = true;
+        const sub = document.getElementById('wallet-passkey-sub');
+        const btn = document.getElementById('wallet-passkey-btn');
+        if (sub) sub.textContent = '🔒 Set — required to change wallet';
+        if (btn) btn.textContent = 'Change';
+        // Keep _manageGroupData in sync so re-opening the page shows the right state
+        if (_manageGroupData) _manageGroupData.has_wallet_passcode = true;
+      } catch (e) {
+        const msg = String(e.message || e);
+        const friendly = msg.toLowerCase().includes('passkey') || msg.includes('403')
+          ? 'Incorrect current passkey.'
+          : msg;
+        WebApp.showAlert('Error: ' + friendly);
       }
     }
 
@@ -5446,15 +5585,26 @@ http_response_code(200);</pre>
           body: JSON.stringify({ amount_usd_cents: Math.round(amtUsd * 100), external_reference: ref })
         });
         if (!r.ok) {
-          const d = await r.json().catch(() => ({}));
-          throw new Error(d.detail || `HTTP ${r.status}`);
+          const data = await r.json().catch(() => ({}));
+          const raw = data.detail || `HTTP ${r.status}`;
+          // Map technical server messages to something actionable
+          const friendly =
+            raw.includes('contract not compiled') || raw.includes('FileNotFoundError')
+              ? 'Payment contract not built on this server. Ask the operator to run: cd contracts && npm run build'
+              : raw.includes('Payment link generation failed')
+              ? 'Could not generate payment link — check that the contract is compiled and the wallet address is valid.'
+              : raw.includes('wallet_address') || raw.includes('no payout wallet')
+              ? 'This app has no Payout Wallet set. Add one in Developer Apps first.'
+              : raw;
+          _renderSandboxError(friendly);
+          return;
         }
         const charge = await r.json();
 
         _renderSandboxPending(charge, amtUsd, secretKey);
-        _sandboxPollCharge(charge.charge_id, secretKey);
+        _sandboxPollCharge(charge.id, secretKey);   // charge.id, not charge.charge_id
       } catch (e) {
-        WebApp.showAlert('Error creating charge: ' + e.message);
+        _renderSandboxError(e.message || String(e));
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" style="margin-right:6px"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Create Test Charge`;
@@ -5529,6 +5679,27 @@ http_response_code(200);</pre>
           </button>
         </div>
       `;
+    }
+
+    function _renderSandboxError(msg) {
+      const resEl = document.getElementById('sandbox-result');
+      resEl.style.display = 'block';
+      resEl.innerHTML = `
+        <div class="glass" style="border-radius:var(--r);padding:20px;border:1px solid rgba(255,92,92,.25);background:rgba(255,92,92,.06)">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" width="22" height="22" style="flex-shrink:0;margin-top:1px">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--danger);margin-bottom:4px">Charge failed</div>
+              <div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.5">${esc(msg)}</div>
+            </div>
+          </div>
+          <button class="btn" style="margin-top:14px;width:100%;padding:10px;font-size:13px;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);color:var(--danger);border-radius:var(--r-xs)"
+            onclick="document.getElementById('sandbox-result').style.display='none'">
+            Dismiss
+          </button>
+        </div>`;
     }
 
     function _sandboxPollCharge(chargeId, sk) {
@@ -6055,7 +6226,23 @@ http_response_code(200);</pre>
         });
         if (!r.ok) throw new Error(await _errDetail(r));
         WebApp.HapticFeedback.notificationOccurred('success');
+
+        // Update cache immediately and re-render the open detail view
+        const cached = _cachedPlatforms.find(x => x.id === platformId);
+        if (cached) cached.wallet_address = result.wallet;
+        await _renderDevApp(platformId);
         loadPlatforms();
+
+        showSuccessToast('✓ Wallet saved');
+
+        // If no passkey is set yet, guide the dev straight into setting one.
+        // A passkey protects future wallet changes — skip the delay so it feels
+        // like a single coherent onboarding step.
+        const hasPasscode = cached ? !!cached.wallet_passcode_hash : false;
+        if (!hasExistingWallet && !hasPasscode) {
+          await new Promise(r => setTimeout(r, 600));
+          await promptPlatformPasscode(platformId, false);
+        }
       } catch (e) {
         WebApp.showAlert('Error updating wallet: ' + (e.message || e));
       }
@@ -6088,6 +6275,14 @@ http_response_code(200);</pre>
         });
         if (!r.ok) throw new Error(await _errDetail(r));
         WebApp.HapticFeedback.notificationOccurred('success');
+        showSuccessToast('🔒 Passkey set');
+        // Update the in-memory cache immediately so the passkey row shows
+        // the right state without waiting for a server round-trip.
+        const cached = _cachedPlatforms.find(x => x.id === platformId);
+        if (cached) cached.wallet_passcode_hash = 'set';
+        // Re-render the open dev-app detail right now.
+        await _renderDevApp(platformId);
+        // Background-refresh to get the real hash value from the server.
         loadPlatforms();
       } catch (e) {
         WebApp.showAlert('Error setting passkey: ' + (e.message || e));

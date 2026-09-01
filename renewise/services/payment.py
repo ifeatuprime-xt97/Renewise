@@ -209,8 +209,13 @@ async def generate_platform_payment_request(
         platform["id"], charge_id, price_usd, ton_usd_rate, price_gram, price_nano,
     )
 
-    # For now, platforms use global default fees
+    # Per-platform fee overrides take priority over global defaults.
+    # This mirrors exactly how generate_payment_request() handles groups.
     global_buyer_bps, global_admin_bps = await get_global_fees()
+    platform_buyer_bps = platform.get("buyer_fee_bps")
+    platform_admin_bps = platform.get("admin_fee_bps")
+    effective_buyer_bps = platform_buyer_bps if platform_buyer_bps is not None else global_buyer_bps
+    effective_admin_bps = platform_admin_bps if platform_admin_bps is not None else global_admin_bps
 
     # We use charge_id in place of subscription_id to uniquely salt the vault contract
     params = VaultParams(
@@ -219,8 +224,8 @@ async def generate_platform_payment_request(
         log_address=Address(LOG_ADDRESS),
         trigger_wallet=Address(TRIGGER_WALLET),
         price=price_nano,
-        buyer_fee_bps=global_buyer_bps,
-        admin_fee_bps=global_admin_bps,
+        buyer_fee_bps=effective_buyer_bps,
+        admin_fee_bps=effective_admin_bps,
         subscription_id=charge_id,
     )
 
@@ -230,7 +235,7 @@ async def generate_platform_payment_request(
         log.error("Failed to build platform payment link for platform=%s charge_id=%s: %s", platform["id"], charge_id, exc)
         raise
 
-    buyer_fee_gram = price_gram * global_buyer_bps / 10000
+    buyer_fee_gram = price_gram * effective_buyer_bps / 10000
     total_gram     = price_gram + buyer_fee_gram
 
     # Register the vault with the webhook server's polling loop

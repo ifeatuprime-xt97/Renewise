@@ -132,15 +132,16 @@ async def regenerate_platform_keys(platform_id: int, mode: str, actor_telegram_i
                 raise ValueError("Cannot rotate live keys before they are generated")
                 
             secret_val = _hash_secret(raw_secret_key)
-            col_name = "secret_key_live_hash"
+            await db.execute(
+                "UPDATE platforms SET secret_key_live_hash = $1 WHERE id = $2",
+                secret_val, platform_id
+            )
         else:
             secret_val = raw_secret_key
-            col_name = "secret_key_test"
-
-        await db.execute(
-            f"UPDATE platforms SET {col_name} = $1 WHERE id = $2",
-            secret_val, platform_id
-        )
+            await db.execute(
+                "UPDATE platforms SET secret_key_test = $1 WHERE id = $2",
+                secret_val, platform_id
+            )
         
         await db.execute(
             "INSERT INTO platform_audit_log (platform_id, action, actor_telegram_id, details) VALUES ($1, $2, $3, $4)",
@@ -282,18 +283,29 @@ async def get_platform_charges(platform_id: int, status: str | None = None, limi
             )
         return [dict(r) for r in rows]
 
-async def get_all_user_platform_charges(owner_telegram_id: int, limit: int = 50, offset: int = 0) -> list[dict]:
-    """Retrieves paginated charges across all platforms owned by the user."""
+async def get_all_user_platform_charges(owner_telegram_id: int, status: str | None = None, limit: int = 50, offset: int = 0) -> list[dict]:
+    """Retrieves paginated charges across all platforms owned by the user, optionally filtered by status."""
     async with _db() as db:
-        rows = await db.fetch(
-            "SELECT c.id, c.platform_id, p.platform_name, c.external_reference, c.mode, c.amount_usd_cents, c.status, "
-            "c.vault_address, c.tx_hash, c.required_nano_amount, c.created_at, c.completed_at "
-            "FROM platform_charges c "
-            "JOIN platforms p ON c.platform_id = p.id "
-            "WHERE p.owner_telegram_id = $1 "
-            "ORDER BY c.created_at DESC LIMIT $2 OFFSET $3",
-            owner_telegram_id, limit, offset
-        )
+        if status:
+            rows = await db.fetch(
+                "SELECT c.id, c.platform_id, p.platform_name, c.external_reference, c.mode, c.amount_usd_cents, c.status, "
+                "c.vault_address, c.tx_hash, c.required_nano_amount, c.created_at, c.completed_at "
+                "FROM platform_charges c "
+                "JOIN platforms p ON c.platform_id = p.id "
+                "WHERE p.owner_telegram_id = $1 AND c.status = $2 "
+                "ORDER BY c.created_at DESC LIMIT $3 OFFSET $4",
+                owner_telegram_id, status, limit, offset
+            )
+        else:
+            rows = await db.fetch(
+                "SELECT c.id, c.platform_id, p.platform_name, c.external_reference, c.mode, c.amount_usd_cents, c.status, "
+                "c.vault_address, c.tx_hash, c.required_nano_amount, c.created_at, c.completed_at "
+                "FROM platform_charges c "
+                "JOIN platforms p ON c.platform_id = p.id "
+                "WHERE p.owner_telegram_id = $1 "
+                "ORDER BY c.created_at DESC LIMIT $2 OFFSET $3",
+                owner_telegram_id, limit, offset
+            )
         return [dict(r) for r in rows]
 
 async def get_platform_stats(platform_id: int) -> dict:
