@@ -2204,7 +2204,7 @@
 
     <!-- Quick-action strip -->
     <div style="display:flex;gap:8px;margin-bottom:20px">
-      <button class="btn" onclick="App.nav('dev-sandbox')"
+      <button class="btn" onclick="openSandbox('dev-settings')"
         style="flex:1;background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);font-size:13px;padding:10px 8px;border-radius:var(--r-sm)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex-shrink:0"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
         Open Sandbox
@@ -2675,11 +2675,11 @@ http_response_code(200);</pre>
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-dev-sandbox">
     <div class="back-row">
-      <button class="back-btn" onclick="App.nav('dev-settings')">
+      <button class="back-btn" id="sandbox-back-btn" onclick="App.nav(_sandboxReturnPage || 'dev-settings')">
         <svg viewBox="0 0 24 24" fill="none">
           <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
         </svg>
-        Dev Settings
+        Back
       </button>
     </div>
     <div class="section-hdr" style="margin-bottom:8px">
@@ -3794,7 +3794,7 @@ http_response_code(200);</pre>
         'comp':       () => App.nav('manage'),
         'delete':     () => App.nav('manage'),
         'dev-app':    () => App.nav('dev-dashboard'),
-        'dev-sandbox':() => App.nav('dev-settings'),
+        'dev-sandbox':() => App.nav(_sandboxReturnPage || 'dev-settings'),
       },
 
       nav(page) {
@@ -3946,7 +3946,7 @@ http_response_code(200);</pre>
             ? `<code style="font-size:11px">${vaultS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
           ['TX Hash', tx
-            ? `<code style="font-size:11px;color:var(--accent);cursor:pointer" onclick="WebApp.openLink('${d.tonviewer_url}')">${txS}</code>`
+            ? `<code style="font-size:11px;color:var(--accent);cursor:pointer" onclick="_openUrl('${_regUrl(d.tonviewer_url)}')">${txS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
         ];
 
@@ -3963,7 +3963,7 @@ http_response_code(200);</pre>
           </div>
           ${tx ? `
           <button class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px"
-            onclick="WebApp.openLink('${d.tonviewer_url}')">
+            onclick="_openUrl('${_regUrl(d.tonviewer_url)}')">
             ${ico('link', 15)} View on TonViewer
           </button>` : ''}
         `;
@@ -3996,7 +3996,7 @@ http_response_code(200);</pre>
           </div>
           ${txHash ? `
           <button class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px"
-            onclick="WebApp.openLink('https://tonviewer.com/${esc(txHash)}')">
+            onclick="_openUrl('${_regUrl('https://tonviewer.com/' + txHash)}')">
             ${ico('link', 15)} View on TonViewer
           </button>` : ''}
         `;
@@ -4107,7 +4107,7 @@ http_response_code(200);</pre>
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
           ['TX Hash',      tx
             ? `<code style="font-size:11px;color:var(--accent);cursor:pointer"
-                onclick="WebApp.openLink('${esc(d.explorer_url)}')">${txS}</code>`
+                onclick="_openUrl('${_regUrl(d.explorer_url)}')">${txS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
         ];
 
@@ -4124,12 +4124,12 @@ http_response_code(200);</pre>
           </div>
           ${tx ? `
           <button class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px"
-            onclick="WebApp.openLink('${esc(d.explorer_url)}')">
+            onclick="_openUrl('${_regUrl(d.explorer_url)}')">
             ${ico('link', 15)} View on TonScan
           </button>` : ''}
           ${d.status === 'pending' && d.payment_url ? `
           <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px"
-            onclick="WebApp.openLink('${esc(d.payment_url)}')">
+            onclick="_openUrl('${_regUrl(d.payment_url)}')">
             ${ico('wallet', 15)} Open Payment Link
           </button>` : ''}
         `;
@@ -4168,6 +4168,39 @@ http_response_code(200);</pre>
     // Utility
     // ════════════════════════════════════════════════════
     function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    // ── Safe external URL opener ──────────────────────────────────────────────
+    // Inline onclick strings in dynamically injected innerHTML cannot reliably
+    // call WebApp.openLink inside Telegram's WebView (CSP + scope issues).
+    // Instead, store URLs in this registry and reference them by key from onclick.
+    const _urlRegistry = {};
+    let   _urlRegKey   = 0;
+
+    // Register a URL and return an onclick-safe attribute string
+    function _regUrl(url) {
+      const key = '_u' + (_urlRegKey++);
+      _urlRegistry[key] = url;
+      return key;
+    }
+
+    // Called from injected onclick="_openUrl('_u0')" — always a real global fn
+    function _openUrl(key) {
+      const url = _urlRegistry[key];
+      if (!url) return;
+      if (window.Telegram && window.Telegram.WebApp) {
+        const tg = window.Telegram.WebApp;
+        const isTgLink = url.startsWith('https://t.me/') || url.startsWith('tg://');
+        if (isTgLink && typeof tg.openTelegramLink === 'function') {
+          tg.openTelegramLink(url);
+        } else if (typeof tg.openLink === 'function') {
+          tg.openLink(url, { try_instant_view: false });
+        } else {
+          window.open(url, '_blank', 'noreferrer');
+        }
+      } else {
+        window.open(url, '_blank', 'noreferrer');
+      }
+    }
 
     function pill(status) {
       const labels = { active: 'Active', expired: 'Expired', comped: 'Comped', paused: 'Paused', pending: 'Pending' };
@@ -4728,7 +4761,7 @@ http_response_code(200);</pre>
           <span class="hist-name">${esc(tx.first_name || 'User')}</span>
           <span class="hist-date">${esc(tx.start_date || 'N/A')}</span>
           <span class="hist-hash" title="View on TonViewer"
-            onclick="event.stopPropagation();WebApp.openLink('https://tonviewer.com/${esc(tx.last_payment_tx_hash || '')}')">
+            onclick="event.stopPropagation();_openUrl('${_regUrl('https://tonviewer.com/' + (tx.last_payment_tx_hash || ''))}')">
             ${tx.last_payment_tx_hash ? tx.last_payment_tx_hash.slice(0, 14) + '…' : '—'}
           </span>
         </div>
@@ -5469,7 +5502,7 @@ http_response_code(200);</pre>
                 <div style="display:flex;justify-content:space-between;align-items:center">
                   <span style="font-size:11px;color:rgba(255,255,255,.5)">Secret key: shown once on generation</span>
                   <div style="display:flex;gap:6px">
-                    <button class="btn" style="padding:3px 10px;font-size:11px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.1)" onclick="setSandboxEnv('live'); App.nav('dev-sandbox')">Sandbox</button>
+                    <button class="btn" style="padding:3px 10px;font-size:11px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.1)" onclick="setSandboxEnv('live');openSandbox('dev-app')">Sandbox</button>
                     <button class="btn" style="padding:3px 10px;font-size:11px;background:var(--error)" onclick="regenerateKey('live')">Rotate</button>
                   </div>
                 </div>
@@ -5509,7 +5542,7 @@ http_response_code(200);</pre>
                   <button class="btn" style="padding:5px 14px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="regenerateKey('test')">Rotate</button>
                   <button class="btn" title="Delete platform" style="padding:5px 10px;font-size:12px;background:transparent;color:var(--destructive);border:1px solid var(--destructive);border-radius:8px;display:flex;align-items:center" onclick="deletePlatform(${p.id})"><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' width='14' height='14'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4h6v2'/></svg></button>
                 </div>
-                <button class="btn" style="width:100%;padding:9px 12px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="setSandboxEnv('test'); App.nav('dev-sandbox')">Open Sandbox</button>
+                <button class="btn" style="width:100%;padding:9px 12px;font-size:12px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px" onclick="setSandboxEnv('test');openSandbox('dev-app')">Open Sandbox</button>
               </div>
 
               ${dashLiveBlock}
@@ -6325,7 +6358,7 @@ http_response_code(200);</pre>
                 Charges
               </button>
               <button style="flex:1;padding:11px 8px;background:none;border:none;color:rgba(255,255,255,.75);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"
-                onclick="setSandboxEnv('test'); _sandboxSelectPlatform(${p.id}); App.nav('dev-sandbox')">
+                onclick="setSandboxEnv('test'); _sandboxSelectPlatform(${p.id}); openSandbox('dev-app')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
                 Sandbox
               </button>
@@ -6336,6 +6369,15 @@ http_response_code(200);</pre>
       } catch (e) {
         el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load apps.</p></div>`;
       }
+    }
+
+    // Tracks which page opened the sandbox so the back button returns there correctly
+    let _sandboxReturnPage = 'dev-settings';
+
+    // Navigate to sandbox and record where to return
+    function openSandbox(returnPage) {
+      _sandboxReturnPage = returnPage || 'dev-settings';
+      App.nav('dev-sandbox');
     }
 
     // ── Helper: pre-select a platform in the sandbox ──────────────────────────
@@ -6399,7 +6441,7 @@ http_response_code(200);</pre>
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             </span>All Charges
           </button>
-          <button class="dev-app-btn" onclick="setSandboxEnv('test');_sandboxSelectPlatform(${p.id});App.nav('dev-sandbox')">
+          <button class="dev-app-btn" onclick="setSandboxEnv('test');_sandboxSelectPlatform(${p.id});openSandbox('dev-app')">
             <span class="dev-app-btn-ico" style="background:rgba(74,222,128,.1)">
               <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" width="20" height="20"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
             </span>Sandbox
