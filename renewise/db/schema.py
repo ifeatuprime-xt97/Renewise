@@ -588,11 +588,11 @@ async def init_db() -> None:
                 "DO $$ BEGIN ALTER TABLE users ADD COLUMN terms_accepted_at TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 # processed_tx_hashes — subscription link
                 "DO $$ BEGIN ALTER TABLE processed_tx_hashes ADD COLUMN sub_id INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-            ]
-            for mig in pg_migrations:
-                await db.execute(mig)
-        finally:
-            await db.execute("SELECT pg_advisory_unlock(18273645)")
+                ]
+                for mig in pg_migrations:
+                    await db.execute(mig)
+            finally:
+                await db.execute("SELECT pg_advisory_unlock(18273645)")
 
         return
 
