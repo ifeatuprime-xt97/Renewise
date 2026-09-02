@@ -5336,24 +5336,95 @@ http_response_code(200);</pre>
     let chargesPage = 0;
     const CHARGES_PER_PAGE = 20;
     let _cachedPlatforms = [];  // module-level cache populated by loadPlatforms()
+    let _appChargesOffset  = 0;
+    let _appChargesAllDone = false;
+    const _APP_CHARGES_PAGE = 20;
 
+    // Redirects to the per-app page (page-dev-app) which now contains the charges inline
     async function showPlatformCharges(platformId, platformName) {
-      currentPlatformId = platformId;
-      chargesPage = 0;
+      await openDevApp(platformId);
+    }
 
-      // Use the existing pmt-detail-overlay as the dashboard sheet
-      const overlay  = document.getElementById('pmt-detail-overlay');
-      const sheet    = document.getElementById('pmt-detail-body');
-      const titleEl  = overlay.querySelector('h2');
-      if (titleEl) titleEl.textContent = `${platformName} Dashboard`;
+    async function reloadAppCharges() {
+      _appChargesOffset  = 0;
+      _appChargesAllDone = false;
+      await _fetchAppCharges(true);
+    }
 
-      sheet.innerHTML = `
-        <div id="dashboard-content" style="text-align:left;padding-right:4px">
-          <div style="text-align:center;padding:20px;color:rgba(255,255,255,.5)">Loading dashboard…</div>
-        </div>
-      `;
-      overlay.classList.add('show');
-      await renderDashboard();
+    async function loadAppChargesMore() {
+      if (!_appChargesAllDone) await _fetchAppCharges(false);
+    }
+
+    async function _fetchAppCharges(reset) {
+      const listEl = document.getElementById('app-charges-list');
+      const moreEl = document.getElementById('app-charges-more');
+      if (!listEl) return;
+
+      const filterEl = document.getElementById('app-charge-filter');
+      const statusFilter = filterEl ? filterEl.value : '';
+
+      if (reset) {
+        listEl.innerHTML = skeletonCards(3);
+        if (moreEl) moreEl.style.display = 'none';
+      }
+
+      try {
+        let url = `${API}/developer/platforms/${currentPlatformId}/charges?limit=${_APP_CHARGES_PAGE}&offset=${_appChargesOffset}`;
+        if (statusFilter) url += `&status=${statusFilter}`;
+        const r = await apiFetch(url, { headers: H() });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const data = await r.json();
+        const charges = data.charges || [];
+
+        if (reset && !charges.length) {
+          listEl.innerHTML = `<div style="text-align:center;padding:24px 0;color:rgba(255,255,255,.3);font-size:13px">No charges found.</div>`;
+          if (moreEl) moreEl.style.display = 'none';
+          return;
+        }
+
+        if (reset) listEl.innerHTML = '';
+
+        const statusDotColor = { completed: 'var(--success)', pending: '#fbbf24', expired: 'rgba(255,255,255,.28)', failed: 'var(--danger)' };
+        const statusLabel    = { completed: 'Paid', pending: 'Pending', expired: 'Expired', failed: 'Failed' };
+
+        charges.forEach(c => {
+          const date = new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const sColor = statusDotColor[c.status] || 'rgba(255,255,255,.3)';
+          const sLabel = statusLabel[c.status] || c.status;
+          const row = document.createElement('div');
+          row.className = 'charge-row';
+          row.onclick = () => ChargeDetail.show(c);
+          row.innerHTML = `
+            <div class="charge-status-dot" style="background:${sColor}"></div>
+            <div class="charge-body">
+              <div class="charge-ref">
+                $${(c.amount_usd_cents / 100).toFixed(2)}
+                <span class="charge-mode-badge ${c.mode}" style="margin-left:4px">${c.mode}</span>
+              </div>
+              <div class="charge-meta">
+                ${esc(c.external_reference)}
+                <span style="display:inline-block;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.25);margin:0 5px 1px;vertical-align:middle"></span>
+                ${date}
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:12px;font-weight:700;color:${sColor}">${sLabel}</div>
+              ${c.tx_hash ? `<div style="font-size:10.5px;color:var(--accent);margin-top:2px">TX ↗</div>` : ''}
+            </div>`;
+          // Wrap in glass card
+          const wrapper = document.createElement('div');
+          wrapper.className = 'glass';
+          wrapper.style.cssText = 'border-radius:var(--r-sm);padding:4px 16px;margin-bottom:10px';
+          wrapper.appendChild(row);
+          listEl.appendChild(wrapper);
+        });
+
+        _appChargesOffset  += charges.length;
+        _appChargesAllDone  = charges.length < _APP_CHARGES_PAGE;
+        if (moreEl) moreEl.style.display = _appChargesAllDone ? 'none' : 'block';
+      } catch (e) {
+        if (reset) listEl.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--danger);font-size:13px">Failed to load charges.</div>`;
+      }
     }
 
     async function renderDashboard(statusFilter = '') {
@@ -5531,14 +5602,11 @@ http_response_code(200);</pre>
     }
 
     async function filterCharges(status) {
-      chargesPage = 0;
-      await renderDashboard(status);
+      // legacy no-op — charges now rendered inline in _renderDevApp
     }
 
     async function changeChargesPage(delta) {
-      chargesPage += delta;
-      const status = document.getElementById('charge-status-filter').value;
-      await renderDashboard(status);
+      // legacy no-op — replaced by load-more pattern
     }
 
     async function regenerateKey(mode) {
@@ -6252,7 +6320,7 @@ http_response_code(200);</pre>
                 Manage
               </button>
               <button style="flex:1;padding:11px 8px;background:none;border:none;border-right:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.75);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"
-                onclick="showPlatformCharges(${p.id}, '${esc(p.platform_name)}')">
+                onclick="openDevApp(${p.id})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                 Charges
               </button>
@@ -6326,7 +6394,7 @@ http_response_code(200);</pre>
 
         // ── Action grid ───────────────────────────────────────────────────────
         html += `<div class="dev-app-grid">
-          <button class="dev-app-btn" onclick="showPlatformCharges(${p.id},'${esc(p.platform_name)}')">
+          <button class="dev-app-btn" onclick="document.getElementById('app-charges-section').scrollIntoView({behavior:'smooth'})">
             <span class="dev-app-btn-ico" style="background:rgba(0,152,234,.15)">
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="20" height="20"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             </span>All Charges
@@ -6456,7 +6524,36 @@ http_response_code(200);</pre>
           </button>
         `;
 
+        // ── Charges section ───────────────────────────────────────────────────
+        html += `
+          <div style="margin-top:24px" id="app-charges-section">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:15px;font-weight:800">Charges</div>
+              <select id="app-charge-filter"
+                style="background:var(--surface2);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px;font-size:12px;font-family:inherit;outline:none;cursor:pointer"
+                onchange="reloadAppCharges()">
+                <option value="">All</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="expired">Expired</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+            <div id="app-charges-list">${skeletonCards(3)}</div>
+            <div id="app-charges-more" style="display:none;margin-top:10px">
+              <button onclick="loadAppChargesMore()"
+                style="width:100%;padding:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xs);color:rgba(255,255,255,.75);font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">
+                Load more
+              </button>
+            </div>
+          </div>
+        `;
+
         container.innerHTML = html;
+        // Load the first page of charges after rendering
+        _appChargesOffset = 0;
+        _appChargesAllDone = false;
+        await _fetchAppCharges(true);
       } catch (e) {
         container.innerHTML = `<div class="empty">${ico('alert',40)}<p>Failed to load app details.</p></div>`;
       }
