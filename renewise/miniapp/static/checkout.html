@@ -45,19 +45,21 @@
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
       text-align: center;
       position: relative;
-      overflow: hidden;
+      isolation: isolate;
     }
 
-    .checkout-card::before {
-      content: '';
+    .checkout-card .card-glow {
       position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(0, 152, 234, 0.1) 0%, transparent 60%);
-      z-index: -1;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 0%, rgba(0, 152, 234, 0.12) 0%, transparent 70%);
       pointer-events: none;
+      z-index: 0;
+    }
+
+    .checkout-card > *:not(.card-glow) {
+      position: relative;
+      z-index: 1;
     }
 
     .header-row {
@@ -145,6 +147,13 @@
       -webkit-tap-highlight-color: transparent;
       text-decoration: none;
       user-select: none;
+      touch-action: manipulation;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .wallet-btn * {
+      pointer-events: none;
     }
 
     .wallet-btn:active {
@@ -219,6 +228,7 @@
 <body>
 
   <div class="checkout-card">
+    <div class="card-glow"></div>
     
     <div id="loading" class="loader"></div>
     <div id="error-screen" class="status-screen" style="color:var(--danger)">Failed to load checkout details.</div>
@@ -262,7 +272,7 @@
         <!-- MyTonWallet -->
         <button class="wallet-btn" onclick="openWallet('mytonwallet')">
           <img class="wallet-icon"
-               src="https://mytonwallet.io/icon-256.png"
+               src="https://mytonwallet.io/img/icon-256x256.png"
                alt="MyTonWallet">
           <span>MyTonWallet</span>
         </button>
