@@ -25,7 +25,8 @@ env/
 
 # ── Node / Contracts ──────────────────────────────────────────────────────────
 contracts/node_modules/
-contracts/build/
+# contracts/build/ is intentionally tracked — the compiled .boc is required
+# at runtime and there is no Node.js build step on the server
 
 # ── Logs ──────────────────────────────────────────────────────────────────────
 *.log

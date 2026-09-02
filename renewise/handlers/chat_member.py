@@ -190,9 +190,9 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
             warn = (
                 f"⚠️ I've been removed from <b>{chat.title}</b>.\n\n"
                 "Here's what this means:\n"
-                "  • All new join requests are <b>paused</b> — no one can join until I'm back\n"
+                "  • All new join requests are <b>paused</b> no one can join until I'm back\n"
                 "  • Existing subscribers keep their access for now\n"
-                "  • Nothing is deleted — your paywall settings are safe\n\n"
+                "  • Nothing is deleted your paywall settings are safe\n\n"
                 "To resume, simply re-add me as admin with the same permissions and I'll pick up where I left off."
             )
             try:

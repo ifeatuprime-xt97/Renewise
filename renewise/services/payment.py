@@ -84,7 +84,7 @@ async def generate_payment_request(
     live USD/TON exchange rate fetched from CoinGecko. This ensures users
     always pay the correct USD-equivalent amount regardless of token price.
 
-    The vault is NOT deployed yet — deployment happens atomically on first
+    The vault is NOT deployed yet deployment happens atomically on first
     payment via TON's deploy-on-first-message pattern.
     """
     group = await queries.get_group_by_id(group_id)

@@ -140,7 +140,7 @@ async def _get_network_detail_text(ctx: ContextTypes.DEFAULT_TYPE, g_dict: dict)
 
     lines = [
         "⚙️ <b>Network Dashboard</b>\n",
-        f"{status_icon} {chat_type} — <b>{title}</b>",
+        f"{status_icon} {chat_type} <b>{title}</b>",
         f"  💰 ${usd:.2f} USD / {interval} days",
         f"  👥 {member_count} active member{'s' if member_count != 1 else ''}",
         f"  👛 <code>{wallet}</code>",
@@ -172,7 +172,7 @@ async def cmd_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cb_menu_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """◀️ Back — always returns to the network picker."""
+    """◀️ Back always returns to the network picker."""
     query = update.callback_query
     await query.answer()
     await _show_network_picker(update, ctx)
@@ -383,6 +383,22 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if not await validate_ton_address(address):
         await update.message.reply_text(
             "❌ Invalid TON address format. Please try again:",
+            parse_mode="HTML",
+            reply_markup=cancel_input_kb(),
+        )
+        return AWAIT_NEW_WALLET
+
+    # Network check: on mainnet, testnet addresses won't receive payments.
+    # On testnet, both address types are accepted.
+    from renewise.services.wallet import detect_address_network
+    from renewise.config import TONCENTER_TESTNET
+    addr_network = detect_address_network(address)
+    if not TONCENTER_TESTNET and addr_network == "testnet":
+        await update.message.reply_text(
+            "⚠️ <b>Testnet address detected</b>\n\n"
+            "This looks like a <b>testnet</b> wallet address (starts with <code>kQ</code> or <code>0Q</code>).\n\n"
+            "The system is running on <b>mainnet</b> — payouts will not reach a testnet wallet.\n\n"
+            "Please send your <b>mainnet</b> wallet address (starts with <code>EQ</code> or <code>UQ</code>):",
             parse_mode="HTML",
             reply_markup=cancel_input_kb(),
         )
@@ -782,7 +798,7 @@ async def msg_comp_username(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
 
     ctx.user_data.pop("comp_group", None)  # type: ignore[union-attr]
     await update.message.reply_text(
-        f"\u2705 {html.escape(display)} has been comped — access granted, logged as <code>comped</code>.",
+        f"\u2705 {html.escape(display)} has been comped access granted, logged as <code>comped</code>.",
         parse_mode="HTML",
         reply_markup=network_detail_kb(group["id"]),
     )
@@ -1091,7 +1107,7 @@ async def cb_settings(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     passkey_line = "🔒 Set" if has_passkey else "Not set"
 
     text = (
-        f"⚙️ <b>Settings — {title}</b>\n\n"
+        f"⚙️ <b>Settings {title}</b>\n\n"
         f"💰 Price:        <b>${usd:.2f} USD</b> / {interval} days\n"
         f"👛 Wallet:       <code>{wallet_disp}</code>\n"
         f"🔑 Passkey:      {passkey_line}\n"
@@ -1318,7 +1334,7 @@ async def cb_delete_network(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
     ctx.user_data["delete_group_title"] = title  # type: ignore[index]
 
     await query.edit_message_text(
-        f"🗑️ <b>Delete Network — {title}</b>\n\n"
+        f"🗑️ <b>Delete Network {title}</b>\n\n"
         "This will permanently do the following, <b>in order</b>:\n\n"
         "1️⃣ All new and pending payments for this network are <b>immediately paused</b>\n"
         "2️⃣ The bot <b>leaves the group/channel</b> automatically\n"

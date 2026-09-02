@@ -16,7 +16,7 @@ Flow
     → trigger wallet sends Refund{recipient} to vault contract
     → vault verifies sender == trigger_wallet, releases overage_held to recipient
     → user DMed: trigger tx hash + TonScan explorer link
-    → DB updated to status=sent automatically — no superadmin needed
+    → DB updated to status=sent automatically no superadmin needed
 
   If TRIGGER_MNEMONIC is not configured:
     → wallet saved to DB (status=pending_send)
@@ -77,7 +77,7 @@ async def cb_refund_prompt(
         chat_id=update.effective_user.id,
         text=(
             "💳 <b>Reply with your TON wallet address</b>\n\n"
-            "Just send your address in the next message — it starts with "
+            "Just send your address in the next message it starts with "
             "<code>UQ</code> or <code>EQ</code>.\n\n"
             "Example:\n"
             "<code>UQBvI0aFLnw2QbZgjMPCLRdtRHxhUyinQudg6sdiohIwg5jL</code>"
@@ -94,7 +94,7 @@ async def handle_refund_wallet_message(
     Catches plain-text messages in private chats when the user has a pending
     refund awaiting their wallet address.
 
-    Registered as a low-priority MessageHandler — only fires in private chats
+    Registered as a low-priority MessageHandler only fires in private chats
     and only when bot_data["pending_refunds"] has an entry for this user OR
     the DB has a pending_wallet refund for them.  All other handlers run first.
     """
@@ -174,7 +174,7 @@ async def _process_wallet_submission(
     if not TRIGGER_MNEMONIC:
         # Trigger wallet not configured — wallet is saved, notify superadmins.
         log.warning(
-            "refund: TRIGGER_MNEMONIC not set — refund_id=%d queued for manual send",
+            "refund: TRIGGER_MNEMONIC not set refund_id=%d queued for manual send",
             refund_id,
         )
         from renewise.config import ALLOWED_SUPERADMIN_IDS
@@ -221,7 +221,7 @@ async def _process_wallet_submission(
                 await ctx.bot.send_message(
                     chat_id=admin_id,
                     text=(
-                        f"🚨 <b>Refund failed — vault address missing</b>\n\n"
+                        f"🚨 <b>Refund failed vault address missing</b>\n\n"
                         f"Refund ID: <code>{refund_id}</code>\n"
                         f"User: <code>{tg_user_id}</code>\n"
                         f"Amount: <b>{refund_ton:.4f} TON</b>\n"
@@ -293,7 +293,7 @@ async def _process_wallet_submission(
         )
         await reply_fn(
             f"⚠️ <b>Automatic refund failed.</b>\n\n"
-            f"Don't worry — your wallet address has been saved and a member of "
+            f"Don't worry your wallet address has been saved and a member of "
             f"our team will process your refund of <b>{refund_ton:.4f} TON</b> manually.\n\n"
             f"<i>Expected within 24 hours.</i>",
             parse_mode="HTML",
@@ -304,7 +304,7 @@ async def _process_wallet_submission(
                 await ctx.bot.send_message(
                     chat_id=admin_id,
                     text=(
-                        f"🚨 <b>Auto-refund trigger failed — manual action required</b>\n\n"
+                        f"🚨 <b>Auto-refund trigger failed manual action required</b>\n\n"
                         f"Refund ID: <code>{refund_id}</code>\n"
                         f"User: <code>{tg_user_id}</code>\n"
                         f"Vault: <code>{vault_address}</code>\n"

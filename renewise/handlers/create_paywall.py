@@ -586,7 +586,7 @@ async def _show_wallet_entry(query, interval) -> None:
 
 
 async def cb_reuse_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    """Admin chose to reuse their previously stored wallet — skip text entry."""
+    """Admin chose to reuse their previously stored wallet skip text entry."""
     query = update.callback_query
     await query.answer()
 
@@ -597,7 +597,7 @@ async def cb_reuse_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int
 
 
 async def cb_enter_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    """Admin chose to enter a different wallet — show the text-entry screen."""
+    """Admin chose to enter a different wallet show the text-entry screen."""
     query = update.callback_query
     await query.answer()
     interval = _w(ctx).get("interval")
@@ -708,7 +708,7 @@ async def cb_final_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
             )
         else:
             link_section = (
-                "⚠️ I couldn't generate an invite link automatically — "
+                "⚠️ I couldn't generate an invite link automatically "
                 "please create one manually in your group/channel settings "
                 "(set it to require approval) and share it with your audience.\n\n"
             )
@@ -754,7 +754,7 @@ async def cb_back_to_instructions(update: Update, ctx: ContextTypes.DEFAULT_TYPE
         "<b>2️⃣ Enable Join Approval</b>\n"
         "In your group settings → Members, turn on <b>Approve New Members</b> "
         "(for groups) or in channel settings enable <b>Join Requests</b> (for channels). "
-        "This is how I control who gets in — I approve paying members and reject non-payers.\n\n"
+        "This is how I control who gets in I approve paying members and reject non-payers.\n\n"
         "<b>3️⃣ Add me as Admin</b>\n"
         "Add me as an <b>Admin</b> with these permissions:\n"
         "✅ Add Users <i>(enables both 'Add Users' and 'Process Join Requests')</i>\n"
@@ -790,7 +790,7 @@ async def cb_back_to_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
         ])
         text = (
             "👋 <b>Welcome to Renewise!</b>\n\n"
-            "I turn your Telegram group or channel into a paid community — "
+            "I turn your Telegram group or channel into a paid community "
             "members pay in GRAM, you get paid directly, no middleman holding your funds.\n\n"
             "Ready to set one up? It takes about 2 minutes."
         )

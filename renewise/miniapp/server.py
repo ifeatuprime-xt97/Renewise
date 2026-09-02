@@ -962,15 +962,56 @@ async def api_developer_update_wallet(
     
     if not wallet_address:
         raise HTTPException(status_code=400, detail="Wallet address is required")
-        
+
+    # Validate format first
+    if not await validate_ton_address(wallet_address):
+        raise HTTPException(status_code=422, detail="Invalid TON wallet address format")
+
     telegram_user_id = user["id"]
-    await verify_platform_ownership(platform_id, telegram_user_id)
+    platform = await verify_platform_ownership(platform_id, telegram_user_id)
+
+    # Network enforcement depends on whether the platform has live keys:
+    #
+    # • Test-only platform (no live keys yet): accept both mainnet and testnet
+    #   wallet addresses. Test charges route to testnet regardless of address
+    #   type — the developer is told to pay with testnet TON, not real money.
+    #
+    # • Live platform (live keys generated): enforce mainnet-only wallet when
+    #   TONCENTER_TESTNET=false, because live charges settle real funds.
+    #   If TONCENTER_TESTNET=true (full testnet mode) both types are accepted.
+    from renewise.services.wallet import detect_address_network
+    from renewise.config import TONCENTER_TESTNET
+    _addr_net = detect_address_network(wallet_address)
+    has_live_keys = bool(platform.get("publishable_key_live"))
+
+    if has_live_keys and not TONCENTER_TESTNET and _addr_net == "testnet":
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "This platform has live keys. "
+                "Testnet wallet address provided but the system is running on mainnet. "
+                "Please use a mainnet address (EQ... or UQ...) to receive live payouts."
+            ),
+        )
     
     success = await platform_svc.update_platform_wallet(platform_id, wallet_address, telegram_user_id, passcode)
     if not success:
         raise HTTPException(status_code=403, detail="Incorrect or missing passcode")
-        
-    return {"ok": True}
+
+    addr_network = _addr_net or "unknown"
+    # For test-only platforms, remind the dev to use testnet TON when paying
+    testnet_notice = (
+        "This wallet is set for test charges. When testing, pay with testnet TON — "
+        "not real money. Testnet TON is free from https://t.me/testgiver_ton_bot"
+        if not has_live_keys else None
+    )
+    warning = (
+        "Raw address format — unable to verify network compatibility. "
+        "Ensure this address is reachable on the correct network."
+        if addr_network == "raw" else testnet_notice
+    )
+
+    return {"ok": True, "address_network": addr_network, "has_live_keys": has_live_keys, "warning": warning}
 
 @app.post("/api/developer/platforms/{platform_id}/passcode")
 @limiter.limit("5/minute")
@@ -1356,6 +1397,20 @@ async def api_group_update_wallet(
     if not await validate_ton_address(body.wallet_address):
         raise HTTPException(status_code=422, detail="Invalid TON wallet address format")
 
+    # On mainnet, reject testnet addresses outright — payouts will never arrive.
+    # On testnet, both address types are accepted.
+    from renewise.services.wallet import detect_address_network
+    from renewise.config import TONCENTER_TESTNET
+    _addr_net = detect_address_network(body.wallet_address)
+    if not TONCENTER_TESTNET and _addr_net == "testnet":
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Testnet wallet address provided but the system is running on mainnet. "
+                "Please use a mainnet address (EQ... or UQ...) to receive payouts."
+            ),
+        )
+
     # Passkey check — required when a passkey is already set on this group.
     # First-time wallet setup has no passkey, so it passes through freely.
     if not await queries.check_group_wallet_passcode(group_id, body.passcode):
@@ -1393,12 +1448,24 @@ async def api_group_update_wallet(
         {"change_id": change_id, "new_wallet": body.wallet_address},
     )
 
+    from renewise.services.wallet import detect_address_network
+    from renewise.config import TONCENTER_TESTNET
+    addr_network = _addr_net or "unknown"
+    # warn on raw addresses only (can't determine testnet/mainnet from raw form)
+    warning = (
+        "Raw address format — unable to verify network compatibility. "
+        "Ensure this address is reachable on the correct network."
+        if addr_network == "raw" else None
+    )
+
     return {
         "ok":          True,
         "scheduled":   True,
         "change_id":   change_id,
         "activates_at": activates_at_str,
         "delay_hours": WALLET_CHANGE_DELAY_HOURS,
+        "address_network": addr_network,
+        "warning": warning,
         "message": (
             f"Change scheduled \u2014 activates in {WALLET_CHANGE_DELAY_HOURS} hours. "
             "You'll be notified via the bot."

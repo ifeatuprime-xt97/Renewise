@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 # ── Terms of Service text (condensed for Telegram) ────────────────────────────
 _TERMS_TEXT = (
-    "📋 <b>Renewise — Terms of Service & Privacy Policy</b>\n\n"
+    "📋 <b>Renewise Terms of Service & Privacy Policy</b>\n\n"
 
     "<b>What Renewise does</b>\n"
     "Renewise lets Telegram group and channel admins charge for membership in GRAM (TON). "
@@ -178,7 +178,7 @@ async def post_init(app: Application) -> None:
             "until configured. Use /start → ⚡ Trigger Wallet for details."
         )
     else:
-        log.info("Refund trigger wallet configured — checking live balance…")
+        log.info("Refund trigger wallet configured checking live balance…")
         try:
             from renewise.superadmin.queries import get_trigger_wallet_balance as _tw_bal
             _balance = await _tw_bal(_TW, _TK, _TN)

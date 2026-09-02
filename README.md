@@ -1,6 +1,6 @@
 # ReneWise
 
-Non-custodial subscription paywall bot for Telegram groups and channels. Members pay in TON (GRAM), admins receive payouts directly to their wallet — no middleman holds funds at any point.
+Non-custodial subscription paywall bot for Telegram groups and channels. Members pay in TON (GRAM), admins receive payouts directly to their wallet  no middleman holds funds at any point.
 
 See [`about.md`](about.md) for a product overview and [`DOCUMENT.md`](DOCUMENT.md) for the Terms of Service and Privacy Policy draft.
 
@@ -25,7 +25,7 @@ See [`about.md`](about.md) for a product overview and [`DOCUMENT.md`](DOCUMENT.m
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+ (for contract compilation only)
-- Two Telegram bot tokens from [@BotFather](https://t.me/BotFather) — one for the main bot, one for the superadmin bot
+- Two Telegram bot tokens from [@BotFather](https://t.me/BotFather)  one for the main bot, one for the superadmin bot
 - Group Privacy mode **disabled** in BotFather for the main bot
 
 ### 1. Install dependencies
@@ -44,7 +44,7 @@ cd ..
 ### 3. Configure environment
 ```bash
 cp .env.example .env
-# Fill in all values — see Environment Variables below
+# Fill in all values  see Environment Variables below
 ```
 
 ### 4. Run everything
@@ -79,7 +79,7 @@ This starts the main bot, superadmin bot, Mini App API, and in-process payment w
 | `SUPERADMIN_BOT_TOKEN` | ✅ | Separate bot token for the superadmin control panel |
 | `ALLOWED_SUPERADMIN_IDS` | ✅ | Comma-separated Telegram user IDs allowed to use superadmin bot |
 | `DATABASE_PATH` | optional | SQLite path (default: `./data/renewise.db`) |
-| `DATABASE_URL` | optional | PostgreSQL connection string — overrides `DATABASE_PATH` when set |
+| `DATABASE_URL` | optional | PostgreSQL connection string  overrides `DATABASE_PATH` when set |
 
 ### TON Payments
 | Variable | Required | Description |
@@ -118,13 +118,13 @@ This starts the main bot, superadmin bot, Mini App API, and in-process payment w
 | Variable | Description |
 |---|---|
 | `KEEP_ALIVE` | Set to `false` to disable self-ping (default: `true` on Render) |
-| `KEEP_ALIVE_URL` | Your Render service URL — set automatically via `RENDER_EXTERNAL_URL` |
+| `KEEP_ALIVE_URL` | Your Render service URL  set automatically via `RENDER_EXTERNAL_URL` |
 | `KEEP_ALIVE_URLS` | Additional comma-separated URLs to ping (e.g. the Mini App) |
 | `KEEP_ALIVE_INTERVAL` | Ping interval in seconds (default: `600`) |
 
 ---
 
-## Smart Contract — PaymentVault
+## Smart Contract  PaymentVault
 
 One vault contract is deployed per subscription (user × group pair), on first payment via TON's deploy-on-first-message pattern.
 
@@ -143,9 +143,9 @@ When a member sends more than the required amount:
 3. Member replies with their TON address (validated by the bot)
 4. Trigger wallet sends `Refund{recipient}` to the vault
 5. Vault verifies `sender == trigger_wallet` and releases `overage_held` to the member
-6. Member receives their TON directly from the vault — no platform private key involved
+6. Member receives their TON directly from the vault  no platform private key involved
 
-**Security:** The trigger wallet holds only ~2 TON for gas. If compromised, an attacker can only trigger refunds the contract already validated — they cannot redirect funds or drain the platform wallet.
+**Security:** The trigger wallet holds only ~2 TON for gas. If compromised, an attacker can only trigger refunds the contract already validated  they cannot redirect funds or drain the platform wallet.
 
 ### Underpayment
 If a member sends less than required, the contract rejects the message with exit code 400 and TON's bounce mechanism returns most of the funds automatically. The bot DMs the member explaining the shortfall.
@@ -169,7 +169,7 @@ python run.py
 │   └── MessageHandler         → wallet address collection for refunds
 ├── Superadmin bot (separate PTB Application)
 │   └── Full platform control panel (see Superadmin Commands below)
-├── Mini App API (FastAPI — uvicorn)
+├── Mini App API (FastAPI  uvicorn)
 │   ├── Admin + subscriber endpoints
 │   ├── Developer Platform API  (/api/platform/*, /api/developer/*)
 │   └── Hosted checkout page    (/checkout/{charge_id})
@@ -217,7 +217,7 @@ The Telegram Mini App is a FastAPI application. All endpoints require a valid Te
 | `GET /api/my-payment-history` | Subscriber's full payment history |
 | `POST /api/groups/detect` | Detect recently admin-granted chats (wizard step) |
 | `POST /api/groups/create` | Activate a new paywall |
-| `GET /api/groups/{id}/detail` | Group detail — price, wallet, members, revenue |
+| `GET /api/groups/{id}/detail` | Group detail  price, wallet, members, revenue |
 | `GET /api/groups/{id}/payment-history` | Paginated payment history |
 | `GET /api/groups/{id}/payments/{sub_id}` | Full payment detail with fee breakdown |
 | `GET /api/groups/{id}/members` | Paginated member list |
@@ -251,7 +251,7 @@ The Telegram Mini App is a FastAPI application. All endpoints require a valid Te
 ### External Developer API (Bearer token auth)
 | Endpoint | Description |
 |---|---|
-| `POST /api/platform/charges` | Create a charge — returns `payment_url`, `vault_address`, `checkout_url` |
+| `POST /api/platform/charges` | Create a charge  returns `payment_url`, `vault_address`, `checkout_url` |
 | `GET /api/platform/charges/{id}` | Get charge status and details |
 
 ### Public / unauthenticated
@@ -259,7 +259,7 @@ The Telegram Mini App is a FastAPI application. All endpoints require a valid Te
 |---|---|
 | `GET /checkout/{charge_id}` | Hosted checkout page |
 | `GET /api/public/checkout/{charge_id}` | Charge data for the checkout page |
-| `GET /healthz` | Health check — `200 {"status":"ok"}` or `503` on DB failure |
+| `GET /healthz` | Health check  `200 {"status":"ok"}` or `503` on DB failure |
 | `GET /api/config` | Bot username for constructing deep-links |
 
 ---
@@ -317,8 +317,8 @@ contracts/
 └── build/                      # Compiled contract (generated by npm run build)
 
 deploy/
-├── renewise-bot.service        # systemd unit — bot + watcher
-└── renewise-api.service        # systemd unit — Mini App API
+├── renewise-bot.service        # systemd unit  bot + watcher
+└── renewise-api.service        # systemd unit  Mini App API
 ```
 
 ---
@@ -328,9 +328,9 @@ deploy/
 ```sql
 groups                  one row per Telegram group/channel
 users                   one row per Telegram user
-subscriptions           one row per (user, group) pair — status, vault address, renewal dates
+subscriptions           one row per (user, group) pair  status, vault address, renewal dates
 vault_registry          vault_address → (subscription, user, group) mapping
-processed_tx_hashes     idempotency table — prevents double-processing of transactions
+processed_tx_hashes     idempotency table  prevents double-processing of transactions
 overpayment_refunds     refund lifecycle: pending_wallet → pending_send → sent
 admin_audit_log         append-only log of all admin and platform events
 platform_config         global fee defaults + payments kill switch
@@ -356,7 +356,7 @@ platform_audit_log      per-platform audit trail
 ### Superadmin bot
 | Command | Description |
 |---|---|
-| `/start` | Platform dashboard — stats, kill switch, trigger wallet status |
+| `/start` | Platform dashboard  stats, kill switch, trigger wallet status |
 | `/overview` | Monthly GMV, fee revenue, active admins and subscribers |
 | `/groups` | Paginated group directory |
 | `/lookup <term>` | Search by TX hash or Telegram user ID |
@@ -394,8 +394,8 @@ The project has no external process manager dependency, but you **must** run the
 
 | Process | Command | Restarts needed? |
 |---|---|---|
-| Bot + watcher | `python run.py` | ✅ Yes — critical |
-| Mini App API | `uvicorn renewise.miniapp.server:app --host 0.0.0.0 --port 8000` | ✅ Yes — critical |
+| Bot + watcher | `python run.py` | ✅ Yes  critical |
+| Mini App API | `uvicorn renewise.miniapp.server:app --host 0.0.0.0 --port 8000` | ✅ Yes  critical |
 
 ### systemd (recommended for Linux VPS)
 
@@ -443,4 +443,4 @@ To also keep the Mini App API awake, set `KEEP_ALIVE_URLS=https://your-api.onren
 
 ### SQLite concurrency
 
-WAL mode is enabled by default. SQLite has a single-writer ceiling — monitor logs for `database is locked` errors under load. If they appear consistently, migrating to PostgreSQL (set `DATABASE_URL`) is the next step.
+WAL mode is enabled by default. SQLite has a single-writer ceiling  monitor logs for `database is locked` errors under load. If they appear consistently, migrating to PostgreSQL (set `DATABASE_URL`) is the next step.

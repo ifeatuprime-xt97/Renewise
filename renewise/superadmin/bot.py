@@ -375,7 +375,7 @@ async def show_groups_page(update: Update, context, page: int):
     keyboard = []
     for g in groups:
         dot = "🟢" if g["status"] == "active" else ("🔴" if g["status"] == "suspended" else "⚪")
-        price_cents = g.get("price_usd_cents") or int((g.get("price") or 0) * 100)
+        price_cents = g.get("price_usd_cents") or 0
         title = html.escape(g.get("chat_title") or str(g["telegram_chat_id"]))
         text += (
             f"{dot} ID:<b>{g['id']}</b> <i>{title}</i>\n"
@@ -407,7 +407,7 @@ async def show_group_details(update: Update, context, group_id: int):
         await update.callback_query.edit_message_text("Group not found.")
         return
 
-    price_cents = g.get("price_usd_cents") or int((g.get("price") or 0) * 100)
+    price_cents = g.get("price_usd_cents") or 0
     title = html.escape(g.get("chat_title") or str(g["telegram_chat_id"]))
     text = (
         f"📝 <b>Group #{g['id']} — {title}</b>\n\n"
@@ -1397,7 +1397,7 @@ async def perform_lookup(update: Update, context, term: str) -> None:
             text += f"👑 <b>Admin of {len(admin_groups)} group(s):</b>\n"
             for g in admin_groups:
                 dot   = "🟢" if g["status"] == "active" else "🔴"
-                price = (g.get("price_usd_cents") or int((g.get("price") or 0) * 100))
+                price = (g.get("price_usd_cents") or 0)
                 title = html.escape(g.get("chat_title") or str(g["telegram_chat_id"]))
                 text += (
                     f"{dot} #{g['id']} <i>{title}</i> | "

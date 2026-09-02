@@ -1,13 +1,10 @@
 """
-TON address validation — Phase 1: format + basic checksum only.
-Phase 2: add live chain lookup via TonCenter / TON HTTP API.
+TON address validation — format + checksum only.
+Accepts both mainnet (EQ.../UQ...) and testnet (kQ.../0Q...) address formats.
 """
 from __future__ import annotations
 import re
 import base64
-
-import aiohttp
-from renewise.config import TONCENTER_API_KEY, TONCENTER_TESTNET
 
 # TON addresses come in two forms:
 #   Raw:      0:<64 hex chars>
@@ -24,32 +21,45 @@ def _crc16(data: bytes) -> int:
     return crc & 0xFFFF
 
 
-async def validate_ton_address(address: str) -> bool:
-    """Return True if address looks like a valid TON address and exists on-chain."""
+def detect_address_network(address: str) -> str | None:
+    """
+    Detect whether a TON address is for mainnet or testnet.
+
+    Returns:
+        "mainnet"  — bounceable EQ... or non-bounceable UQ... prefix
+        "testnet"  — bounceable kQ... or non-bounceable 0Q... prefix
+        "raw"      — raw 0:<hex> form (network-agnostic)
+        None       — not a recognised TON address
+
+    The distinction lives in bit 7 (0x80) of the flag byte:
+        flag & 0x80 == 0x80  →  testnet
+        flag & 0x80 == 0x00  →  mainnet
+    Bounceable bit is bit 6 (0x40) and does not affect network.
+    """
     address = address.strip()
-    
-    is_valid_format = False
+
     if _RAW_RE.match(address):
-        is_valid_format = True
-    else:
-        # Friendly form: 48 bytes base64url-encoded (with or without padding)
-        try:
-            padded = address + "=" * (-len(address) % 4)
-            raw = base64.urlsafe_b64decode(padded)
-            if len(raw) == 36:
-                payload, checksum = raw[:34], raw[34:]
-                expected = _crc16(payload).to_bytes(2, "big")
-                if checksum == expected:
-                    is_testnet_addr = bool(payload[0] & 0x80)
-                    if is_testnet_addr == TONCENTER_TESTNET:
-                        is_valid_format = True
-        except Exception:
-            pass
+        return "raw"
 
-    if not is_valid_format:
-        return False
+    try:
+        padded = address + "=" * (-len(address) % 4)
+        raw = base64.urlsafe_b64decode(padded)
+        if len(raw) == 36:
+            payload, checksum = raw[:34], raw[34:]
+            expected = _crc16(payload).to_bytes(2, "big")
+            if checksum == expected:
+                is_testnet = bool(payload[0] & 0x80)
+                return "testnet" if is_testnet else "mainnet"
+    except Exception:
+        pass
 
-    # We only check format validity (checksum, workchain, etc.)
-    # We DO NOT require prior on-chain activity (via TonCenter) because real 
-    # admins will often register brand new wallets that haven't received funds yet.
-    return True
+    return None
+
+
+async def validate_ton_address(address: str) -> bool:
+    """
+    Return True if address is a valid TON address (format + CRC16 checksum).
+    Accepts both mainnet (EQ.../UQ...) and testnet (kQ.../0Q...) addresses.
+    Use detect_address_network() separately if you need to know which network.
+    """
+    return detect_address_network(address) is not None

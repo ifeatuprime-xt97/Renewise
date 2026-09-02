@@ -1,24 +1,24 @@
-# Renewise — Terms of Service & Privacy Policy (DRAFT)
+# Renewise  Terms of Service & Privacy Policy (DRAFT)
 
-> **This is a draft, not a finished legal document.** It reflects what Renewise actually does technically as of the current build. Have a qualified attorney review and adapt it — particularly the liability, dispute, and data-retention sections — before it governs real users and real money, and before relying on it in any jurisdiction with specific consumer-protection or data-protection requirements (e.g., GDPR in the EU/UK, or local payment-services regulation).
+> **This is a draft, not a finished legal document.** It reflects what Renewise actually does technically as of the current build. Have a qualified attorney review and adapt it  particularly the liability, dispute, and data-retention sections  before it governs real users and real money, and before relying on it in any jurisdiction with specific consumer-protection or data-protection requirements (e.g., GDPR in the EU/UK, or local payment-services regulation).
 
 ---
 
-## ⚠️ PRE-LAUNCH LEGAL CHECKLIST — ALL PLACEHOLDERS MUST BE FILLED BEFORE GO-LIVE
+## ⚠️ PRE-LAUNCH LEGAL CHECKLIST  ALL PLACEHOLDERS MUST BE FILLED BEFORE GO-LIVE
 
-The following items are the only things preventing this document from being legally complete. None of them can be filled by the engineering team — they require real business information and legal review. Complete every item before showing this document to real users or processing real money.
+The following items are the only things preventing this document from being legally complete. None of them can be filled by the engineering team  they require real business information and legal review. Complete every item before showing this document to real users or processing real money.
 
 | # | Location | Placeholder | What you need to provide |
 |---|---|---|---|
-| 1 | ToS — header | `[DATE]` (line 9) | The actual effective date of the Terms, e.g. `August 12, 2026`. Set this when the document is finalized, not when the code ships. |
-| 2 | Privacy Policy — header | `[DATE]` (line 116) | Same date as the ToS, or the date this Privacy Policy version takes effect. |
-| 3 | ToS — Section 16 "Governing Law" | `[TO BE COMPLETED WITH LEGAL COUNSEL]` (line 106) | The jurisdiction whose law governs disputes (e.g. "the laws of England and Wales" or "the State of Delaware, USA"). Depends on where the operating entity is incorporated. Requires legal advice. |
-| 4 | ToS — Section 17 "Contact" | `[CONTACT METHOD]` (line 110) | A real contact address for legal/ToS questions — typically a support email or Telegram handle (e.g. `support@renewise.app` or `@RenewiseSupport`). |
-| 5 | Privacy Policy — Section 4 "Data Retention" | `[SPECIFIC RETENTION PERIODS TO BE DEFINED WITH LEGAL COUNSEL]` (line 161) | Concrete retention windows for each data category (e.g. "subscription records retained for 7 years", "audit logs for 2 years"). GDPR requires this to be specific. Requires legal advice. |
-| 6 | Privacy Policy — Section 7 "Your Rights" | `[CONTACT METHOD]` (line 179) | Same as item 4 — a real contact point for data access/deletion requests. |
-| 7 | Privacy Policy — Section 10 "Contact" | `[CONTACT METHOD]` (line 191) | Same as item 4. |
+| 1 | ToS  header | `[DATE]` (line 9) | The actual effective date of the Terms, e.g. `August 12, 2026`. Set this when the document is finalized, not when the code ships. |
+| 2 | Privacy Policy  header | `[DATE]` (line 116) | Same date as the ToS, or the date this Privacy Policy version takes effect. |
+| 3 | ToS  Section 16 "Governing Law" | `[TO BE COMPLETED WITH LEGAL COUNSEL]` (line 106) | The jurisdiction whose law governs disputes (e.g. "the laws of England and Wales" or "the State of Delaware, USA"). Depends on where the operating entity is incorporated. Requires legal advice. |
+| 4 | ToS  Section 17 "Contact" | `[CONTACT METHOD]` (line 110) | A real contact address for legal/ToS questions  typically a support email or Telegram handle (e.g. `support@renewise.app` or `@RenewiseSupport`). |
+| 5 | Privacy Policy  Section 4 "Data Retention" | `[SPECIFIC RETENTION PERIODS TO BE DEFINED WITH LEGAL COUNSEL]` (line 161) | Concrete retention windows for each data category (e.g. "subscription records retained for 7 years", "audit logs for 2 years"). GDPR requires this to be specific. Requires legal advice. |
+| 6 | Privacy Policy  Section 7 "Your Rights" | `[CONTACT METHOD]` (line 179) | Same as item 4  a real contact point for data access/deletion requests. |
+| 7 | Privacy Policy  Section 10 "Contact" | `[CONTACT METHOD]` (line 191) | Same as item 4. |
 
-> **Items 3 and 5 are legally substantive** — they can't just be filled in; they require decisions about the operating entity and advice from a qualified lawyer familiar with your jurisdiction. Items 1, 2, 4, 6, 7 are factual fills that only need the correct date and a working contact address.
+> **Items 3 and 5 are legally substantive**  they can't just be filled in; they require decisions about the operating entity and advice from a qualified lawyer familiar with your jurisdiction. Items 1, 2, 4, 6, 7 are factual fills that only need the correct date and a working contact address.
 
 ---
 
@@ -29,9 +29,9 @@ The following items are the only things preventing this document from being lega
 
 ### 1. What Renewise Is
 
-Renewise ("we," "us," "the Service") is a Telegram bot, companion Mini App, and TON blockchain smart-contract platform that allows administrators of private Telegram groups and channels ("Admins") to charge for membership access. Members ("Subscribers") pay in GRAM (the native currency of The Open Network / TON blockchain). Once a payment is confirmed on-chain, Renewise automatically approves the Subscriber's join request and manages their subscription lifecycle — including renewal reminders, re-billing, and removal on non-payment — without any manual action from the Admin.
+Renewise ("we," "us," "the Service") is a Telegram bot, companion Mini App, and TON blockchain smart-contract platform that allows administrators of private Telegram groups and channels ("Admins") to charge for membership access. Members ("Subscribers") pay in GRAM (the native currency of The Open Network / TON blockchain). Once a payment is confirmed on-chain, Renewise automatically approves the Subscriber's join request and manages their subscription lifecycle  including renewal reminders, re-billing, and removal on non-payment  without any manual action from the Admin.
 
-### 2. Non-Custodial Architecture — Please Read Carefully
+### 2. Non-Custodial Architecture  Please Read Carefully
 
 Renewise settles payments through a per-subscription smart contract ("PaymentVault") deployed on the TON blockchain. When a Subscriber pays:
 
@@ -44,8 +44,8 @@ Renewise settles payments through a per-subscription smart contract ("PaymentVau
 
 Renewise charges two fees per transaction, both disclosed to Admins during onboarding and to Subscribers before payment:
 
-- **Buyer fee** — added on top of the subscription price; paid by the Subscriber. Default: 2.00% (200 basis points).
-- **Admin fee** — deducted from the Admin's payout. Default: 3.30% (330 basis points).
+- **Buyer fee**  added on top of the subscription price; paid by the Subscriber. Default: 2.00% (200 basis points).
+- **Admin fee**  deducted from the Admin's payout. Default: 3.30% (330 basis points).
 - **Combined platform take:** approximately 5.30% on a standard transaction.
 
 These defaults apply globally unless Renewise has negotiated a specific per-group override with an Admin. The applicable fees for any given group are always displayed before a Subscriber completes payment, and before an Admin activates a paywall.
@@ -60,13 +60,13 @@ Billing intervals are either **weekly** (7 days) or **monthly** (30 days), chose
 
 ### 5. Overpayment and Refunds
 
-If a Subscriber sends more than the required payment amount, the vault contract retains the overage in a dedicated `overage_held` balance — it is not distributed to the Admin or Renewise. Renewise will:
+If a Subscriber sends more than the required payment amount, the vault contract retains the overage in a dedicated `overage_held` balance  it is not distributed to the Admin or Renewise. Renewise will:
 
 1. Detect the overpayment automatically (threshold: USD 1.00 by default; configurable).
 2. DM the Subscriber asking for their TON wallet address.
 3. Use a dedicated trigger wallet to send a `Refund{recipient}` instruction to the vault contract, which releases the held overage directly to the Subscriber's wallet.
 
-This refund is trustless — the trigger wallet cannot redirect funds to itself or drain any other balance; it can only release what the vault has already computed and ring-fenced as overage. If the trigger wallet (`TRIGGER_MNEMONIC`) is not configured, the refund is queued for manual processing by Renewise's team within 24 hours.
+This refund is trustless  the trigger wallet cannot redirect funds to itself or drain any other balance; it can only release what the vault has already computed and ring-fenced as overage. If the trigger wallet (`TRIGGER_MNEMONIC`) is not configured, the refund is queued for manual processing by Renewise's team within 24 hours.
 
 Refunds are processed in TON and will be reduced by the on-chain gas cost of the `Refund{}` transaction (approximately 0.005 TON).
 
@@ -106,7 +106,7 @@ Renewise may suspend or terminate an Admin's or Subscriber's access for violatio
 
 ### 12. Insufficient Payments
 
-If a Subscriber sends less than the required amount to the vault, the payment is not processed and their subscription is not activated. The Subscriber is notified via DM with the shortfall amount and instructed to send a fresh payment for the full required amount. The underpayment transaction cannot be "topped up" — a new full payment is required.
+If a Subscriber sends less than the required amount to the vault, the payment is not processed and their subscription is not activated. The Subscriber is notified via DM with the shortfall amount and instructed to send a fresh payment for the full required amount. The underpayment transaction cannot be "topped up"  a new full payment is required.
 
 ### 13. No Warranty
 
@@ -122,7 +122,7 @@ We may update these Terms from time to time. Continued use of the Service after 
 
 ### 16. Governing Law
 
-[TO BE COMPLETED WITH LEGAL COUNSEL — depends on where you incorporate/operate]
+[TO BE COMPLETED WITH LEGAL COUNSEL  depends on where you incorporate/operate]
 
 ### 17. Contact
 
@@ -183,11 +183,11 @@ Records that are tied to a public blockchain transaction (e.g., tx hashes, vault
 
 ### 5. On-Chain Data Is Public
 
-Because Renewise settles payments via the TON public blockchain, every payment transaction — including the exact amount and all wallet addresses involved — is permanently and publicly visible on-chain. TonScan and other TON blockchain explorers allow anyone to inspect these transactions. This is a fundamental property of the TON network, not a choice Renewise makes.
+Because Renewise settles payments via the TON public blockchain, every payment transaction  including the exact amount and all wallet addresses involved  is permanently and publicly visible on-chain. TonScan and other TON blockchain explorers allow anyone to inspect these transactions. This is a fundamental property of the TON network, not a choice Renewise makes.
 
 ### 6. Mini App
 
-Renewise includes a Telegram Mini App that provides an alternative interface for Admins to set up paywalls and view their subscription data. The Mini App authenticates users via Telegram's standard `initData` HMAC mechanism; no separate login is required. All Mini App API endpoints are scoped to the authenticated user's own data only — no cross-admin data is accessible.
+Renewise includes a Telegram Mini App that provides an alternative interface for Admins to set up paywalls and view their subscription data. The Mini App authenticates users via Telegram's standard `initData` HMAC mechanism; no separate login is required. All Mini App API endpoints are scoped to the authenticated user's own data only  no cross-admin data is accessible.
 
 ### 7. Your Rights
 
@@ -211,7 +211,7 @@ Questions about this Privacy Policy can be directed to [CONTACT METHOD].
 
 ---
 
-## APPENDIX — Platform Technical Summary
+## APPENDIX  Platform Technical Summary
 
 This appendix describes how Renewise works technically. It is provided for transparency and to support the legal sections above. It is not itself a legally binding document.
 
@@ -276,7 +276,7 @@ Access is restricted to user IDs listed in `ALLOWED_SUPERADMIN_IDS`.
 
 The PaymentVault is a Tact-compiled TON smart contract. Each subscription gets its own vault instance, deployed on first payment. Key properties:
 
-- **Deterministic address:** computed from `(admin_wallet, platform_wallet, log_address, trigger_wallet, price, buyer_fee_bps, admin_fee_bps, subscription_id)` — no network call needed.
+- **Deterministic address:** computed from `(admin_wallet, platform_wallet, log_address, trigger_wallet, price, buyer_fee_bps, admin_fee_bps, subscription_id)`  no network call needed.
 - **Atomic split on `Pay{}`:** admin's share and platform fee are sent in the same transaction; neither party can selectively block the other's payout.
 - **`Refund{recipient}` opcode:** can only be sent by the designated `trigger_wallet`. The refund amount is exactly `overage_held`. The trigger wallet cannot steal from the split or direct funds elsewhere.
 - **Gas reserve:** `MIN_GAS_RESERVE = 0.05 TON` is included in the required payment to cover contract compute costs.
@@ -302,12 +302,12 @@ The PaymentVault is a Tact-compiled TON smart contract. Each subscription gets i
 The Telegram Mini App is a FastAPI application that mirrors the bot's functionality in a web interface. All endpoints require a valid Telegram `initData` Authorization header (HMAC-SHA256). Rate limits: 60 req/min for reads, 10 req/min for writes, per IP.
 
 Key endpoints:
-- `GET /api/my-subscriptions` — Subscriber's active subscriptions
-- `GET /api/my-groups` — Admin's groups with revenue summary
-- `POST /api/groups/detect` — Mirrors wizard STEP_DETECT; returns recently admin-granted chats
-- `POST /api/groups/create` — Mirrors wizard final confirm; activates a paywall
-- `GET /api/groups/{id}/payment-history` — Paginated payment history for a group
-- `GET /api/config` — Returns bot username for constructing renewal deep-links
+- `GET /api/my-subscriptions`  Subscriber's active subscriptions
+- `GET /api/my-groups`  Admin's groups with revenue summary
+- `POST /api/groups/detect`  Mirrors wizard STEP_DETECT; returns recently admin-granted chats
+- `POST /api/groups/create`  Mirrors wizard final confirm; activates a paywall
+- `GET /api/groups/{id}/payment-history`  Paginated payment history for a group
+- `GET /api/config`  Returns bot username for constructing renewal deep-links
 
 ### G. Database Tables
 

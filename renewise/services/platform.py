@@ -358,7 +358,7 @@ async def set_platform_webhook(platform_id: int, url: str, actor_telegram_id: in
     Sets or updates the webhook URL.
 
     - If no endpoint exists yet: creates a new one and generates a fresh
-      whsec_ signing secret (returned to the caller — shown only once).
+      whsec_ signing secret (returned to the caller shown only once).
     - If an endpoint already exists: updates the URL only; the existing secret
       is PRESERVED so the developer's server does not break.
 

@@ -229,7 +229,7 @@ def cancel_input_kb() -> InlineKeyboardMarkup:
 def wallet_change_alert_kb(change_id: int) -> InlineKeyboardMarkup:
     """
     Sent to the admin immediately when a wallet change is submitted.
-    The only action is cancellation — no passkey or extra confirmation needed.
+    The only action is cancellation no passkey or extra confirmation needed.
     """
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(
