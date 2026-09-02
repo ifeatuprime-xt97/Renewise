@@ -404,17 +404,15 @@
      * to the installed app even when window.open is blocked.
      */
     function openExternal(url) {
-      if (TgApp) {
-        var isTgLink = url.startsWith('https://t.me/') || url.startsWith('tg://');
-        if (isTgLink && typeof TgApp.openTelegramLink === 'function') {
-          TgApp.openTelegramLink(url);
-        } else if (typeof TgApp.openLink === 'function') {
-          TgApp.openLink(url, { try_instant_view: false });
-        }
+      if (TgApp && typeof TgApp.openLink === 'function') {
+        // ton:// deep-links: openLink routes to the installed wallet app on
+        // both Android and iOS Telegram WebView.
+        TgApp.openLink(url);
         return;
       }
-      // Plain browser / Safari fallback
-      window.open(url, '_blank', 'noreferrer noopener');
+      // Outside Telegram — use location.href for custom schemes (ton://)
+      // so iOS Safari forwards it to the installed wallet app.
+      window.location.href = url;
     }
 
     // ─── Payment data (set by init) ─────────────────────────────────────────

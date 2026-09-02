@@ -4198,18 +4198,14 @@ http_response_code(200);</pre>
     function _openUrl(key) {
       const url = _urlRegistry[key];
       if (!url) return;
-      if (window.Telegram && window.Telegram.WebApp) {
-        const tg = window.Telegram.WebApp;
-        const isTgLink = url.startsWith('https://t.me/') || url.startsWith('tg://');
-        if (isTgLink && typeof tg.openTelegramLink === 'function') {
-          tg.openTelegramLink(url);
-        } else if (typeof tg.openLink === 'function') {
-          tg.openLink(url, { try_instant_view: false });
-        } else {
-          window.open(url, '_blank', 'noreferrer');
-        }
+      if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
+        // openLink handles ton:// deep-links natively on both Android and iOS
+        // Telegram WebView — same mechanism the bot's InlineKeyboardButton uses.
+        window.Telegram.WebApp.openLink(url);
       } else {
-        window.open(url, '_blank', 'noreferrer');
+        // Outside Telegram (browser / desktop): location.href correctly hands
+        // off custom schemes (ton://) to the installed wallet app on mobile.
+        window.location.href = url;
       }
     }
 
