@@ -189,6 +189,10 @@
       }
     }
 
+    @keyframes spin360 {
+      to { transform: rotate(360deg); }
+    }
+
     .page-hdr {
       display: flex;
       align-items: center;
@@ -2108,46 +2112,89 @@
   </section>
 
   <section class="page" id="page-dev-subs">
-    <div class="section-hdr" style="margin-bottom:8px">
-      <h1 class="page-title">API Charges</h1>
-    </div>
-    <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:12px;line-height:1.4">
-      All charges across every app, newest first.
-    </p>
 
-    <!-- Charge search -->
+    <!-- Header row: title + refresh -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h1 class="page-title" style="margin:0">API Charges</h1>
+      <button id="dev-charges-refresh-btn" onclick="loadDevCharges(true)"
+        style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+               color:rgba(255,255,255,.7);border-radius:50%;width:36px;height:36px;
+               display:flex;align-items:center;justify-content:center;cursor:pointer;
+               flex-shrink:0;transition:background .15s;-webkit-tap-highlight-color:transparent"
+        title="Refresh">
+        <svg id="dev-charges-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+             width="16" height="16">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Summary stats strip -->
+    <div id="dev-charges-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px"></div>
+
+    <!-- Search bar -->
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <div style="flex:1;position:relative">
         <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"
-          width="16" height="16"
+          width="15" height="15"
           style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input id="dev-search-input" type="text" placeholder="Reference ID or TX hash…"
+        <input id="dev-search-input" type="search" placeholder="Reference or TX hash…"
           style="width:100%;padding:10px 12px 10px 36px;background:var(--surface2);
                  border:1px solid var(--glass-border);border-radius:var(--r-xs);
-                 color:#fff;font-size:13.5px;outline:none"
+                 color:#fff;font-size:13px;outline:none;-webkit-appearance:none;appearance:none"
+          oninput="if(!this.value)document.getElementById('dev-search-result').innerHTML=''"
           onkeydown="if(event.key==='Enter')searchDevCharges()">
       </div>
       <button onclick="searchDevCharges()"
         style="flex-shrink:0;padding:10px 16px;background:var(--accent);color:#fff;
-               border:none;border-radius:var(--r-xs);font-size:13px;font-weight:700;cursor:pointer">
+               border:none;border-radius:var(--r-xs);font-size:13px;font-weight:700;
+               cursor:pointer;-webkit-tap-highlight-color:transparent">
         Search
       </button>
     </div>
     <div id="dev-search-result" style="margin-bottom:10px"></div>
 
-    <!-- Status filter tabs -->
-    <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px">
-      <button id="dev-tab-all" class="dev-tab active" onclick="setDevChargesTab('all')">All</button>
-      <button id="dev-tab-completed" class="dev-tab" onclick="setDevChargesTab('completed')">✅ Completed</button>
-      <button id="dev-tab-pending" class="dev-tab" onclick="setDevChargesTab('pending')">⏳ Pending</button>
-      <button id="dev-tab-expired" class="dev-tab" onclick="setDevChargesTab('expired')">⏰ Expired</button>
-      <button id="dev-tab-failed" class="dev-tab" onclick="setDevChargesTab('failed')">❌ Failed</button>
+    <!-- Status filter tabs — no emojis, coloured dots instead -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;
+                padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+      <button id="dev-tab-all"       class="dev-tab active" onclick="setDevChargesTab('all')">All</button>
+      <button id="dev-tab-completed" class="dev-tab"        onclick="setDevChargesTab('completed')">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
+                     background:var(--success);margin-right:5px;vertical-align:middle"></span>Completed
+      </button>
+      <button id="dev-tab-pending"   class="dev-tab"        onclick="setDevChargesTab('pending')">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
+                     background:#fbbf24;margin-right:5px;vertical-align:middle"></span>Pending
+      </button>
+      <button id="dev-tab-expired"   class="dev-tab"        onclick="setDevChargesTab('expired')">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
+                     background:rgba(255,255,255,.35);margin-right:5px;vertical-align:middle"></span>Expired
+      </button>
+      <button id="dev-tab-failed"    class="dev-tab"        onclick="setDevChargesTab('failed')">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
+                     background:var(--danger);margin-right:5px;vertical-align:middle"></span>Failed
+      </button>
     </div>
+
+    <!-- Charges list + load-more -->
     <div id="dev-subs-list">
       <div class="loading">Loading…</div>
     </div>
+    <div id="dev-subs-more" style="display:none;margin-top:12px">
+      <button onclick="loadDevChargesMore()"
+        style="width:100%;padding:12px;background:rgba(255,255,255,.06);
+               border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xs);
+               color:rgba(255,255,255,.75);font-size:13px;font-weight:700;
+               cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s">
+        Load more
+      </button>
+    </div>
+
   </section>
 
   <section class="page" id="page-dev-settings">
@@ -2627,6 +2674,14 @@ http_response_code(200);</pre>
      PAGE — Developer Sandbox
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-dev-sandbox">
+    <div class="back-row">
+      <button class="back-btn" onclick="App.nav('dev-settings')">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+        Dev Settings
+      </button>
+    </div>
     <div class="section-hdr" style="margin-bottom:8px">
       <h1 class="page-title">API Sandbox</h1>
     </div>
@@ -2650,12 +2705,14 @@ http_response_code(200);</pre>
         style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:700;letter-spacing:.5px;display:block;margin-bottom:10px">Environment</label>
       <div style="display:flex;gap:8px">
         <button id="sandbox-env-test" onclick="setSandboxEnv('test')"
-          style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;background:var(--accent);color:#000;cursor:pointer;transition:.2s">
-          🧪 Testnet
+          style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;background:var(--accent);color:#000;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+          Testnet
         </button>
         <button id="sandbox-env-live" onclick="setSandboxEnv('live')"
-          style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;background:var(--surface2);color:rgba(255,255,255,.6);cursor:pointer;transition:.2s">
-          🔴 Mainnet
+          style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;background:var(--surface2);color:rgba(255,255,255,.6);cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Mainnet
         </button>
       </div>
     </div>
@@ -2844,7 +2901,7 @@ http_response_code(200);</pre>
       </div>
 
       <!-- Developer API -->
-      <div class="settings-row" style="cursor:pointer" onclick="App.nav('developer')">
+      <div class="settings-row" style="cursor:pointer" onclick="switchAppMode('developer')">
         <div class="sr-left">
           <div class="sr-ico">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2997,6 +3054,15 @@ http_response_code(200);</pre>
       <div id="history-list">
         <div class="loading">Loading…</div>
       </div>
+    </div>
+    <div id="history-more" style="display:none;margin-top:12px">
+      <button onclick="loadHistoryMore()"
+        style="width:100%;padding:12px;background:rgba(255,255,255,.06);
+               border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xs);
+               color:rgba(255,255,255,.75);font-size:13px;font-weight:700;
+               cursor:pointer;-webkit-tap-highlight-color:transparent">
+        Load more
+      </button>
     </div>
   </section>
 
@@ -3233,7 +3299,8 @@ http_response_code(200);</pre>
       </div>
       <button class="btn" style="background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.3);color:var(--danger)"
         onclick="deleteStep2()">
-        ⚠️ Continue to Confirmation
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Continue to Confirmation
       </button>
       <button class="btn btn-ghost" onclick="App.nav('manage')">Cancel</button>
     </div>
@@ -3263,7 +3330,8 @@ http_response_code(200);</pre>
         <button class="btn" id="delete-confirm-btn"
           style="background:rgba(224,92,92,.2);border:1px solid rgba(224,92,92,.35);color:var(--danger)"
           onclick="submitDelete()">
-          🗑️ Delete This Network
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete This Network
         </button>
       </div>
       <div id="delete-result" style="margin-top:14px"></div>
@@ -3286,6 +3354,15 @@ http_response_code(200);</pre>
     <p id="members-count" style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:18px"></p>
     <div id="members-list">
       <div class="loading">Loading…</div>
+    </div>
+    <div id="members-more" style="display:none;margin-top:12px">
+      <button onclick="loadMembersMore()"
+        style="width:100%;padding:12px;background:rgba(255,255,255,.06);
+               border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xs);
+               color:rgba(255,255,255,.75);font-size:13px;font-weight:700;
+               cursor:pointer;-webkit-tap-highlight-color:transparent">
+        Load more
+      </button>
     </div>
   </section>
 
@@ -3706,6 +3783,20 @@ http_response_code(200);</pre>
     const App = {
       _cur: 'dashboard',
 
+      // Maps each sub-page to where its back button should go
+      _backTargets: {
+        'history':    () => App.nav('manage'),
+        'wizard':     () => Wiz.back(),
+        'manage':     () => App.nav('dashboard'),
+        'members':    () => App.nav('manage'),
+        'price':      () => App.nav('manage'),
+        'wallet':     () => App.nav('manage'),
+        'comp':       () => App.nav('manage'),
+        'delete':     () => App.nav('manage'),
+        'dev-app':    () => App.nav('dev-dashboard'),
+        'dev-sandbox':() => App.nav('dev-settings'),
+      },
+
       nav(page) {
         PAGES.forEach(p => {
           const el = document.getElementById('page-' + p);
@@ -3715,13 +3806,18 @@ http_response_code(200);</pre>
           const el = document.getElementById('nav-' + t);
           if (el) el.classList.toggle('active', t === page);
         });
-        const subPages = ['history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete', 'dev-app'];
+        const subPages = ['history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete', 'dev-app', 'dev-sandbox'];
         const bnc = document.getElementById('bottom-nav-creator');
         const bnd = document.getElementById('bottom-nav-dev');
 
         if (subPages.includes(page)) {
           if (bnc) bnc.style.display = 'none';
           if (bnd) bnd.style.display = 'none';
+          // Show Telegram native back button for sub-pages
+          if (this._backTargets[page]) {
+            WebApp.BackButton.onClick = this._backTargets[page];
+            WebApp.BackButton.show();
+          }
         } else {
           if (getAppMode() === 'developer') {
             if (bnd) bnd.style.display = 'flex';
@@ -3730,6 +3826,8 @@ http_response_code(200);</pre>
             if (bnc) bnc.style.display = 'flex';
             if (bnd) bnd.style.display = 'none';
           }
+          // Hide Telegram native back button on root/tab pages
+          WebApp.BackButton.hide();
         }
 
         this._cur = page;
@@ -3753,7 +3851,7 @@ http_response_code(200);</pre>
         if (page === 'dev-dashboard') {
           loadPlatforms();
         } else if (page === 'dev-subs') {
-          loadDevCharges();
+          loadDevCharges(true);
         } else if (page === 'dev-sandbox') {
           loadSandboxApps();
         }
@@ -4575,20 +4673,48 @@ http_response_code(200);</pre>
     // ════════════════════════════════════════════════════
     document.getElementById('history-back-btn').onclick = () => App.nav('manage');
 
+    const _HIST_PAGE = 25;
+    let _historyGroupId  = null;
+    let _historyOffset   = 0;
+    let _historyAllDone  = false;
+
     async function loadHistory(groupId, groupTitle) {
       _historyGroupId = groupId;
+      _historyOffset  = 0;
+      _historyAllDone = false;
       document.getElementById('history-title').textContent = groupTitle || 'Payment History';
       document.getElementById('history-search-input').value = '';
       document.getElementById('history-search-result').innerHTML = '';
+      const moreEl = document.getElementById('history-more');
+      if (moreEl) moreEl.style.display = 'none';
       App.nav('history');
       const el = document.getElementById('history-list');
       el.innerHTML = skeletonCards(3);
+      await _fetchHistory(true);
+    }
+
+    async function loadHistoryMore() {
+      if (!_historyAllDone) await _fetchHistory(false);
+    }
+
+    async function _fetchHistory(reset) {
+      const el    = document.getElementById('history-list');
+      const moreEl = document.getElementById('history-more');
       try {
-        const r = await apiFetch(`${API}/groups/${groupId}/payment-history?limit=30`, { headers: H() });
+        const r = await apiFetch(
+          `${API}/groups/${_historyGroupId}/payment-history?limit=${_HIST_PAGE}&offset=${_historyOffset}`,
+          { headers: H() }
+        );
         if (!r.ok) throw new Error(r.status);
         const { payment_history: rows } = await r.json();
-        if (!rows.length) { el.innerHTML = `<div class="empty" style="padding:32px 0">${ico('credit', 40)}<p>No payments yet.</p></div>`; return; }
-        el.innerHTML = '';
+
+        if (reset && !rows.length) {
+          el.innerHTML = `<div class="empty" style="padding:32px 0">${ico('credit', 40)}<p>No payments yet.</p></div>`;
+          return;
+        }
+
+        if (reset) el.innerHTML = '';
+
         rows.forEach(tx => {
           const price = tx.price_locked_in > 10000
             ? (tx.price_locked_in / 1e9).toFixed(4) + ' TON'
@@ -4596,7 +4722,7 @@ http_response_code(200);</pre>
           const item = document.createElement('div');
           item.className = 'hist-item';
           item.style.cssText = 'cursor:pointer;-webkit-tap-highlight-color:transparent';
-          item.onclick = () => PmtDetail.show(groupId, tx.id, tx);
+          item.onclick = () => PmtDetail.show(_historyGroupId, tx.id, tx);
           item.innerHTML = `
         <div class="hist-left">
           <span class="hist-name">${esc(tx.first_name || 'User')}</span>
@@ -4613,12 +4739,14 @@ http_response_code(200);</pre>
       `;
           el.appendChild(item);
         });
+
+        _historyOffset  += rows.length;
+        _historyAllDone  = rows.length < _HIST_PAGE;
+        if (moreEl) moreEl.style.display = _historyAllDone ? 'none' : 'block';
       } catch (e) {
-        el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load payments.</p></div>`;
+        if (reset) el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load payments.</p></div>`;
       }
     }
-
-    let _historyGroupId = null;
 
     async function searchTx() {
       const hash = document.getElementById('history-search-input').value.trim();
@@ -4679,22 +4807,52 @@ http_response_code(200);</pre>
     // ════════════════════════════════════════════════════
     // VIEW MEMBERS PAGE
     // ════════════════════════════════════════════════════
+    const _MEMBERS_PAGE = 30;
+    let _membersGroupId  = null;
+    let _membersOffset   = 0;
+    let _membersAllDone  = false;
+
     async function openMembers(groupId) {
+      _membersGroupId = groupId;
+      _membersOffset  = 0;
+      _membersAllDone = false;
       App.nav('members');
       document.getElementById('members-title').textContent = (_manageGroupData && _manageGroupData.chat_title) || 'Members';
       document.getElementById('members-count').textContent = '';
+      const moreEl = document.getElementById('members-more');
+      if (moreEl) moreEl.style.display = 'none';
       document.getElementById('members-list').innerHTML = skeletonCards(3);
+      await _fetchMembers(true);
+    }
+
+    async function loadMembersMore() {
+      if (!_membersAllDone) await _fetchMembers(false);
+    }
+
+    async function _fetchMembers(reset) {
+      const el    = document.getElementById('members-list');
+      const moreEl = document.getElementById('members-more');
       try {
-        const r = await apiFetch(`${API}/groups/${groupId}/members?limit=50`, { headers: H() });
+        const r = await apiFetch(
+          `${API}/groups/${_membersGroupId}/members?limit=${_MEMBERS_PAGE}&offset=${_membersOffset}`,
+          { headers: H() }
+        );
         if (!r.ok) throw new Error(r.status);
         const { members, total } = await r.json();
-        document.getElementById('members-count').textContent = `${total} active member${total !== 1 ? 's' : ''}`;
-        const el = document.getElementById('members-list');
-        if (!members.length) {
+
+        // Update count on first page
+        if (reset) {
+          document.getElementById('members-count').textContent =
+            `${total} active member${total !== 1 ? 's' : ''}`;
+        }
+
+        if (reset && !members.length) {
           el.innerHTML = `<div class="empty">${ico('users', 40)}<p>No active members yet.</p></div>`;
           return;
         }
-        el.innerHTML = '';
+
+        if (reset) el.innerHTML = '';
+
         members.forEach(m => {
           const row = document.createElement('div');
           row.className = 'glass';
@@ -4704,12 +4862,16 @@ http_response_code(200);</pre>
           <span class="member-name">${esc(m.first_name || 'User')}${m.username ? ` <span style="color:rgba(255,255,255,.5);font-weight:500">@${esc(m.username)}</span>` : ''}</span>
           <span class="member-sub">${pill(m.status)} · ${m.start_date || 'N/A'}</span>
         </div>
-        <button class="member-comp-btn" onclick="compMember(${groupId}, ${m.telegram_user_id}, '${esc(m.first_name || 'User')}')">Comp</button>
+        <button class="member-comp-btn" onclick="compMember(${_membersGroupId}, ${m.telegram_user_id}, '${esc(m.first_name || 'User')}')">Comp</button>
       `;
           el.appendChild(row);
         });
+
+        _membersOffset  += members.length;
+        _membersAllDone  = members.length < _MEMBERS_PAGE;
+        if (moreEl) moreEl.style.display = _membersAllDone ? 'none' : 'block';
       } catch (e) {
-        document.getElementById('members-list').innerHTML =
+        if (reset) el.innerHTML =
           `<div class="empty">${ico('alert', 40)}<p>Failed to load members.</p></div>`;
       }
     }
@@ -5414,7 +5576,7 @@ http_response_code(200);</pre>
 
         // Go back to the platforms list
         await loadPlatforms();
-        App.nav('developer');
+        App.nav('dev-dashboard');
       } catch (e) {
         WebApp.showAlert('Error deleting platform: ' + (e.message || e));
       }
@@ -5518,10 +5680,10 @@ http_response_code(200);</pre>
           const interval = p.billing_interval_days === 7 ? '/week' : '/month';
           const priceUsd = p.price_usd_cents ? fmtUsd(p.price_usd_cents) : '—';
           const date = p.start_date ? p.start_date.slice(0, 16).replace('T', ' ') : '—';
-          const statusIcon = p.subscription_status === 'active' ? '✅'
-            : p.subscription_status === 'expired' ? '⏰'
-              : p.subscription_status === 'cancelled' ? '❌'
-                : p.subscription_status === 'comped' ? '🎁' : '•';
+          const statusColors = { active: 'var(--success)', expired: 'rgba(255,255,255,.3)', cancelled: 'var(--danger)', comped: '#a78bfa' };
+          const statusLabels = { active: 'Active', expired: 'Expired', cancelled: 'Cancelled', comped: 'Comped' };
+          const sColor = statusColors[p.subscription_status] || 'rgba(255,255,255,.3)';
+          const sLabel = statusLabels[p.subscription_status] || p.subscription_status || '—';
 
           const card = document.createElement('div');
           card.className = 'glass sub-card';
@@ -5529,14 +5691,17 @@ http_response_code(200);</pre>
           card.innerHTML = `
             <div class="sub-hdr" style="margin-bottom:6px">
               <span class="sub-name" style="font-size:15px">${groupName}</span>
-              <span style="font-size:18px">${statusIcon}</span>
+              <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:${sColor}">
+                <span style="width:7px;height:7px;border-radius:50%;background:${sColor};flex-shrink:0;display:inline-block"></span>
+                ${sLabel}
+              </span>
             </div>
             <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px">
               ${priceUsd}<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,.5)">${interval}</span>
             </div>
             <div style="font-size:12px;color:rgba(255,255,255,.45);display:flex;gap:12px;flex-wrap:wrap">
-              <span>📅 ${date}</span>
-              ${p.amount_ton != null ? `<span>💎 ${p.amount_ton} TON</span>` : ''}
+              <span>${date}</span>
+              ${p.amount_ton != null ? `<span style="color:var(--accent);font-weight:600">${p.amount_ton} TON</span>` : ''}
             </div>
           `;
           el.appendChild(card);
@@ -5549,7 +5714,12 @@ http_response_code(200);</pre>
     // ════════════════════════════════════════════════════
     // DEVELOPER — API Charges feed
     // ════════════════════════════════════════════════════
+    // DEVELOPER — API Charges feed
+    // ════════════════════════════════════════════════════
     let _devChargesFilter = 'all';
+    const _DC_PAGE_SIZE   = 20;      // rows per page
+    let   _dcOffset       = 0;       // current offset for load-more
+    let   _dcAllLoaded    = false;   // true when API returned < PAGE_SIZE
 
     function setDevChargesTab(tab) {
       _devChargesFilter = tab;
@@ -5557,56 +5727,140 @@ http_response_code(200);</pre>
         const btn = document.getElementById(`dev-tab-${t}`);
         if (btn) btn.classList.toggle('active', t === tab);
       });
-      // Clear search state when switching tabs
       const si = document.getElementById('dev-search-input');
       const sr = document.getElementById('dev-search-result');
       if (si) si.value = '';
       if (sr) sr.innerHTML = '';
-      loadDevCharges();
+      loadDevCharges(true);
     }
 
-    async function loadDevCharges() {
-      const el = document.getElementById('dev-subs-list');
-      if (!el) return;
-      el.innerHTML = skeletonCards(3);
-      try {
-        const url = `${API}/developer/charges` + (_devChargesFilter !== 'all' ? `?status=${_devChargesFilter}` : '');
-        const r = await apiFetch(url, { headers: H() });
-        if (!r.ok) throw new Error();
-        const { charges } = await r.json();
+    // _renderChargeStats — fills the summary strip above the list
+    function _renderChargeStats(stats) {
+      const el = document.getElementById('dev-charges-stats');
+      if (!el || !stats) return;
+      const items = [
+        { label: 'Total', value: stats.total ?? '—', color: '#fff' },
+        { label: 'Completed', value: stats.completed ?? '—', color: 'var(--success)' },
+        { label: 'Volume', value: stats.volume_usd != null ? fmtUsd(stats.volume_usd) : '—', color: 'var(--accent)' },
+      ];
+      el.innerHTML = items.map(i => `
+        <div style="background:var(--surface);border:1px solid rgba(255,255,255,.07);
+                    border-radius:var(--r-xs);padding:10px 12px;text-align:center">
+          <div style="font-size:17px;font-weight:800;color:${i.color};line-height:1.1">${i.value}</div>
+          <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;
+                      letter-spacing:.4px;color:rgba(255,255,255,.4);margin-top:3px">${i.label}</div>
+        </div>`).join('');
+    }
 
-        if (!charges || !charges.length) {
-          el.innerHTML = `<div class="empty">${ico('credit', 40)}<p>No charges${_devChargesFilter !== 'all' ? ` with status "${_devChargesFilter}"` : ''} yet.</p></div>`;
+    async function loadDevCharges(reset = false) {
+      const listEl = document.getElementById('dev-subs-list');
+      const moreEl = document.getElementById('dev-subs-more');
+      if (!listEl) return;
+
+      if (reset) {
+        _dcOffset = 0;
+        _dcAllLoaded = false;
+        listEl.innerHTML = skeletonCards(4);
+        if (moreEl) moreEl.style.display = 'none';
+        // Clear stats during reload
+        const statsEl = document.getElementById('dev-charges-stats');
+        if (statsEl) statsEl.innerHTML = '';
+      }
+
+      // Spin the refresh icon while loading
+      const icon = document.getElementById('dev-charges-refresh-icon');
+      if (icon) icon.style.animation = 'spin360 .7s linear infinite';
+
+      try {
+        let url = `${API}/developer/charges?limit=${_DC_PAGE_SIZE}&offset=${_dcOffset}`;
+        if (_devChargesFilter !== 'all') url += `&status=${_devChargesFilter}`;
+        const r = await apiFetch(url, { headers: H() });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        const data = await r.json();
+        const charges = data.charges || [];
+
+        // Stats (only on first page so we get totals, not filtered page counts)
+        if (_dcOffset === 0 && data.stats) _renderChargeStats(data.stats);
+
+        // Empty state on first page
+        if (_dcOffset === 0 && !charges.length) {
+          listEl.innerHTML = `<div class="empty">${ico('credit', 40)}<p>No charges${_devChargesFilter !== 'all' ? ` with status <b>${_devChargesFilter}</b>` : ''} yet.</p></div>`;
+          if (moreEl) moreEl.style.display = 'none';
           return;
         }
 
-        const wrapper = document.createElement('div');
-        wrapper.className = 'glass';
-        wrapper.style.cssText = 'border-radius:var(--r-sm);padding:4px 16px';
+        // Build / append rows
+        let wrapper;
+        if (_dcOffset === 0) {
+          listEl.innerHTML = '';
+          wrapper = document.createElement('div');
+          wrapper.id = 'dev-charges-wrapper';
+          wrapper.className = 'glass';
+          wrapper.style.cssText = 'border-radius:var(--r-sm);padding:4px 16px';
+          listEl.appendChild(wrapper);
+        } else {
+          wrapper = document.getElementById('dev-charges-wrapper');
+          if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.id = 'dev-charges-wrapper';
+            wrapper.className = 'glass';
+            wrapper.style.cssText = 'border-radius:var(--r-sm);padding:4px 16px';
+            listEl.appendChild(wrapper);
+          }
+        }
+
         charges.forEach(c => wrapper.appendChild(_renderChargeCard(c)));
-        el.innerHTML = '';
-        el.appendChild(wrapper);
+        _dcOffset += charges.length;
+        _dcAllLoaded = charges.length < _DC_PAGE_SIZE;
+        if (moreEl) moreEl.style.display = _dcAllLoaded ? 'none' : 'block';
+
       } catch (e) {
-        el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load charges.</p></div>`;
+        if (_dcOffset === 0) {
+          listEl.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load charges.</p></div>`;
+        }
+      } finally {
+        if (icon) icon.style.animation = '';
       }
     }
 
-    // ── Developer charge search ───────────────────────────────────────────────
+    function loadDevChargesMore() {
+      if (!_dcAllLoaded) loadDevCharges(false);
+    }
 
     function _renderChargeCard(c) {
-      const statusDotColor = { completed: 'var(--success)', pending: '#fbbf24', expired: 'rgba(255,255,255,.3)', failed: 'var(--danger)' };
-      const date = new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const statusDotColor = {
+        completed: 'var(--success)',
+        pending:   '#fbbf24',
+        expired:   'rgba(255,255,255,.28)',
+        failed:    'var(--danger)',
+      };
+      const statusLabel = { completed: 'Paid', pending: 'Pending', expired: 'Expired', failed: 'Failed' };
+      const date = new Date(c.created_at).toLocaleString(undefined, {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+
       const row = document.createElement('div');
       row.className = 'charge-row';
-      row.style.cursor = 'pointer';
       row.onclick = () => ChargeDetail.show(c);
       row.innerHTML = `
         <div class="charge-status-dot" style="background:${statusDotColor[c.status] || 'rgba(255,255,255,.3)'}"></div>
         <div class="charge-body">
-          <div class="charge-ref">${esc(c.platform_name || 'App')} · <span style="color:rgba(255,255,255,.5);font-weight:600">${esc(c.external_reference)}</span></div>
-          <div class="charge-meta">${date}${c.tx_hash ? ' · <span style="color:var(--accent)">TX ↗</span>' : ''}</div>
+          <div class="charge-ref">${esc(c.platform_name || 'App')}
+            <span style="color:rgba(255,255,255,.45);font-weight:600;font-size:12px">
+              · ${esc(c.external_reference)}
+            </span>
+          </div>
+          <div class="charge-meta">
+            ${date}
+            <span style="display:inline-block;width:3px;height:3px;border-radius:50%;
+                         background:rgba(255,255,255,.25);margin:0 5px 1px;vertical-align:middle"></span>
+            <span style="color:${statusDotColor[c.status] || 'rgba(255,255,255,.3)'};font-weight:700">
+              ${statusLabel[c.status] || c.status}
+            </span>
+            ${c.tx_hash ? `<span style="color:var(--accent);margin-left:6px;font-weight:700">TX ↗</span>` : ''}
+          </div>
         </div>
-        <div>
+        <div style="text-align:right;flex-shrink:0">
           <div class="charge-amount">${fmtUsd(c.amount_usd_cents)}</div>
           <div class="charge-mode-badge ${c.mode}">${c.mode}</div>
         </div>`;
@@ -5618,7 +5872,7 @@ http_response_code(200);</pre>
       const resultEl = document.getElementById('dev-search-result');
       if (!query) { resultEl.innerHTML = ''; return; }
 
-      resultEl.innerHTML = `<div style="font-size:13px;color:rgba(255,255,255,.5);padding:6px 0">Searching…</div>`;
+      resultEl.innerHTML = `<div style="font-size:13px;color:rgba(255,255,255,.45);padding:6px 0">Searching…</div>`;
       try {
         const r = await apiFetch(`${API}/developer/search?q=${encodeURIComponent(query)}`, { headers: H() });
         if (!r.ok) throw new Error(await _errDetail(r));
@@ -5627,14 +5881,13 @@ http_response_code(200);</pre>
         if (!found || !results.length) {
           resultEl.innerHTML = `
             <div style="background:rgba(255,92,92,.07);border:1px solid rgba(255,92,92,.2);
-                        border-radius:var(--r-xs);padding:14px 16px;font-size:13px;color:rgba(255,255,255,.65)">
+                        border-radius:var(--r-xs);padding:14px 16px;font-size:13px;
+                        color:rgba(255,255,255,.65)">
               No charge found for <code style="color:var(--accent)">${esc(query)}</code>.
-              Try the full external_reference or the complete TX hash.
             </div>`;
           return;
         }
 
-        // Build result list using the same charge-row component as the main list
         const label = document.createElement('div');
         label.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.4);margin-bottom:6px';
         label.textContent = `${results.length} result${results.length !== 1 ? 's' : ''}`;

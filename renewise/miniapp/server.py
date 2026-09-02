@@ -901,7 +901,33 @@ async def api_developer_charges_global(
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(sorted(_valid_statuses))}")
     telegram_user_id = user["id"]
     charges = await platform_svc.get_all_user_platform_charges(telegram_user_id, status=status, limit=limit, offset=offset)
-    return {"charges": charges}
+
+    # Include aggregate stats on the first page so the UI can show a summary strip
+    stats = None
+    if offset == 0:
+        from renewise.db.connection import _db as _conn
+        async with _conn() as db:
+            row = await db.fetchrow(
+                """
+                SELECT
+                    COUNT(*)                                             AS total,
+                    COUNT(*) FILTER (WHERE c.status = 'completed')      AS completed,
+                    COALESCE(SUM(c.amount_usd_cents)
+                             FILTER (WHERE c.status = 'completed'), 0)  AS volume_usd_cents
+                FROM platform_charges c
+                JOIN platforms p ON p.id = c.platform_id
+                WHERE p.owner_telegram_id = $1
+                """,
+                telegram_user_id,
+            )
+            if row:
+                stats = {
+                    "total":      int(row["total"]),
+                    "completed":  int(row["completed"]),
+                    "volume_usd": int(row["volume_usd_cents"]),
+                }
+
+    return {"charges": charges, "stats": stats}
 
 
 @app.get("/api/developer/charges/{charge_id}")
