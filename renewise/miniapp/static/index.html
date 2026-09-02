@@ -13,6 +13,7 @@
     href="https://fonts.googleapis.com/css2?family=Concert+One&family=Nunito:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     /* ── Design tokens — MyTonWallet-inspired palette ── */
     :root {
@@ -1132,6 +1133,9 @@
       background: var(--surface);
       border-top: 1px solid rgba(255, 255, 255, .1);
       padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .overlay-sheet h2 {
@@ -3760,26 +3764,6 @@ http_response_code(200);</pre>
       }
     }
 
-    function toggleAcc(el) {
-      const wasOpen = el.classList.contains('open');
-      const group = el.parentElement;
-      // Close all others
-      group.querySelectorAll('.accordion-trigger').forEach(trigger => {
-        trigger.classList.remove('open');
-        trigger.classList.remove('no-border'); // reset borders
-      });
-      if (!wasOpen) {
-        el.classList.add('open');
-        el.classList.add('no-border'); // hide border of the row since content has it
-      }
-
-      // Ensure the very last row in group keeps no-border if it's the last child
-      const lastRow = group.querySelector('.accordion-trigger:last-of-type');
-      if (lastRow && !lastRow.classList.contains('open')) {
-        lastRow.classList.add('no-border');
-      }
-    }
-
     const App = {
       _cur: 'dashboard',
 
@@ -5704,13 +5688,12 @@ http_response_code(200);</pre>
 
         if (data.is_new && data.webhook_secret) {
           // Only show the secret on first-time setup
-          alert(`Webhook configured!\n\nSigning secret (save this now shown once):\n\n${data.webhook_secret}`);
+          alert(`Webhook configured!\n\nSigning secret (save this now — shown once):\n\n${data.webhook_secret}`);
         } else {
           WebApp.showAlert('Webhook URL updated. Your existing signing secret is unchanged.');
         }
 
-        const status = document.getElementById('charge-status-filter') ? document.getElementById('charge-status-filter').value : '';
-        await renderDashboard(status);
+        await _renderDevApp(currentPlatformId);
       } catch (e) {
         WebApp.showAlert('Error setting webhook: ' + (e.message || e));
       }
@@ -5728,10 +5711,9 @@ http_response_code(200);</pre>
         const data = await r.json();
 
         WebApp.HapticFeedback.notificationOccurred('success');
-        alert(`New signing secret (save this now shown once):\n\n${data.webhook_secret}`);
+        alert(`New signing secret (save this now — shown once):\n\n${data.webhook_secret}`);
 
-        const status = document.getElementById('charge-status-filter') ? document.getElementById('charge-status-filter').value : '';
-        await renderDashboard(status);
+        await _renderDevApp(currentPlatformId);
       } catch (e) {
         WebApp.showAlert('Error rotating secret: ' + (e.message || e));
       }
@@ -6134,26 +6116,117 @@ http_response_code(200);</pre>
 
     function _renderSandboxPending(charge, amtUsd, sk) {
       const resEl = document.getElementById('sandbox-result');
-      const payUrl = charge.payment_url || '';
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payUrl)}&bgcolor=0d111a&color=ffffff&qzone=2`;
-      const envLabel = _sandboxEnv === 'test' ? '🧪 Testnet' : '🔴 Mainnet';
+      const payUrl  = charge.payment_url || '';
+      const amtTon  = charge.required_nano ? (charge.required_nano / 1e9).toFixed(4) : '—';
+      const envLabel = _sandboxEnv === 'test' ? 'Testnet' : 'Mainnet';
+
+      // If payment_url is missing (charge creation partially failed) show error
+      if (!payUrl) {
+        resEl.style.display = 'block';
+        resEl.innerHTML = `
+          <div class="glass" style="border-radius:var(--r);padding:20px;border:1px solid rgba(255,92,92,.25);background:rgba(255,92,92,.06)">
+            <div style="font-size:14px;font-weight:700;color:var(--danger);margin-bottom:6px">Payment link not available</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.6)">
+              The charge was created (ID #${charge.id}) but no payment URL was returned.
+              Check that your app has a payout wallet configured and the contract is deployed.
+            </div>
+          </div>`;
+        return;
+      }
+
+      // Register wallet deep-links safely (no inline WebApp.openLink)
+      const tkUrl  = payUrl.replace(/^ton:\/\//, 'tonkeeper://');
+      const tgUrl  = `https://t.me/wallet?startattach=tonconnect-${encodeURIComponent(payUrl)}`;
+      const mtwUrl = payUrl.replace(/^ton:\/\//, 'mytonwallet://');
+
+      const tkKey  = _regUrl(tkUrl);
+      const tgKey  = _regUrl(tgUrl);
+      const mtwKey = _regUrl(mtwUrl);
+      const qrKey  = _regUrl(payUrl);   // fallback: open the raw ton:// link
 
       resEl.style.display = 'block';
       resEl.innerHTML = `
-        <div id="sandbox-pending-view">
-          <div style="font-size:11px;text-transform:uppercase;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.4);margin-bottom:14px;text-align:center">${envLabel} · Awaiting Payment</div>
-          
-          <iframe 
-            src="${charge.checkout_url}" 
-            style="width:100%;height:650px;border:none;border-radius:24px;background:var(--bg)"
-            title="Checkout Preview">
-          </iframe>
+        <div id="sandbox-pending-view" style="text-align:center">
 
-          <p style="text-align:center;font-size:12px;color:rgba(255,255,255,.35);margin-top:14px">
+          <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+                      text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.4);
+                      margin-bottom:16px;background:rgba(255,255,255,.06);padding:5px 12px;
+                      border-radius:20px">
+            <span style="width:6px;height:6px;border-radius:50%;background:#fbbf24;display:inline-block"></span>
+            ${envLabel} · Awaiting Payment
+          </div>
+
+          <div style="font-size:36px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:4px">
+            $${amtUsd}
+          </div>
+          <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px">${amtTon} TON</div>
+
+          <div style="background:#fff;padding:14px;border-radius:16px;display:inline-block;margin-bottom:20px">
+            <div id="sandbox-qr"></div>
+          </div>
+
+          <p style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:16px">
+            Scan with any TON wallet or tap a button below
+          </p>
+
+          <!-- Tonkeeper — full width primary -->
+          <button onclick="_openUrl('${tkKey}')"
+            style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+                   padding:14px;border-radius:14px;background:var(--accent);border:none;
+                   color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
+                   margin-bottom:10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation">
+            <img src="https://tonkeeper.com/assets/tonconnect-icon.png" width="28" height="28"
+                 style="border-radius:8px;flex-shrink:0" alt="Tonkeeper">
+            Open Tonkeeper
+          </button>
+
+          <!-- 3-column grid: Telegram Wallet, MyTonWallet, Tonhub -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+            <button onclick="_openUrl('${tgKey}')"
+              style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
+                     border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;
+                     -webkit-tap-highlight-color:transparent;touch-action:manipulation">
+              <img src="https://wallet.tg/images/logo-288.png" width="32" height="32"
+                   style="border-radius:9px" alt="Telegram Wallet">
+              Telegram Wallet
+            </button>
+            <button onclick="_openUrl('${mtwKey}')"
+              style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
+                     border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;
+                     -webkit-tap-highlight-color:transparent;touch-action:manipulation">
+              <img src="https://mytonwallet.io/img/icon-256x256.png" width="32" height="32"
+                   style="border-radius:9px" alt="MyTonWallet">
+              MyTonWallet
+            </button>
+            <button onclick="_openUrl('${qrKey}')"
+              style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
+                     border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;
+                     -webkit-tap-highlight-color:transparent;touch-action:manipulation">
+              <img src="https://tonhub.com/tonconnect_logo.png" width="32" height="32"
+                   style="border-radius:9px" alt="Tonhub">
+              Tonhub
+            </button>
+          </div>
+
+          <p style="font-size:11px;color:rgba(255,255,255,.25)">
             Polling for confirmation every 3 seconds…
           </p>
         </div>
       `;
+
+      // Generate QR code after injecting HTML
+      if (payUrl && window.QRCode) {
+        try {
+          new QRCode(document.getElementById('sandbox-qr'), {
+            text: payUrl, width: 180, height: 180,
+            colorDark: '#0d111a', colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+        } catch (_) {}
+      }
     }
 
     function _renderSandboxSuccess(charge, amtUsd) {
@@ -6169,7 +6242,9 @@ http_response_code(200);</pre>
 
       resEl.innerHTML = `
         <div class="glass" style="border-radius:var(--r);padding:24px;text-align:center;border:1px solid rgba(0,152,234,.3);background:rgba(0,152,234,.06)">
-          <div style="font-size:48px;margin-bottom:8px">✅</div>
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(46,204,113,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" width="28" height="28" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
           <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">Payment Received!</div>
           <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px">Charge ID #${charge.id}</div>
 
@@ -6193,7 +6268,7 @@ http_response_code(200);</pre>
           </div>
 
           <p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px">
-            📬 Check the Telegram bot you should have received a payment notification.
+            Check the Telegram bot — you should have received a payment notification.
           </p>
           <button class="btn btn-primary" onclick="document.getElementById('sandbox-result').style.display='none';document.getElementById('sandbox-result').innerHTML=''" style="border-radius:12px;padding:12px">
             Test Another Charge
@@ -6234,10 +6309,20 @@ http_response_code(200);</pre>
           return;
         }
         try {
+          // Use a direct fetch with the platform Bearer key (not initData)
+          // apiFetch wraps with initData auth — not appropriate here.
+          // We catch 401 manually to stop polling on key revocation.
           const r = await fetch(`${API}/platform/charges/${chargeId}`, {
             headers: { 'Authorization': `Bearer ${sk}` }
           });
-          if (!r.ok) return;
+          if (r.status === 401) {
+            // Key rotated or revoked — stop polling, show error
+            clearInterval(_sandboxPollTimer);
+            _sandboxPollTimer = null;
+            _renderSandboxError('Polling stopped: secret key was revoked or rotated. Regenerate and try again.');
+            return;
+          }
+          if (!r.ok) return; // transient error, keep polling
           const charge = await r.json();
           if (charge.status === 'completed') {
             clearInterval(_sandboxPollTimer);
@@ -6245,6 +6330,10 @@ http_response_code(200);</pre>
             const amtUsd = charge.amount_usd_cents / 100;
             _renderSandboxSuccess(charge, amtUsd);
             WebApp.HapticFeedback.notificationOccurred('success');
+          } else if (charge.status === 'failed' || charge.status === 'expired') {
+            clearInterval(_sandboxPollTimer);
+            _sandboxPollTimer = null;
+            _renderSandboxError(`Charge ${charge.status}. Create a new test charge to try again.`);
           }
         } catch (_) { /* network hiccup, keep polling */ }
       }, 3000);

@@ -269,16 +269,24 @@ async def get_platform_charges(platform_id: int, status: str | None = None, limi
     async with _db() as db:
         if status:
             rows = await db.fetch(
-                "SELECT id, external_reference, mode, amount_usd_cents, status, vault_address, "
-                "tx_hash, required_nano_amount, created_at, completed_at "
-                "FROM platform_charges WHERE platform_id = $1 AND status = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+                "SELECT c.id, c.external_reference, c.mode, c.amount_usd_cents, c.status, "
+                "c.vault_address, c.payment_url, c.tx_hash, "
+                "c.required_nano_amount AS required_nano, c.created_at, c.completed_at, "
+                "p.platform_name "
+                "FROM platform_charges c "
+                "JOIN platforms p ON p.id = c.platform_id "
+                "WHERE c.platform_id = $1 AND c.status = $2 ORDER BY c.created_at DESC LIMIT $3 OFFSET $4",
                 platform_id, status, limit, offset
             )
         else:
             rows = await db.fetch(
-                "SELECT id, external_reference, mode, amount_usd_cents, status, vault_address, "
-                "tx_hash, required_nano_amount, created_at, completed_at "
-                "FROM platform_charges WHERE platform_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+                "SELECT c.id, c.external_reference, c.mode, c.amount_usd_cents, c.status, "
+                "c.vault_address, c.payment_url, c.tx_hash, "
+                "c.required_nano_amount AS required_nano, c.created_at, c.completed_at, "
+                "p.platform_name "
+                "FROM platform_charges c "
+                "JOIN platforms p ON p.id = c.platform_id "
+                "WHERE c.platform_id = $1 ORDER BY c.created_at DESC LIMIT $2 OFFSET $3",
                 platform_id, limit, offset
             )
         return [dict(r) for r in rows]
@@ -289,7 +297,8 @@ async def get_all_user_platform_charges(owner_telegram_id: int, status: str | No
         if status:
             rows = await db.fetch(
                 "SELECT c.id, c.platform_id, p.platform_name, c.external_reference, c.mode, c.amount_usd_cents, c.status, "
-                "c.vault_address, c.tx_hash, c.required_nano_amount, c.created_at, c.completed_at "
+                "c.vault_address, c.payment_url, c.tx_hash, "
+                "c.required_nano_amount AS required_nano, c.created_at, c.completed_at "
                 "FROM platform_charges c "
                 "JOIN platforms p ON c.platform_id = p.id "
                 "WHERE p.owner_telegram_id = $1 AND c.status = $2 "
@@ -299,7 +308,8 @@ async def get_all_user_platform_charges(owner_telegram_id: int, status: str | No
         else:
             rows = await db.fetch(
                 "SELECT c.id, c.platform_id, p.platform_name, c.external_reference, c.mode, c.amount_usd_cents, c.status, "
-                "c.vault_address, c.tx_hash, c.required_nano_amount, c.created_at, c.completed_at "
+                "c.vault_address, c.payment_url, c.tx_hash, "
+                "c.required_nano_amount AS required_nano, c.created_at, c.completed_at "
                 "FROM platform_charges c "
                 "JOIN platforms p ON c.platform_id = p.id "
                 "WHERE p.owner_telegram_id = $1 "
