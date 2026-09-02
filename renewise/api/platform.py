@@ -83,8 +83,8 @@ async def create_charge(
         # Create pending charge to get an ID
         row = await db.fetchrow(
             """
-            INSERT INTO platform_charges (platform_id, external_reference, mode, amount_usd_cents, status)
-            VALUES ($1, $2, $3, $4, 'pending')
+            INSERT INTO platform_charges (platform_id, external_reference, mode, amount_usd_cents, status, expires_at)
+            VALUES ($1, $2, $3, $4, 'pending', NOW() + INTERVAL '30 minutes')
             RETURNING id
             """,
             platform["id"], req.external_reference, auth_mode, req.amount_usd_cents
@@ -232,6 +232,24 @@ async def get_charge(
         )
         if not row:
             raise HTTPException(status_code=404, detail="Charge not found")
+        
+        # Auto-expire if past expiration time
+        status = row["status"]
+        if status == "pending" and row.get("expires_at"):
+            from datetime import datetime, timezone
+            expires_at = row["expires_at"]
+            # Handle both naive and aware datetimes
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
+            
+            if now > expires_at:
+                # Mark as expired
+                await db.execute(
+                    "UPDATE platform_charges SET status = 'expired' WHERE id = $1",
+                    charge_id
+                )
+                status = "expired"
             
         base_url = str(request.base_url).rstrip('/')
         return {
@@ -241,7 +259,7 @@ async def get_charge(
             "required_nano": row["required_nano_amount"],
             "vault_address": row["vault_address"],
             "payment_url": row["payment_url"],
-            "status": row["status"],
+            "status": status,
             "checkout_url": f"{base_url}/checkout/{row['id']}",
             "tx_hash": row["tx_hash"],
             "created_at": row["created_at"],

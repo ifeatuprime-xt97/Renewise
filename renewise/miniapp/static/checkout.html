@@ -450,7 +450,7 @@
       } else if (charge.status === 'failed' || charge.status === 'expired') {
         document.getElementById('failed-reason').textContent =
           charge.status === 'expired'
-            ? 'This payment link has expired. Please request a new one.'
+            ? 'This payment link expired after 30 minutes. Please request a new one.'
             : 'Payment failed. Please try again or contact support.';
         showView('failed-view');
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }

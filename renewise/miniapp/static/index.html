@@ -4126,10 +4126,11 @@ http_response_code(200);</pre>
             ${ico('link', 15)} View on TonScan
           </button>` : ''}
           ${d.status === 'pending' && d.payment_url ? `
-          <button id="cd-paylink-btn" data-url="${esc(d.payment_url)}"
-            class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px">
+          <a href="${esc(d.payment_url).replace(/"/g, '&quot;').replace(/'/g, '&#39;')}" 
+             target="_blank" rel="noreferrer"
+             class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px;text-decoration:none;display:flex">
             ${ico('wallet', 15)} Open Payment Link
-          </button>` : ''}
+          </a>` : ''}
         `;
         // Wire via addEventListener — CSP blocks inline onclick in Telegram WebView
         const cdTxCode = document.getElementById('cd-tx-code');
@@ -4139,10 +4140,6 @@ http_response_code(200);</pre>
         const tonscanBtn = document.getElementById('cd-tonscan-btn');
         if (tonscanBtn) tonscanBtn.addEventListener('click', function() {
           _openUrl(_regUrl(tonscanBtn.getAttribute('data-url')));
-        });
-        const paylinkBtn = document.getElementById('cd-paylink-btn');
-        if (paylinkBtn) paylinkBtn.addEventListener('click', function() {
-          _openUrl(_regUrl(paylinkBtn.getAttribute('data-url')));
         });
       },
 
@@ -6382,7 +6379,10 @@ http_response_code(200);</pre>
           } else if (charge.status === 'failed' || charge.status === 'expired') {
             clearInterval(_sandboxPollTimer);
             _sandboxPollTimer = null;
-            _renderSandboxError(`Charge ${charge.status}. Create a new test charge to try again.`);
+            const reason = charge.status === 'expired' 
+              ? 'This payment link expired after 30 minutes. Create a new test charge to try again.'
+              : `Charge ${charge.status}. Create a new test charge to try again.`;
+            _renderSandboxError(reason);
           }
         } catch (_) { /* network hiccup, keep polling */ }
       }, 3000);

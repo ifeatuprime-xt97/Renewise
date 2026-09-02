@@ -461,6 +461,36 @@ async def _process_payment_inprocess(
     log.info("inprocess: done tx=%s", tx_hash)
 
 
+# ── Expire stale platform charges ────────────────────────────────────────────
+
+async def _expire_stale_charges_inprocess() -> None:
+    """
+    Mark pending platform_charges as expired if they've passed their expires_at timestamp.
+    Runs periodically in the watcher loop (every 5 minutes).
+    """
+    from renewise.db.connection import _db
+    
+    async with _db() as db:
+        result = await db.execute(
+            """
+            UPDATE platform_charges
+            SET status = 'expired'
+            WHERE status = 'pending'
+            AND expires_at IS NOT NULL
+            AND expires_at < NOW()
+            """
+        )
+        
+        # PostgreSQL returns "UPDATE N" where N is row count
+        if hasattr(result, 'split'):
+            count = int(result.split()[-1]) if result.split()[-1].isdigit() else 0
+        else:
+            count = 0
+            
+        if count > 0:
+            log.info("_expire_stale_charges: expired %d charge(s)", count)
+
+
 # ── Wallet change apply (in-process, dev mode) ───────────────────────────────
 
 async def _apply_wallet_changes_inprocess(app: "Application") -> None:
@@ -561,6 +591,8 @@ async def poll_vaults_inprocess(app: "Application") -> None:
     _last_cleanup: float = 0.0
     # Wallet change apply: run every 15 minutes in dev mode.
     _last_wallet_apply: float = 0.0
+    # Charge expiration: run every 5 minutes
+    _last_charge_expire: float = 0.0
 
     # Track in-flight payment tasks so they can be awaited/cancelled on shutdown.
     # WeakSet would lose references before tasks complete; use a plain set and
@@ -587,6 +619,10 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                 if now - _last_wallet_apply >= 900:  # every 15 minutes
                     await _apply_wallet_changes_inprocess(app)
                     _last_wallet_apply = now
+                    
+                if now - _last_charge_expire >= 300:  # every 5 minutes
+                    await _expire_stale_charges_inprocess()
+                    _last_charge_expire = now
 
                 vaults = await get_vaults_to_watch()
                 if vaults:

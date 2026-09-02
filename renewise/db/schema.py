@@ -584,6 +584,8 @@ async def init_db() -> None:
                 "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN required_nano_amount BIGINT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN amount_paid_so_far BIGINT DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW(); EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # platform_charges — expiration timestamp
+                "DO $$ BEGIN ALTER TABLE platform_charges ADD COLUMN expires_at TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 # users — ToS acceptance
                 "DO $$ BEGIN ALTER TABLE users ADD COLUMN terms_accepted_at TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 # processed_tx_hashes — subscription link
