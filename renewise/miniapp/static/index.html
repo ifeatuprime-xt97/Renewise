@@ -3618,7 +3618,13 @@ http_response_code(200);</pre>
     async function _errDetail(resp) {
       try {
         const data = await resp.clone().json();
-        if (data && data.detail) return String(data.detail);
+        if (data && data.detail) {
+          // FastAPI validation errors return detail as an array of objects
+          if (Array.isArray(data.detail)) {
+            return data.detail.map(d => d.msg || JSON.stringify(d)).join('; ');
+          }
+          return String(data.detail);
+        }
       } catch (_) { /* not JSON */ }
       try {
         const text = await resp.text();
@@ -5357,7 +5363,7 @@ http_response_code(200);</pre>
 
         document.getElementById('dashboard-content').innerHTML = html;
       } catch (e) {
-        const msg = (e && e.message) ? e.message : String(e);
+        const msg = e instanceof Error ? e.message : (typeof e === 'string' ? e : JSON.stringify(e));
         document.getElementById('dashboard-content').innerHTML = `<div style="color:var(--error);padding:20px">Error loading dashboard: ${esc(msg)}</div>`;
       }
     }

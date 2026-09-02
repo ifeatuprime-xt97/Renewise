@@ -550,6 +550,33 @@ async def init_db() -> None:
                     ALTER TABLE platforms RENAME COLUMN secret_key_test_hash TO secret_key_test;
                 EXCEPTION WHEN others THEN NULL; END; $$;
                 """,
+                # ── Column additions (skipped if column already exists) ────────
+                # platform_charges.payment_url — stores full ton:// deep-link with StateInit
+                "DO $$ BEGIN ALTER TABLE platform_charges ADD COLUMN payment_url TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # groups — fee overrides, passkey, chat_type, price_usd_cents
+                "DO $$ BEGIN ALTER TABLE groups ADD COLUMN buyer_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE groups ADD COLUMN admin_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE groups ADD COLUMN price_usd_cents INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE groups ADD COLUMN chat_title TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE groups ADD COLUMN invite_link TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE groups ADD COLUMN chat_type TEXT NOT NULL DEFAULT 'group'; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE groups ADD COLUMN wallet_passcode_hash TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # platforms — wallet passkey, fee overrides
+                "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN wallet_address TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN wallet_passcode_hash TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN buyer_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN admin_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # platform_config — global fee defaults
+                "DO $$ BEGIN ALTER TABLE platform_config ADD COLUMN global_buyer_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE platform_config ADD COLUMN global_admin_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # subscriptions — payment tracking columns
+                "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN required_nano_amount BIGINT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN amount_paid_so_far BIGINT DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW(); EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # users — ToS acceptance
+                "DO $$ BEGIN ALTER TABLE users ADD COLUMN terms_accepted_at TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # processed_tx_hashes — subscription link
+                "DO $$ BEGIN ALTER TABLE processed_tx_hashes ADD COLUMN sub_id INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
             ]
             for mig in pg_migrations:
                 await db.execute(mig)

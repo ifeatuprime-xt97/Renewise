@@ -73,9 +73,22 @@ async def _fetch_coingecko(session: aiohttp.ClientSession) -> float:
         "?ids=the-open-network&vs_currencies=usd",
         timeout=aiohttp.ClientTimeout(total=5),
     ) as resp:
+        if resp.status == 429:
+            raise RuntimeError(f"429 Too Many Requests — CoinGecko rate limit hit")
         resp.raise_for_status()
         data = await resp.json()
         return float(data["the-open-network"]["usd"])
+
+
+async def _fetch_okx(session: aiohttp.ClientSession) -> float:
+    """Fetch TON price from OKX public ticker (no key needed)."""
+    async with session.get(
+        "https://www.okx.com/api/v5/market/ticker?instId=TON-USDT",
+        timeout=aiohttp.ClientTimeout(total=5),
+    ) as resp:
+        resp.raise_for_status()
+        data = await resp.json()
+        return float(data["data"][0]["last"])
 
 
 async def _fetch_coinmarketcap(session: aiohttp.ClientSession) -> float:
@@ -122,12 +135,22 @@ async def get_ton_usd_price() -> float:
         except Exception as exc:
             log.warning("CoinGecko fetch failed: %s", exc)
 
-        # ── Provider 2: CoinMarketCap ─────────────────────────────────────
+        # ── Provider 2: OKX (free, no key) ───────────────────────────────
+        try:
+            price = await _fetch_okx(session)
+            _cache["price_usd"] = price
+            _cache["timestamp"] = now
+            log.info("TON price from OKX (CoinGecko fallback): $%.4f", price)
+            return price
+        except Exception as exc:
+            log.warning("OKX fetch failed: %s", exc)
+
+        # ── Provider 3: CoinMarketCap ─────────────────────────────────────
         try:
             price = await _fetch_coinmarketcap(session)
             _cache["price_usd"] = price
             _cache["timestamp"] = now
-            log.info("TON price from CoinMarketCap (CoinGecko fallback): $%.4f", price)
+            log.info("TON price from CoinMarketCap (CoinGecko+OKX fallback): $%.4f", price)
             return price
         except Exception as exc:
             log.warning("CoinMarketCap fetch failed: %s", exc)
