@@ -48,7 +48,6 @@
       overflow: hidden;
     }
 
-    /* Subtle glow effect behind card */
     .checkout-card::before {
       content: '';
       position: absolute;
@@ -95,7 +94,7 @@
     .amount-crypto {
       font-size: 14px;
       color: var(--text-muted);
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
 
     .qr-container {
@@ -106,62 +105,69 @@
       margin-bottom: 24px;
     }
 
-    #qrcode img {
+    #qrcode img, #qrcode canvas {
       display: block;
       margin: 0 auto;
     }
 
-    .btn {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-decoration: none;
+    /* ── Wallet buttons section ── */
+    .wallets-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
       margin-bottom: 12px;
     }
 
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-    .btn-primary:hover {
-      background: #008be6;
-      transform: translateY(-1px);
+    .wallets-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 0;
     }
 
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.05);
-      color: #fff;
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .powered-by {
-      margin-top: 32px;
+    .wallet-btn {
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      opacity: 0.7;
+      padding: 14px 10px;
+      border-radius: 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      text-decoration: none;
+      user-select: none;
     }
-    .powered-by span {
-      font-size: 11px;
-      color: var(--text-muted);
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
+
+    .wallet-btn:active {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(0.97);
     }
-    .powered-by img {
-      height: 20px;
+
+    .wallet-btn.primary {
+      background: var(--accent);
+      border-color: transparent;
+      grid-column: 1 / -1; /* full width */
+    }
+
+    .wallet-btn.primary:active {
+      background: #007ac4;
+    }
+
+    .wallet-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
     }
 
     /* Status Overlays */
@@ -186,7 +192,7 @@
       margin-bottom: 20px;
     }
     .status-success { background: rgba(46, 204, 113, 0.1); color: var(--success); }
-    .status-error { background: rgba(231, 76, 60, 0.1); color: var(--danger); }
+    .status-error   { background: rgba(231, 76, 60, 0.1);  color: var(--danger);  }
 
     .loader {
       width: 24px;
@@ -198,10 +204,17 @@
       margin: 40px auto;
     }
 
-    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .polling-note {
+      margin-top: 18px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+    }
 
+    @keyframes spin { 100% { transform: rotate(360deg); } }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Telegram WebApp SDK — available when opened inside Telegram, gracefully absent outside -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
@@ -213,7 +226,7 @@
     <!-- PENDING CHECKOUT -->
     <div id="checkout-view" style="display:none">
       <div class="header-row">
-        <div class="merchant-name" id="merchant-name">ReneWise Merchant</div>
+        <div class="merchant-name" id="merchant-name">ReneWise Checkout</div>
         <div class="order-ref" id="order-ref">#---</div>
       </div>
       
@@ -224,20 +237,55 @@
         <div id="qrcode"></div>
       </div>
 
-      <a id="btn-tonkeeper" href="#" class="btn btn-primary">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-        Open Tonkeeper
-      </a>
-      <a id="btn-wallet" href="#" class="btn btn-secondary">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12l-10 10-10-10 10-10z"/><path d="M12 2v20"/></svg>
-        Telegram Wallet
-      </a>
+      <p class="wallets-label">Pay with</p>
+
+      <div class="wallets-grid">
+        <!-- Tonkeeper — primary / full-width -->
+        <button class="wallet-btn primary" onclick="openWallet('tonkeeper')">
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+            <img class="wallet-icon"
+                 src="https://tonkeeper.com/assets/tonconnect-icon.png"
+                 alt="Tonkeeper"
+                 onerror="this.style.background='#4B7CF3'">
+            <span style="font-size:15px">Open Tonkeeper</span>
+          </div>
+        </button>
+
+        <!-- Telegram Wallet (@wallet bot) -->
+        <button class="wallet-btn" onclick="openWallet('telegram')">
+          <img class="wallet-icon"
+               src="https://wallet.tg/images/logo-288.png"
+               alt="Telegram Wallet">
+          <span>Telegram Wallet</span>
+        </button>
+
+        <!-- MyTonWallet -->
+        <button class="wallet-btn" onclick="openWallet('mytonwallet')">
+          <img class="wallet-icon"
+               src="https://mytonwallet.io/icon-256.png"
+               alt="MyTonWallet">
+          <span>MyTonWallet</span>
+        </button>
+
+        <!-- Tonhub -->
+        <button class="wallet-btn" onclick="openWallet('tonhub')">
+          <img class="wallet-icon"
+               src="https://tonhub.com/tonconnect_logo.png"
+               alt="Tonhub">
+          <span>Tonhub</span>
+        </button>
+      </div>
+
+      <p class="polling-note">Polling for confirmation every 3 seconds…</p>
     </div>
 
     <!-- SUCCESS -->
     <div id="success-view" class="status-screen">
       <div class="status-icon status-success">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
       </div>
       <h2 style="margin-bottom:8px">Payment Successful</h2>
       <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px">Your payment has been confirmed on the blockchain.</p>
@@ -246,7 +294,11 @@
     <!-- FAILED / EXPIRED -->
     <div id="failed-view" class="status-screen">
       <div class="status-icon status-error">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9"  y1="9" x2="15" y2="15"></line>
+        </svg>
       </div>
       <h2 style="margin-bottom:8px">Payment Failed</h2>
       <p style="color:var(--text-muted);font-size:14px" id="failed-reason">This checkout session has expired or failed.</p>
@@ -254,16 +306,85 @@
 
   </div>
 
-  <div class="powered-by">
-    <span>Powered by</span>
-    <img src="/logo" alt="ReneWise Logo" style="border-radius:4px">
-    <div style="font-size:14px;font-weight:600;margin-top:2px;letter-spacing:-0.5px">ReneWise</div>
+  <div style="margin-top:20px;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:.65">
+    <span style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.5px;text-transform:uppercase">Powered by</span>
+    <img src="/logo" alt="ReneWise" style="height:20px;border-radius:4px">
+    <div style="font-size:13px;font-weight:600;letter-spacing:-.3px">ReneWise</div>
   </div>
 
   <script>
-    // Extract charge ID from path: /checkout/123
+    // ── Telegram WebApp helper (safe — works even when opened in a browser) ──
+    const TgApp = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+
+    // Open a URL: inside Telegram use WebApp.openLink (bypasses in-app browser
+    // for ton:// deep-links); outside Telegram fall back to window.open.
+    function openExternal(url) {
+      if (TgApp && typeof TgApp.openLink === 'function') {
+        TgApp.openLink(url, { try_instant_view: false });
+      } else {
+        window.open(url, '_blank', 'noreferrer');
+      }
+    }
+
+    // ── Charge data set by init() ──
+    let _paymentUrl  = '';  // full ton:// deep-link (includes StateInit)
+    let _vaultAddr   = '';  // raw vault address
+    let _requiredNano = 0;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Wallet deep-link map
+    //
+    // All four wallets accept the standard ton:// transfer URI.
+    // We use it for Tonkeeper, GRAM, and MyTonWallet directly.
+    //
+    // Telegram Wallet (Fragment / @wallet bot) uses the Telegram bot deep-link:
+    //   https://t.me/wallet?startattach=...
+    // The recommended format is to pass the full payment_url as the parameter
+    // so the wallet can parse amount + StateInit from it.
+    // ─────────────────────────────────────────────────────────────────────────
+    function openWallet(which) {
+      let url;
+      switch (which) {
+        case 'tonkeeper':
+          // tonkeeper:// scheme opens the Tonkeeper app directly on mobile
+          url = _paymentUrl.startsWith('ton://')
+            ? _paymentUrl.replace('ton://', 'tonkeeper://')
+            : _paymentUrl;
+          break;
+
+        case 'telegram':
+          // Telegram @wallet bot deep-link
+          url = `https://t.me/wallet?startattach=ton_transfer-${encodeURIComponent(_paymentUrl)}`;
+          break;
+
+        case 'mytonwallet':
+          // mytonwallet:// scheme on mobile
+          url = _paymentUrl.startsWith('ton://')
+            ? _paymentUrl.replace('ton://', 'mytonwallet://')
+            : _paymentUrl;
+          break;
+
+        case 'tonhub':
+          // Tonhub uses the standard ton:// URI
+          url = _paymentUrl;
+          break;
+
+        default:
+          url = _paymentUrl;
+      }
+
+      if (!url) {
+        alert('Payment link not ready yet. Please wait a moment and try again.');
+        return;
+      }
+      openExternal(url);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Charge loading & polling
+    // ─────────────────────────────────────────────────────────────────────────
     const pathParts = window.location.pathname.split('/').filter(Boolean);
-    const chargeId = pathParts[pathParts.length - 1];
+    const chargeId  = pathParts[pathParts.length - 1];
     
     let pollInterval = null;
 
@@ -285,10 +406,14 @@
 
       if (charge.status === 'completed') {
         document.getElementById('success-view').classList.add('active');
-        if (pollInterval) clearInterval(pollInterval);
+        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       } else if (charge.status === 'failed' || charge.status === 'expired') {
+        const reason = charge.status === 'expired'
+          ? 'This payment link has expired. Please request a new one.'
+          : 'Payment failed. Please try again or contact support.';
+        document.getElementById('failed-reason').textContent = reason;
         document.getElementById('failed-view').classList.add('active');
-        if (pollInterval) clearInterval(pollInterval);
+        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       } else {
         document.getElementById('checkout-view').style.display = 'block';
       }
@@ -302,32 +427,33 @@
         return;
       }
 
-      // Populate UI
-      const amtUsd = (charge.amount_usd_cents / 100).toFixed(2);
-      const amtTon = (charge.required_nano / 1000000000).toFixed(4);
-      
-      document.getElementById('amount-usd').textContent = `$${amtUsd}`;
-      document.getElementById('amount-crypto').textContent = `${amtTon} TON`;
-      document.getElementById('order-ref').textContent = `#${charge.external_reference}`;
-      
-      // Update links
-      document.getElementById('btn-tonkeeper').href = charge.payment_url;
-      // Telegram wallet link format
-      document.getElementById('btn-wallet').href = `https://t.me/wallet?startattach=ton_transfer-${charge.vault_address}-${charge.required_nano}`;
+      // Cache payment data for wallet buttons
+      _paymentUrl   = charge.payment_url || '';
+      _vaultAddr    = charge.vault_address || '';
+      _requiredNano = charge.required_nano || 0;
 
-      // Generate QR Code
-      new QRCode(document.getElementById("qrcode"), {
-        text: charge.payment_url,
-        width: 200,
-        height: 200,
-        colorDark : "#0d111a",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.M
-      });
+      // Populate display
+      const amtUsd = (charge.amount_usd_cents / 100).toFixed(2);
+      const amtTon = (_requiredNano / 1_000_000_000).toFixed(4);
+      
+      document.getElementById('amount-usd').textContent  = `$${amtUsd}`;
+      document.getElementById('amount-crypto').textContent = `${amtTon} TON`;
+      document.getElementById('order-ref').textContent   = `#${charge.external_reference}`;
+
+      // Generate QR Code from the full payment_url (includes StateInit payload)
+      if (_paymentUrl) {
+        new QRCode(document.getElementById('qrcode'), {
+          text: _paymentUrl,
+          width: 200,
+          height: 200,
+          colorDark:  '#0d111a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+      }
 
       renderStatus(charge);
 
-      // Start polling if pending
       if (charge.status === 'pending') {
         pollInterval = setInterval(async () => {
           const updated = await fetchCharge();

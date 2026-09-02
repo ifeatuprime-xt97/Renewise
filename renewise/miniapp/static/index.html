@@ -5197,7 +5197,7 @@ http_response_code(200);</pre>
     async function renderDashboard(statusFilter = '') {
       if (!currentPlatformId) return;
       try {
-        const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/charges?limit=${CHARGES_PER_PAGE}&offset=${chargesPage * CHARGES_PER_PAGE}${statusFilter ? '&status=' + statusFilter : ''}`);
+        const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/charges?limit=${CHARGES_PER_PAGE}&offset=${chargesPage * CHARGES_PER_PAGE}${statusFilter ? '&status=' + statusFilter : ''}`, { headers: H() });
         if (!r.ok) throw new Error(await _errDetail(r));
         const data = await r.json();
 
