@@ -5747,9 +5747,15 @@ http_response_code(200);</pre>
             raw.includes('contract not compiled') || raw.includes('FileNotFoundError')
               ? 'Payment contract not built on this server. Ask the operator to run: cd contracts && npm run build'
               : raw.includes('Payment link generation failed')
-              ? 'Could not generate payment link check that the contract is compiled and the wallet address is valid.'
+              ? 'Could not generate payment link — check that the contract is compiled and the wallet address is valid.'
               : raw.includes('wallet_address') || raw.includes('no payout wallet')
               ? 'This app has no Payout Wallet set. Add one in Developer Apps first.'
+              : raw.includes('non-JSON response') || raw.includes('latest code')
+              ? 'The backend service needs to be redeployed. Redeploy Render and try again.'
+              : raw.includes('Could not reach') || raw.includes('unreachable')
+              ? 'Backend service is unreachable. Try again in a moment.'
+              : raw.includes('timed out') || raw.includes('cold-starting')
+              ? 'Backend is waking up — wait a few seconds and try again.'
               : raw;
           _renderSandboxError(friendly);
           return;

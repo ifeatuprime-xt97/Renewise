@@ -101,13 +101,27 @@ async def create_charge(
     if _internal_url and _internal_secret:
         # ── Proxy to Render bot service ──────────────────────────────────────
         import aiohttp as _aiohttp
+        from datetime import datetime as _dt
+
+        def _json_safe(v):
+            """Convert values that aren't JSON-serializable to strings."""
+            if isinstance(v, _dt):
+                return v.isoformat()
+            return v
+
+        _platform_payload = {
+            k: _json_safe(v)
+            for k, v in platform.items()
+            if k != "auth_mode"
+        }
+
         try:
             async with _aiohttp.ClientSession() as _session:
                 async with _session.post(
                     f"{_internal_url}/internal/generate-payment-link",
                     json={
-                        "platform":       {k: v for k, v in platform.items() if k != "auth_mode"},
-                        "charge_id":      charge_id,
+                        "platform":        _platform_payload,
+                        "charge_id":       charge_id,
                         "price_usd_cents": req.amount_usd_cents,
                     },
                     headers={"X-Internal-Secret": _internal_secret},
@@ -133,7 +147,17 @@ async def create_charge(
         except Exception as _e:
             import logging as _logging
             _logging.getLogger(__name__).exception("Proxy to internal service failed for charge %s", charge_id)
-            raise HTTPException(status_code=503, detail=f"Payment service unavailable: {type(_e).__name__}")
+            # Give a more specific message based on the error type
+            _ename = type(_e).__name__
+            if "ContentType" in _ename or "JSON" in _ename:
+                _detail = "Internal service returned a non-JSON response — Render may not be running the latest code with the /internal/generate-payment-link endpoint."
+            elif "ClientConnectorError" in _ename or "ServerDisconnectedError" in _ename:
+                _detail = "Could not reach the internal Render service. Check INTERNAL_API_URL and that Render is running."
+            elif "TimeoutError" in _ename or "asyncio" in _ename:
+                _detail = "Internal service timed out. Render may be cold-starting."
+            else:
+                _detail = f"Payment service unavailable ({_ename}). Check Render logs."
+            raise HTTPException(status_code=503, detail=_detail)
     else:
         # ── Local generation (Render or local dev) ────────────────────────────
         try:
