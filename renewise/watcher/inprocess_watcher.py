@@ -229,13 +229,23 @@ async def _process_payment_inprocess(
     reg = await get_vault_registration(vault_address)
     if not reg:
         from renewise.db.queries import get_platform_charge_by_vault
-        log.debug("inprocess: no vault registry for %s, checking platform_charges", vault_address)
+        log.info("inprocess: no vault registry for %s, checking platform_charges", vault_address)
         charge = await get_platform_charge_by_vault(vault_address)
         if charge:
             log.info("inprocess: found platform charge id=%d for vault=%s", charge["id"], vault_address)
             return await _process_platform_charge_inprocess(app, charge, tx_hash, amount_nano)
         
-        log.warning("inprocess: unknown vault %s — no registry entry and no platform charge", vault_address)
+        # Enhanced debugging: show what's in the database
+        from renewise.db.connection import _db
+        async with _db() as db:
+            all_pending = await db.fetch(
+                "SELECT id, vault_address, status FROM platform_charges WHERE status = 'pending' ORDER BY id DESC LIMIT 10"
+            )
+            log.warning("inprocess: unknown vault %s — no registry entry and no platform charge. Recent pending charges:", vault_address)
+            for pc in all_pending:
+                log.warning("  charge_id=%d vault=%s status=%s match=%s", 
+                           pc["id"], pc["vault_address"], pc["status"],
+                           "YES" if pc["vault_address"] == vault_address else "NO")
         return
 
     user_id  = reg["user_id"]

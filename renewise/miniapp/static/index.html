@@ -4130,7 +4130,10 @@ http_response_code(200);</pre>
              target="_blank" rel="noreferrer"
              class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px;text-decoration:none;display:flex">
             ${ico('wallet', 15)} Open Payment Link
-          </a>` : ''}
+          </a>
+          <button id="cd-recheck-btn" class="btn btn-ghost" style="margin-top:8px;font-size:12px;padding:8px">
+            ${ico('refresh', 14)} Check for Payment
+          </button>` : ''}
         `;
         // Wire via addEventListener — CSP blocks inline onclick in Telegram WebView
         const cdTxCode = document.getElementById('cd-tx-code');
@@ -4140,6 +4143,30 @@ http_response_code(200);</pre>
         const tonscanBtn = document.getElementById('cd-tonscan-btn');
         if (tonscanBtn) tonscanBtn.addEventListener('click', function() {
           _openUrl(_regUrl(tonscanBtn.getAttribute('data-url')));
+        });
+        const recheckBtn = document.getElementById('cd-recheck-btn');
+        if (recheckBtn) recheckBtn.addEventListener('click', async function() {
+          recheckBtn.disabled = true;
+          recheckBtn.innerHTML = `${ico('refresh', 14)} Checking...`;
+          try {
+            const resp = await fetch(`/api/developer/charges/${d.id}/recheck`, {
+              method: 'POST',
+              headers: {'X-Init-Data': WebApp.initData}
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+              showToast(`Found ${data.transactions_found} transaction(s). Refreshing...`, 'info');
+              setTimeout(() => location.reload(), 1500);
+            } else {
+              showToast(data.detail || 'Recheck failed', 'error');
+              recheckBtn.disabled = false;
+              recheckBtn.innerHTML = `${ico('refresh', 14)} Check for Payment`;
+            }
+          } catch (err) {
+            showToast('Network error', 'error');
+            recheckBtn.disabled = false;
+            recheckBtn.innerHTML = `${ico('refresh', 14)} Check for Payment`;
+          }
         });
       },
 

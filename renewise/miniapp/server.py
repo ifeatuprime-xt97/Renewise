@@ -980,6 +980,76 @@ async def api_developer_charge_detail(
     r["explorer_url"] = f"https://{explorer}/tx/{r['tx_hash']}" if r["tx_hash"] else None
     return r
 
+
+@app.post("/api/developer/charges/{charge_id}/recheck")
+@limiter.limit("10/minute")
+async def api_developer_charge_recheck(
+    request: Request,
+    charge_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Manually trigger a recheck of a pending platform charge's vault for new transactions.
+    Useful for debugging when transactions don't auto-confirm.
+    """
+    telegram_user_id = user["id"]
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        row = await db.fetchrow(
+            """
+            SELECT c.id, c.vault_address, c.status, c.required_nano_amount, p.owner_telegram_id
+            FROM platform_charges c
+            JOIN platforms p ON p.id = c.platform_id
+            WHERE c.id = $1 AND p.owner_telegram_id = $2
+            """,
+            charge_id, telegram_user_id,
+        )
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Charge not found")
+    
+    if not row["vault_address"]:
+        raise HTTPException(status_code=400, detail="Charge has no vault address")
+    
+    vault_address = row["vault_address"]
+    required_nano = row["required_nano_amount"]
+    
+    # Fetch recent transactions from TonCenter
+    from renewise.watcher.toncenter import fetch_transactions, extract_tx_hash, extract_in_msg_value
+    import logging
+    log = logging.getLogger(__name__)
+    
+    try:
+        txs = await fetch_transactions(vault_address, limit=10)
+        log.info(f"Recheck: found {len(txs)} transaction(s) for vault {vault_address}")
+        
+        # Check if any transaction meets the required amount
+        matching_txs = []
+        for tx in txs:
+            tx_hash = extract_tx_hash(tx)
+            amount_nano = extract_in_msg_value(tx)
+            
+            if tx_hash and amount_nano:
+                matching_txs.append({
+                    "tx_hash": tx_hash,
+                    "amount_nano": amount_nano,
+                    "amount_ton": round(amount_nano / 1e9, 9),
+                    "sufficient": amount_nano >= (required_nano or 0)
+                })
+        
+        return {
+            "vault_address": vault_address,
+            "required_nano": required_nano,
+            "required_ton": round(required_nano / 1e9, 9) if required_nano else None,
+            "transactions_found": len(matching_txs),
+            "transactions": matching_txs,
+            "note": "If a matching transaction was found, the watcher should process it within 5 seconds. Refresh the charge details to see if status changed."
+        }
+        
+    except Exception as e:
+        log.exception(f"Recheck failed for charge {charge_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch transactions: {str(e)}")
+
 @app.post("/api/developer/platforms")
 @limiter.limit("10/minute")
 async def api_developer_platforms_create(
