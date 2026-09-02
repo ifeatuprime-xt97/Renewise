@@ -168,19 +168,18 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
-      transition: background 0.15s, transform 0.1s;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+    }
+    
+    /* Active state - both touch and mouse */
+    .wallet-btn:active {
+      transform: scale(0.95);
+      opacity: 0.7;
     }
 
     /* Children must not capture pointer/touch events */
     .wallet-btn > * {
       pointer-events: none;
-    }
-
-    /* Active state — works on both Android and iOS */
-    .wallet-btn:active,
-    .wallet-btn.pressed {
-      background: rgba(255,255,255,0.12);
-      transform: scale(0.96);
     }
 
     .wallet-btn.primary {
@@ -192,9 +191,9 @@
       border-color: transparent;
       font-size: 15px;
     }
-    .wallet-btn.primary:active,
-    .wallet-btn.primary.pressed {
+    .wallet-btn.primary:active {
       background: #007ac4;
+      transform: scale(0.97);
     }
 
     .wallet-icon {
@@ -367,12 +366,12 @@
       var container = document.getElementById('wallet-links-container');
       if (!container) return;
 
-      // Encode payment URL for safe HTML attribute injection
-      var escapedUrl = payUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      // Escape only quotes for HTML attribute safety (keep & as-is for URL params)
+      var safeUrl = payUrl.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
       container.innerHTML = `
         <!-- Tonkeeper (full-width primary) -->
-        <a href="${escapedUrl}" target="_blank" rel="noreferrer" class="wallet-btn primary">
+        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn primary">
           <img class="wallet-icon"
                src="https://tonkeeper.com/assets/tonconnect-icon.png"
                alt="Tonkeeper"
@@ -381,7 +380,7 @@
         </a>
 
         <!-- Telegram Wallet -->
-        <a href="${escapedUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
+        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
           <img class="wallet-icon"
                src="https://wallet.tg/images/logo-288.png"
                alt="Telegram Wallet"
@@ -390,7 +389,7 @@
         </a>
 
         <!-- MyTonWallet -->
-        <a href="${escapedUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
+        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
           <img class="wallet-icon"
                src="https://mytonwallet.io/img/icon-256x256.png"
                alt="MyTonWallet"
@@ -399,7 +398,7 @@
         </a>
 
         <!-- Tonhub -->
-        <a href="${escapedUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
+        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
           <img class="wallet-icon"
                src="https://tonhub.com/tonconnect_logo.png"
                alt="Tonhub"

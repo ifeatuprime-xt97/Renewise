@@ -54,7 +54,8 @@ MIN_CONFIRMATIONS: int = int(os.getenv("MIN_CONFIRMATIONS", "1"))
 
 # ── Polling fallback ──────────────────────────────────────────────────────────
 # Interval in seconds between polling cycles when webhooks are not available.
-POLL_INTERVAL_SECONDS: int = int(os.getenv("POLL_INTERVAL_SECONDS", "15"))
+# For platform charges and bot subscriptions, faster polling = faster confirmation.
+POLL_INTERVAL_SECONDS: int = int(os.getenv("POLL_INTERVAL_SECONDS", "5"))
 
 # ── Webhook server ────────────────────────────────────────────────────────────
 WEBHOOK_HOST: str = os.getenv("WEBHOOK_HOST", "0.0.0.0")

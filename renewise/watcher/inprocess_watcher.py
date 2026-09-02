@@ -170,7 +170,8 @@ async def _process_platform_charge_inprocess(
     amount_nano: int,
 ) -> None:
     """Process a completed platform API charge."""
-    log.info("inprocess_platform: tx=%s charge_id=%d amount=%d", tx_hash, charge["id"], amount_nano)
+    log.info("inprocess_platform: tx=%s charge_id=%d amount=%d status=%s", 
+             tx_hash, charge["id"], amount_nano, charge.get("status"))
     
     # Claim idempotency
     claimed = await mark_tx_processed(tx_hash, charge["id"])
@@ -185,6 +186,8 @@ async def _process_platform_charge_inprocess(
         # For now, mark as failed, or wait for top-up? API doesn't support top-up yet. 
         # But we still record it so we don't re-process. We won't dispatch webhook for partial payment.
         return
+    
+    log.info("inprocess_platform: marking charge %d as completed (tx=%s)", charge["id"], tx_hash)
         
     # Mark as completed
     from renewise.db.connection import _db
@@ -193,6 +196,8 @@ async def _process_platform_charge_inprocess(
             "UPDATE platform_charges SET status = 'completed', completed_at = NOW(), tx_hash = $1 WHERE id = $2",
             tx_hash, charge["id"]
         )
+    
+    log.info("inprocess_platform: charge %d status updated to completed", charge["id"])
         
     from renewise.services.webhooks import dispatch_webhook
     asyncio.create_task(dispatch_webhook(charge["id"]))
@@ -224,11 +229,13 @@ async def _process_payment_inprocess(
     reg = await get_vault_registration(vault_address)
     if not reg:
         from renewise.db.queries import get_platform_charge_by_vault
+        log.debug("inprocess: no vault registry for %s, checking platform_charges", vault_address)
         charge = await get_platform_charge_by_vault(vault_address)
         if charge:
+            log.info("inprocess: found platform charge id=%d for vault=%s", charge["id"], vault_address)
             return await _process_platform_charge_inprocess(app, charge, tx_hash, amount_nano)
-            
-        log.warning("inprocess: unknown vault %s — no registry entry", vault_address)
+        
+        log.warning("inprocess: unknown vault %s — no registry entry and no platform charge", vault_address)
         return
 
     user_id  = reg["user_id"]
