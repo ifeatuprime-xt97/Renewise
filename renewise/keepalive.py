@@ -113,11 +113,80 @@ async def handle_health(_request: web.Request) -> web.Response:
     return web.json_response({"status": "ok", "service": "renewise-bot"})
 
 
+async def handle_generate_payment_link(request: web.Request) -> web.Response:
+    """
+    Internal endpoint: generate a TON payment link for a platform charge.
+
+    Called by the Mini App API (Vercel) which cannot run the contract locally.
+    Protected by INTERNAL_API_SECRET — never expose this to the public.
+
+    POST /internal/generate-payment-link
+    Headers: X-Internal-Secret: <INTERNAL_API_SECRET>
+    Body: {
+        "platform": { ...platform dict with wallet_address, buyer_fee_bps, etc. },
+        "charge_id": 42,
+        "price_usd_cents": 999
+    }
+    Response: {
+        "payment_url": "ton://...",
+        "vault_address": "EQ...",
+        "required_nano": 1234567890
+    }
+    """
+    import os
+    expected_secret = os.environ.get("INTERNAL_API_SECRET", "")
+    if not expected_secret:
+        return web.json_response({"error": "INTERNAL_API_SECRET not configured"}, status=503)
+
+    provided = request.headers.get("X-Internal-Secret", "")
+    if not provided or provided != expected_secret:
+        return web.json_response({"error": "Unauthorized"}, status=401)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON body"}, status=400)
+
+    platform = body.get("platform")
+    charge_id = body.get("charge_id")
+    price_usd_cents = body.get("price_usd_cents")
+
+    if not platform or not charge_id or not price_usd_cents:
+        return web.json_response({"error": "Missing required fields"}, status=400)
+
+    try:
+        from renewise.services.payment import generate_platform_payment_request
+        result = await generate_platform_payment_request(
+            platform=platform,
+            charge_id=charge_id,
+            price_usd_cents=price_usd_cents,
+        )
+        return web.json_response({
+            "payment_url":   result.payment_url,
+            "vault_address": result.vault_address,
+            "required_nano": result.required_nano,
+        })
+    except ValueError as e:
+        return web.json_response({"error": str(e)}, status=400)
+    except FileNotFoundError:
+        return web.json_response(
+            {"error": "Contract not compiled. Run: cd contracts && npm run build"},
+            status=503,
+        )
+    except Exception as e:
+        log.exception("Payment link generation failed for charge %s", charge_id)
+        return web.json_response(
+            {"error": f"Payment link generation failed: {type(e).__name__}"},
+            status=500,
+        )
+
+
 def _build_app() -> web.Application:
     app = web.Application()
     app.router.add_get("/", handle_health)
     app.router.add_get("/health", handle_health)
     app.router.add_get("/healthz", handle_health)
+    app.router.add_post("/internal/generate-payment-link", handle_generate_payment_link)
     return app
 
 

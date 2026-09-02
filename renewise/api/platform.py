@@ -91,27 +91,71 @@ async def create_charge(
         )
         charge_id = row["id"]
         
-    # Generate payment request
-    try:
-        payment_req = await generate_platform_payment_request(
-            platform=platform,
-            charge_id=charge_id,
-            price_usd_cents=req.amount_usd_cents,
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=503,
-            detail="Payment contract not compiled. Run: cd contracts && npm install && npm run build",
-        )
-    except Exception as e:
-        import logging as _logging
-        _logging.getLogger(__name__).exception("Payment link generation failed for charge %s", charge_id)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Payment link generation failed ({type(e).__name__}). Check server logs.",
-        )
+    # Generate payment request.
+    # When INTERNAL_API_URL is set (Vercel deployment), the .boc and wallet
+    # config live on Render — proxy the generation there. Otherwise generate locally.
+    import os as _os
+    _internal_url = _os.environ.get("INTERNAL_API_URL", "").rstrip("/")
+    _internal_secret = _os.environ.get("INTERNAL_API_SECRET", "")
+
+    if _internal_url and _internal_secret:
+        # ── Proxy to Render bot service ──────────────────────────────────────
+        import aiohttp as _aiohttp
+        try:
+            async with _aiohttp.ClientSession() as _session:
+                async with _session.post(
+                    f"{_internal_url}/internal/generate-payment-link",
+                    json={
+                        "platform":       {k: v for k, v in platform.items() if k != "auth_mode"},
+                        "charge_id":      charge_id,
+                        "price_usd_cents": req.amount_usd_cents,
+                    },
+                    headers={"X-Internal-Secret": _internal_secret},
+                    timeout=_aiohttp.ClientTimeout(total=15),
+                ) as _resp:
+                    _data = await _resp.json()
+                    if _resp.status != 200:
+                        raise HTTPException(
+                            status_code=_resp.status,
+                            detail=_data.get("error", f"Internal service error {_resp.status}"),
+                        )
+                    from renewise.services.payment import PaymentRequest
+                    payment_req = PaymentRequest(
+                        payment_url=_data["payment_url"],
+                        vault_address=_data["vault_address"],
+                        required_nano=_data["required_nano"],
+                        payload=_data["vault_address"],
+                        amount=_data["required_nano"] / 1e9,
+                        currency="TON",
+                    )
+        except HTTPException:
+            raise
+        except Exception as _e:
+            import logging as _logging
+            _logging.getLogger(__name__).exception("Proxy to internal service failed for charge %s", charge_id)
+            raise HTTPException(status_code=503, detail=f"Payment service unavailable: {type(_e).__name__}")
+    else:
+        # ── Local generation (Render or local dev) ────────────────────────────
+        try:
+            payment_req = await generate_platform_payment_request(
+                platform=platform,
+                charge_id=charge_id,
+                price_usd_cents=req.amount_usd_cents,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except FileNotFoundError:
+            raise HTTPException(
+                status_code=503,
+                detail="Payment contract not compiled. Run: cd contracts && npm install && npm run build",
+            )
+        except Exception as e:
+            import logging as _logging
+            _logging.getLogger(__name__).exception("Payment link generation failed for charge %s", charge_id)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Payment link generation failed ({type(e).__name__}). Check server logs.",
+            )
         
     # Update charge with vault details
     async with _db() as db:

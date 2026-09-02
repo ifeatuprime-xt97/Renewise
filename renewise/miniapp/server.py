@@ -903,6 +903,52 @@ async def api_developer_charges_global(
     charges = await platform_svc.get_all_user_platform_charges(telegram_user_id, status=status, limit=limit, offset=offset)
     return {"charges": charges}
 
+
+@app.get("/api/developer/charges/{charge_id}")
+@limiter.limit("60/minute")
+async def api_developer_charge_detail(
+    request: Request,
+    charge_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Full detail for a single platform charge, authenticated via initData.
+    Only returns the charge if it belongs to a platform owned by the
+    authenticated user.
+    """
+    telegram_user_id = user["id"]
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        row = await db.fetchrow(
+            """
+            SELECT c.id, c.platform_id, p.platform_name, c.external_reference,
+                   c.mode, c.amount_usd_cents, c.status, c.vault_address,
+                   c.payment_url, c.buyer_fee_bps, c.platform_fee_bps,
+                   c.tx_hash, c.required_nano_amount, c.created_at, c.completed_at
+            FROM platform_charges c
+            JOIN platforms p ON p.id = c.platform_id
+            WHERE c.id = $1 AND p.owner_telegram_id = $2
+            """,
+            charge_id, telegram_user_id,
+        )
+    if not row:
+        raise HTTPException(status_code=404, detail="Charge not found")
+
+    base_url = str(request.base_url).rstrip("/")
+    r = dict(row)
+    r["checkout_url"] = f"{base_url}/checkout/{r['id']}"
+    r["required_nano"] = r.pop("required_nano_amount", None)
+    # Compute required TON for display
+    nano = r.get("required_nano")
+    r["required_ton"] = round(nano / 1e9, 9) if nano else None
+    # Fee percentages for display
+    r["buyer_fee_pct"]    = (r["buyer_fee_bps"] or 0) / 100.0
+    r["platform_fee_pct"] = (r["platform_fee_bps"] or 0) / 100.0
+    # TonScan link
+    explorer = "testnet.tonscan.org" if r["mode"] == "test" else "tonscan.org"
+    r["explorer_url"] = f"https://{explorer}/tx/{r['tx_hash']}" if r["tx_hash"] else None
+    return r
+
 @app.post("/api/developer/platforms")
 @limiter.limit("10/minute")
 async def api_developer_platforms_create(
