@@ -145,6 +145,7 @@
       appearance: none;
       border: none;
       outline: none;
+      text-decoration: none; /* for <a> tags */
       /* Layout */
       display: flex;
       flex-direction: column;
@@ -167,6 +168,7 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
+      transition: background 0.15s, transform 0.1s;
     }
 
     /* Children must not capture pointer/touch events */
@@ -293,44 +295,8 @@
 
       <p class="wallets-label">Pay with</p>
 
-      <div class="wallets-grid">
-
-        <!-- Tonkeeper (full-width primary) -->
-        <button class="wallet-btn primary" data-wallet="tonkeeper">
-          <img class="wallet-icon"
-               src="https://tonkeeper.com/assets/tonconnect-icon.png"
-               alt="Tonkeeper"
-               width="36" height="36">
-          <span>Open Tonkeeper</span>
-        </button>
-
-        <!-- Telegram Wallet -->
-        <button class="wallet-btn" data-wallet="telegram">
-          <img class="wallet-icon"
-               src="https://wallet.tg/images/logo-288.png"
-               alt="Telegram Wallet"
-               width="36" height="36">
-          <span>Telegram Wallet</span>
-        </button>
-
-        <!-- MyTonWallet -->
-        <button class="wallet-btn" data-wallet="mytonwallet">
-          <img class="wallet-icon"
-               src="https://mytonwallet.io/img/icon-256x256.png"
-               alt="MyTonWallet"
-               width="36" height="36">
-          <span>MyTonWallet</span>
-        </button>
-
-        <!-- Tonhub -->
-        <button class="wallet-btn" data-wallet="tonhub">
-          <img class="wallet-icon"
-               src="https://tonhub.com/tonconnect_logo.png"
-               alt="Tonhub"
-               width="36" height="36">
-          <span>Tonhub</span>
-        </button>
-
+      <div class="wallets-grid" id="wallet-links-container">
+        <!-- Wallet buttons will be injected here by JavaScript with actual payment URLs -->
       </div>
 
       <p class="polling-note">Polling for confirmation every 3 seconds…</p>
@@ -389,88 +355,59 @@
     // Detect Android
     var isAndroid = /Android/.test(navigator.userAgent);
 
-    /**
-     * Open a URL in the correct way for the current platform:
-     *
-     * Inside Telegram (both iOS and Android):
-     *   - t.me links  → WebApp.openTelegramLink()  (proper Telegram nav)
-     *   - other URLs  → WebApp.openLink()           (system browser / wallet)
-     *
-     * Outside Telegram (plain browser):
-     *   - All URLs    → window.open() with _blank
-     *
-     * For custom-scheme deep-links (tonkeeper://, mytonwallet://) on iOS we
-     * also set window.location.href as the primary call so Safari forwards it
-     * to the installed app even when window.open is blocked.
-     */
-    function openExternal(url) {
-      if (TgApp && typeof TgApp.openLink === 'function') {
-        // ton:// deep-links: openLink routes to the installed wallet app on
-        // both Android and iOS Telegram WebView.
-        TgApp.openLink(url);
-        return;
-      }
-      // Outside Telegram — use location.href for custom schemes (ton://)
-      // so iOS Safari forwards it to the installed wallet app.
-      window.location.href = url;
-    }
-
     // ─── Payment data (set by init) ─────────────────────────────────────────
     var _paymentUrl   = '';
     var _vaultAddr    = '';
     var _requiredNano = 0;
 
-    // ─── Build wallet URL ────────────────────────────────────────────────────
-    // All wallets receive the same ton:// deep-link — identical to how the bot
-    // sends payment buttons. Telegram's openLink (or the OS on plain browser)
-    // routes ton:// to whichever TON wallet the user has installed.
-    // No scheme replacement, no t.me/wallet?startattach — just the universal link.
-    function walletUrl(which) {
-      if (!_paymentUrl) return null;
-      return _paymentUrl;
+    // ─── Render wallet links as native <a> tags ─────────────────────────────
+    function renderWalletLinks(payUrl) {
+      if (!payUrl) return;
+      
+      var container = document.getElementById('wallet-links-container');
+      if (!container) return;
+
+      // Encode payment URL for safe HTML attribute injection
+      var escapedUrl = payUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+      container.innerHTML = `
+        <!-- Tonkeeper (full-width primary) -->
+        <a href="${escapedUrl}" target="_blank" rel="noreferrer" class="wallet-btn primary">
+          <img class="wallet-icon"
+               src="https://tonkeeper.com/assets/tonconnect-icon.png"
+               alt="Tonkeeper"
+               width="36" height="36">
+          <span>Open Tonkeeper</span>
+        </a>
+
+        <!-- Telegram Wallet -->
+        <a href="${escapedUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
+          <img class="wallet-icon"
+               src="https://wallet.tg/images/logo-288.png"
+               alt="Telegram Wallet"
+               width="36" height="36">
+          <span>Telegram Wallet</span>
+        </a>
+
+        <!-- MyTonWallet -->
+        <a href="${escapedUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
+          <img class="wallet-icon"
+               src="https://mytonwallet.io/img/icon-256x256.png"
+               alt="MyTonWallet"
+               width="36" height="36">
+          <span>MyTonWallet</span>
+        </a>
+
+        <!-- Tonhub -->
+        <a href="${escapedUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
+          <img class="wallet-icon"
+               src="https://tonhub.com/tonconnect_logo.png"
+               alt="Tonhub"
+               width="36" height="36">
+          <span>Tonhub</span>
+        </a>
+      `;
     }
-
-    // ─── Wire up wallet buttons ──────────────────────────────────────────────
-    // Use touchend + preventDefault to eliminate the 300 ms iOS click delay
-    // and avoid ghost-click issues. Falls back to click for non-touch devices.
-    function handleWalletTap(btn) {
-      var which = btn.getAttribute('data-wallet');
-      var url   = walletUrl(which);
-      if (!url) {
-        // Visual feedback that something is wrong
-        btn.style.opacity = '0.5';
-        setTimeout(function () { btn.style.opacity = ''; }, 600);
-        return;
-      }
-      openExternal(url);
-    }
-
-    document.querySelectorAll('.wallet-btn').forEach(function (btn) {
-      var touchMoved = false;
-
-      btn.addEventListener('touchstart', function () {
-        touchMoved = false;
-        btn.classList.add('pressed');
-      }, { passive: true });
-
-      btn.addEventListener('touchmove', function () {
-        touchMoved = true;
-        btn.classList.remove('pressed');
-      }, { passive: true });
-
-      btn.addEventListener('touchend', function (e) {
-        btn.classList.remove('pressed');
-        if (!touchMoved) {
-          e.preventDefault(); // suppress subsequent click event
-          handleWalletTap(btn);
-        }
-      });
-
-      // Fallback for mouse / desktop
-      btn.addEventListener('click', function () {
-        handleWalletTap(btn);
-      });
-    });
 
     // ─── Charge polling ──────────────────────────────────────────────────────
     var pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -541,6 +478,9 @@
         document.getElementById('amount-usd').textContent    = '$' + amtUsd;
         document.getElementById('amount-crypto').textContent = amtTon + ' TON';
         document.getElementById('order-ref').textContent     = '#' + charge.external_reference;
+
+        // Render wallet links as native <a> tags
+        renderWalletLinks(_paymentUrl);
 
         if (_paymentUrl) {
           /* global QRCode */

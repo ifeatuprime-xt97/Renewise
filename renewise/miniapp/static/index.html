@@ -6195,46 +6195,46 @@ http_response_code(200);</pre>
             Scan with any TON wallet or tap a button below
           </p>
 
-          <!-- Tonkeeper — full width primary -->
-          <button id="sbx-btn-tk" data-pay-url="${esc(payUrl)}"
-            style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+          <!-- Tonkeeper — full width primary (native link, no JS) -->
+          <a href="${esc(payUrl)}" target="_blank" rel="noreferrer"
+            style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
                    padding:14px;border-radius:14px;background:var(--accent);border:none;
                    color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
-                   margin-bottom:10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation">
+                   text-decoration:none;margin-bottom:10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation">
             <img src="https://tonkeeper.com/assets/tonconnect-icon.png" width="28" height="28"
                  style="border-radius:8px;flex-shrink:0;pointer-events:none" alt="Tonkeeper">
             <span style="pointer-events:none">Open Tonkeeper</span>
-          </button>
+          </a>
 
-          <!-- 3-column grid -->
+          <!-- 3-column grid (native links, no JS) -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
-            <button id="sbx-btn-tg" data-pay-url="${esc(payUrl)}"
+            <a href="${esc(payUrl)}" target="_blank" rel="noreferrer"
               style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
                      border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
-                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;
+                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;
                      -webkit-tap-highlight-color:transparent;touch-action:manipulation">
               <img src="https://wallet.tg/images/logo-288.png" width="32" height="32"
                    style="border-radius:9px;pointer-events:none" alt="Telegram Wallet">
               <span style="pointer-events:none">Telegram Wallet</span>
-            </button>
-            <button id="sbx-btn-mtw" data-pay-url="${esc(payUrl)}"
+            </a>
+            <a href="${esc(payUrl)}" target="_blank" rel="noreferrer"
               style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
                      border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
-                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;
+                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;
                      -webkit-tap-highlight-color:transparent;touch-action:manipulation">
               <img src="https://mytonwallet.io/img/icon-256x256.png" width="32" height="32"
                    style="border-radius:9px;pointer-events:none" alt="MyTonWallet">
               <span style="pointer-events:none">MyTonWallet</span>
-            </button>
-            <button id="sbx-btn-hub" data-pay-url="${esc(payUrl)}"
+            </a>
+            <a href="${esc(payUrl)}" target="_blank" rel="noreferrer"
               style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
                      border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
-                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;
+                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;
                      -webkit-tap-highlight-color:transparent;touch-action:manipulation">
               <img src="https://tonhub.com/tonconnect_logo.png" width="32" height="32"
                    style="border-radius:9px;pointer-events:none" alt="Tonhub">
               <span style="pointer-events:none">Tonhub</span>
-            </button>
+            </a>
           </div>
 
           <p style="font-size:11px;color:rgba(255,255,255,.25)">
@@ -6244,16 +6244,6 @@ http_response_code(200);</pre>
       `;
 
       // Wire up wallet buttons via addEventListener (CSP-safe — no inline handlers)
-      ['sbx-btn-tk','sbx-btn-tg','sbx-btn-mtw','sbx-btn-hub'].forEach(function(id) {
-        const btn = document.getElementById(id);
-        if (!btn) return;
-        btn.addEventListener('click', function() {
-          const url = btn.getAttribute('data-pay-url');
-          if (!url) return;
-          _openUrl(_regUrl(url));
-        }, { passive: true });
-      });
-
       // Generate QR code after injecting HTML
       if (payUrl && window.QRCode) {
         try {
