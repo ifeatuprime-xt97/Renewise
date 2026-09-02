@@ -3640,6 +3640,7 @@ http_response_code(200);</pre>
     const H = () => ({ 'Authorization': 'tma ' + initData, 'Content-Type': 'application/json' });
 
     let BOT_USERNAME = '';
+    let TON_USD_PRICE = null; // populated from /api/config on startup
 
     // ════════════════════════════════════════════════════
     // Global fetch wrapper — intercepts 401 session expiry
@@ -3930,7 +3931,8 @@ http_response_code(200);</pre>
             ? `<code style="font-size:11px">${vaultS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
           ['TX Hash', tx
-            ? `<code style="font-size:11px;color:var(--accent);cursor:pointer" onclick="_openUrl('${_regUrl(d.tonviewer_url)}')">${txS}</code>`
+            ? `<code id="pd-tx-code" data-url="${esc(d.tonviewer_url)}"
+                style="font-size:11px;color:var(--accent);cursor:pointer">${txS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
         ];
 
@@ -3946,11 +3948,19 @@ http_response_code(200);</pre>
               </div>`).join('')}
           </div>
           ${tx ? `
-          <button class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px"
-            onclick="_openUrl('${_regUrl(d.tonviewer_url)}')">
+          <button id="pd-tonviewer-btn" data-url="${esc(d.tonviewer_url)}"
+            class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px">
             ${ico('link', 15)} View on TonViewer
           </button>` : ''}
         `;
+        const txCode = document.getElementById('pd-tx-code');
+        if (txCode) txCode.addEventListener('click', function() {
+          _openUrl(_regUrl(txCode.getAttribute('data-url')));
+        });
+        const tvBtn = document.getElementById('pd-tonviewer-btn');
+        if (tvBtn) tvBtn.addEventListener('click', function() {
+          _openUrl(_regUrl(tvBtn.getAttribute('data-url')));
+        });
       },
 
       _renderFallback(body, tx) {
@@ -3979,11 +3989,15 @@ http_response_code(200);</pre>
               </div>`).join('')}
           </div>
           ${txHash ? `
-          <button class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px"
-            onclick="_openUrl('${_regUrl('https://tonviewer.com/' + txHash)}')">
+          <button id="pdf-tonviewer-btn" data-url="${esc('https://tonviewer.com/' + txHash)}"
+            class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px">
             ${ico('link', 15)} View on TonViewer
           </button>` : ''}
         `;
+        const tvBtn2 = document.getElementById('pdf-tonviewer-btn');
+        if (tvBtn2) tvBtn2.addEventListener('click', function() {
+          _openUrl(_regUrl(tvBtn2.getAttribute('data-url')));
+        });
       },
     };
 
@@ -4090,8 +4104,8 @@ http_response_code(200);</pre>
             ? `<code style="font-size:11px">${vaultS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
           ['TX Hash',      tx
-            ? `<code style="font-size:11px;color:var(--accent);cursor:pointer"
-                onclick="_openUrl('${_regUrl(d.explorer_url)}')">${txS}</code>`
+            ? `<code id="cd-tx-code" data-url="${esc(d.explorer_url)}"
+                style="font-size:11px;color:var(--accent);cursor:pointer">${txS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
         ];
 
@@ -4107,16 +4121,29 @@ http_response_code(200);</pre>
               </div>`).join('')}
           </div>
           ${tx ? `
-          <button class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px"
-            onclick="_openUrl('${_regUrl(d.explorer_url)}')">
+          <button id="cd-tonscan-btn" data-url="${esc(d.explorer_url)}"
+            class="btn btn-ghost" style="margin-top:16px;font-size:13px;padding:10px">
             ${ico('link', 15)} View on TonScan
           </button>` : ''}
           ${d.status === 'pending' && d.payment_url ? `
-          <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px"
-            onclick="_openUrl('${_regUrl(d.payment_url)}')">
+          <button id="cd-paylink-btn" data-url="${esc(d.payment_url)}"
+            class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px">
             ${ico('wallet', 15)} Open Payment Link
           </button>` : ''}
         `;
+        // Wire via addEventListener — CSP blocks inline onclick in Telegram WebView
+        const cdTxCode = document.getElementById('cd-tx-code');
+        if (cdTxCode) cdTxCode.addEventListener('click', function() {
+          _openUrl(_regUrl(cdTxCode.getAttribute('data-url')));
+        });
+        const tonscanBtn = document.getElementById('cd-tonscan-btn');
+        if (tonscanBtn) tonscanBtn.addEventListener('click', function() {
+          _openUrl(_regUrl(tonscanBtn.getAttribute('data-url')));
+        });
+        const paylinkBtn = document.getElementById('cd-paylink-btn');
+        if (paylinkBtn) paylinkBtn.addEventListener('click', function() {
+          _openUrl(_regUrl(paylinkBtn.getAttribute('data-url')));
+        });
       },
 
       _renderFallback(body, c) {
@@ -4739,13 +4766,12 @@ http_response_code(200);</pre>
           const item = document.createElement('div');
           item.className = 'hist-item';
           item.style.cssText = 'cursor:pointer;-webkit-tap-highlight-color:transparent';
-          item.onclick = () => PmtDetail.show(_historyGroupId, tx.id, tx);
           item.innerHTML = `
         <div class="hist-left">
           <span class="hist-name">${esc(tx.first_name || 'User')}</span>
           <span class="hist-date">${esc(tx.start_date || 'N/A')}</span>
           <span class="hist-hash" title="View on TonViewer"
-            onclick="event.stopPropagation();_openUrl('${_regUrl('https://tonviewer.com/' + (tx.last_payment_tx_hash || ''))}')">
+            data-tx-url="https://tonviewer.com/${esc(tx.last_payment_tx_hash || '')}">
             ${tx.last_payment_tx_hash ? tx.last_payment_tx_hash.slice(0, 14) + '…' : '—'}
           </span>
         </div>
@@ -4754,6 +4780,16 @@ http_response_code(200);</pre>
           ${pill(tx.status)}
         </div>
       `;
+          // Row click → payment detail
+          item.addEventListener('click', () => PmtDetail.show(_historyGroupId, tx.id, tx));
+          // TX hash click → TonViewer (stop row click propagating)
+          const hashSpan = item.querySelector('.hist-hash');
+          if (hashSpan && tx.last_payment_tx_hash) {
+            hashSpan.addEventListener('click', function(e) {
+              e.stopPropagation();
+              _openUrl(_regUrl(hashSpan.getAttribute('data-tx-url')));
+            });
+          }
           el.appendChild(item);
         });
 
@@ -6134,15 +6170,9 @@ http_response_code(200);</pre>
         return;
       }
 
-      // Register wallet deep-links safely (no inline WebApp.openLink)
-      const tkUrl  = payUrl.replace(/^ton:\/\//, 'tonkeeper://');
-      const tgUrl  = `https://t.me/wallet?startattach=tonconnect-${encodeURIComponent(payUrl)}`;
-      const mtwUrl = payUrl.replace(/^ton:\/\//, 'mytonwallet://');
-
-      const tkKey  = _regUrl(tkUrl);
-      const tgKey  = _regUrl(tgUrl);
-      const mtwKey = _regUrl(mtwUrl);
-      const qrKey  = _regUrl(payUrl);   // fallback: open the raw ton:// link
+      // All wallet buttons open the same ton:// link (same pattern as the bot).
+      // NO onclick attributes in innerHTML — CSP blocks inline handlers in Telegram.
+      // Use data-pay-url + addEventListener after injection instead.
 
       resEl.style.display = 'block';
       resEl.innerHTML = `
@@ -6170,44 +6200,44 @@ http_response_code(200);</pre>
           </p>
 
           <!-- Tonkeeper — full width primary -->
-          <button onclick="_openUrl('${tkKey}')"
+          <button id="sbx-btn-tk" data-pay-url="${esc(payUrl)}"
             style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
                    padding:14px;border-radius:14px;background:var(--accent);border:none;
                    color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
                    margin-bottom:10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation">
             <img src="https://tonkeeper.com/assets/tonconnect-icon.png" width="28" height="28"
-                 style="border-radius:8px;flex-shrink:0" alt="Tonkeeper">
-            Open Tonkeeper
+                 style="border-radius:8px;flex-shrink:0;pointer-events:none" alt="Tonkeeper">
+            <span style="pointer-events:none">Open Tonkeeper</span>
           </button>
 
-          <!-- 3-column grid: Telegram Wallet, MyTonWallet, Tonhub -->
+          <!-- 3-column grid -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
-            <button onclick="_openUrl('${tgKey}')"
+            <button id="sbx-btn-tg" data-pay-url="${esc(payUrl)}"
               style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
                      border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
                      color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;
                      -webkit-tap-highlight-color:transparent;touch-action:manipulation">
               <img src="https://wallet.tg/images/logo-288.png" width="32" height="32"
-                   style="border-radius:9px" alt="Telegram Wallet">
-              Telegram Wallet
+                   style="border-radius:9px;pointer-events:none" alt="Telegram Wallet">
+              <span style="pointer-events:none">Telegram Wallet</span>
             </button>
-            <button onclick="_openUrl('${mtwKey}')"
+            <button id="sbx-btn-mtw" data-pay-url="${esc(payUrl)}"
               style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
                      border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
                      color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;
                      -webkit-tap-highlight-color:transparent;touch-action:manipulation">
               <img src="https://mytonwallet.io/img/icon-256x256.png" width="32" height="32"
-                   style="border-radius:9px" alt="MyTonWallet">
-              MyTonWallet
+                   style="border-radius:9px;pointer-events:none" alt="MyTonWallet">
+              <span style="pointer-events:none">MyTonWallet</span>
             </button>
-            <button onclick="_openUrl('${qrKey}')"
+            <button id="sbx-btn-hub" data-pay-url="${esc(payUrl)}"
               style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
                      border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
                      color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;
                      -webkit-tap-highlight-color:transparent;touch-action:manipulation">
               <img src="https://tonhub.com/tonconnect_logo.png" width="32" height="32"
-                   style="border-radius:9px" alt="Tonhub">
-              Tonhub
+                   style="border-radius:9px;pointer-events:none" alt="Tonhub">
+              <span style="pointer-events:none">Tonhub</span>
             </button>
           </div>
 
@@ -6216,6 +6246,17 @@ http_response_code(200);</pre>
           </p>
         </div>
       `;
+
+      // Wire up wallet buttons via addEventListener (CSP-safe — no inline handlers)
+      ['sbx-btn-tk','sbx-btn-tg','sbx-btn-mtw','sbx-btn-hub'].forEach(function(id) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener('click', function() {
+          const url = btn.getAttribute('data-pay-url');
+          if (!url) return;
+          _openUrl(_regUrl(url));
+        }, { passive: true });
+      });
 
       // Generate QR code after injecting HTML
       if (payUrl && window.QRCode) {
@@ -7050,11 +7091,19 @@ http_response_code(200);</pre>
           _state.priceUsdCents = Math.round(usd * 100);
           _state.intervalDays = parseInt(document.getElementById('wiz-interval').value, 10);
           const buyer = usd * 0.02, admin = usd * 0.033;
+          const memberPaysUsd = usd + buyer;
+          const tonLine = TON_USD_PRICE
+            ? `<div class="fee-row" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)">
+                <span class="fl" style="color:rgba(255,255,255,.5)">≈ TON at live rate</span>
+                <span class="fv" style="color:var(--accent)">${(memberPaysUsd / TON_USD_PRICE).toFixed(4)} TON</span>
+               </div>`
+            : '';
           document.getElementById('wiz-fee-box').innerHTML = `
         <div class="fee-box-title">Estimated fee breakdown at $${usd.toFixed(2)}</div>
-        <div class="fee-row"><span class="fl">Member pays</span><span class="fv">$${(usd + buyer).toFixed(2)}</span></div>
+        <div class="fee-row"><span class="fl">Member pays</span><span class="fv">$${memberPaysUsd.toFixed(2)}</span></div>
         <div class="fee-row"><span class="fl">You receive</span><span class="fv">$${(usd - admin).toFixed(2)}</span></div>
         <div class="fee-row"><span class="fl">Platform fee</span><span class="fv">$${(buyer + admin).toFixed(2)}</span></div>
+        ${tonLine}
       `;
           _go(3);
         },
@@ -7220,7 +7269,11 @@ http_response_code(200);</pre>
       // 1. Fetch bot username for deep-links
       try {
         const r = await apiFetch(`${API}/config`);
-        if (r.ok) { const d = await r.json(); BOT_USERNAME = d.bot_username || ''; }
+        if (r.ok) {
+          const d = await r.json();
+          BOT_USERNAME  = d.bot_username  || '';
+          TON_USD_PRICE = d.ton_usd_price || null;
+        }
       } catch (_) { }
 
       // 2. Initialise icons

@@ -404,27 +404,17 @@
      * to the installed app even when window.open is blocked.
      */
     function openExternal(url) {
-      var isTgLink = url.startsWith('https://t.me/') || url.startsWith('tg://');
-      var isCustomScheme = !/^https?:\/\//.test(url);
-
       if (TgApp) {
-        if (isTgLink) {
+        var isTgLink = url.startsWith('https://t.me/') || url.startsWith('tg://');
+        if (isTgLink && typeof TgApp.openTelegramLink === 'function') {
           TgApp.openTelegramLink(url);
-        } else {
-          // openLink handles both https:// and custom-scheme deep-links in
-          // the Telegram WebView on Android & iOS
+        } else if (typeof TgApp.openLink === 'function') {
           TgApp.openLink(url, { try_instant_view: false });
         }
         return;
       }
-
-      // Plain browser fallback
-      if (isCustomScheme) {
-        // On iOS Safari, custom schemes must be assigned to location.href
-        window.location.href = url;
-      } else {
-        window.open(url, '_blank', 'noreferrer noopener');
-      }
+      // Plain browser / Safari fallback
+      window.open(url, '_blank', 'noreferrer noopener');
     }
 
     // ─── Payment data (set by init) ─────────────────────────────────────────
@@ -433,34 +423,13 @@
     var _requiredNano = 0;
 
     // ─── Build wallet URL ────────────────────────────────────────────────────
+    // All wallets receive the same ton:// deep-link — identical to how the bot
+    // sends payment buttons. Telegram's openLink (or the OS on plain browser)
+    // routes ton:// to whichever TON wallet the user has installed.
+    // No scheme replacement, no t.me/wallet?startattach — just the universal link.
     function walletUrl(which) {
       if (!_paymentUrl) return null;
-
-      switch (which) {
-        case 'tonkeeper':
-          // Tonkeeper registers both tonkeeper:// and tc:// — use tonkeeper://
-          // inside Telegram WebApp.openLink handles the scheme correctly on
-          // both Android and iOS without extra tricks.
-          return _paymentUrl.replace(/^ton:\/\//, 'tonkeeper://');
-
-        case 'telegram':
-          // Telegram @wallet bot accepts a TON Connect / transfer URL.
-          // The simplest reliable format: open the bot with a start parameter
-          // that encodes the ton:// payment URL.
-          return 'https://t.me/wallet?startattach=tonconnect-' +
-                 encodeURIComponent(_paymentUrl);
-
-        case 'mytonwallet':
-          // mytonwallet:// mirrors the ton:// path on mobile
-          return _paymentUrl.replace(/^ton:\/\//, 'mytonwallet://');
-
-        case 'tonhub':
-          // Tonhub uses standard ton://
-          return _paymentUrl;
-
-        default:
-          return _paymentUrl;
-      }
+      return _paymentUrl;
     }
 
     // ─── Wire up wallet buttons ──────────────────────────────────────────────

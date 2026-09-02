@@ -511,28 +511,39 @@ async def init_db() -> None:
         ]
 
         async with _db() as db:
-            for stmt in pg_stmts:
-                await db.execute(stmt)
-            # Seed platform_config singleton
-            await db.execute(
-                "INSERT INTO platform_config (id, payments_paused) "
-                "OVERRIDING SYSTEM VALUE VALUES (1, FALSE) ON CONFLICT DO NOTHING"
-            )
-            # Seed fee defaults
-            buyer_bps_default = int(os.getenv("BUYER_FEE_BPS", "200"))
-            admin_bps_default = int(os.getenv("ADMIN_FEE_BPS", "330"))
-            await db.execute(
-                "UPDATE platform_config "
-                "SET global_buyer_fee_bps = COALESCE(global_buyer_fee_bps, $1), "
-                "    global_admin_fee_bps = COALESCE(global_admin_fee_bps, $2) "
-                "WHERE id = 1",
-                buyer_bps_default, admin_bps_default,
-            )
+            # ── Advisory lock: serialise concurrent cold-starts ───────────────
+            # Vercel spins up multiple function instances simultaneously, all
+            # hitting init_db() at once. ALTER TABLE DDL takes AccessExclusiveLock
+            # which causes deadlocks when two processes race. pg_try_advisory_lock
+            # lets only one process run the migrations; others skip safely (all
+            # migrations are idempotent so a skipped run is fine).
+            acquired = await db.fetchval("SELECT pg_try_advisory_lock(18273645)")
+            if not acquired:
+                # Another instance is running migrations right now — skip.
+                return
+            try:
+                for stmt in pg_stmts:
+                    await db.execute(stmt)
+                # Seed platform_config singleton
+                await db.execute(
+                    "INSERT INTO platform_config (id, payments_paused) "
+                    "OVERRIDING SYSTEM VALUE VALUES (1, FALSE) ON CONFLICT DO NOTHING"
+                )
+                # Seed fee defaults
+                buyer_bps_default = int(os.getenv("BUYER_FEE_BPS", "200"))
+                admin_bps_default = int(os.getenv("ADMIN_FEE_BPS", "330"))
+                await db.execute(
+                    "UPDATE platform_config "
+                    "SET global_buyer_fee_bps = COALESCE(global_buyer_fee_bps, $1), "
+                    "    global_admin_fee_bps = COALESCE(global_admin_fee_bps, $2) "
+                    "WHERE id = 1",
+                    buyer_bps_default, admin_bps_default,
+                )
 
-            # ── Postgres migrations (idempotent) ──────────────────────────────
-            # Each statement is wrapped in a DO-EXCEPTION block so re-running on
-            # a database that has already been migrated is completely safe.
-            pg_migrations = [
+                # ── Postgres migrations (idempotent) ──────────────────────────
+                # Each statement is wrapped in a DO-EXCEPTION block so re-running on
+                # a database that has already been migrated is completely safe.
+                pg_migrations = [
                 # Make live key columns nullable (opt-in live key generation)
                 """
                 DO $$ BEGIN
@@ -580,6 +591,8 @@ async def init_db() -> None:
             ]
             for mig in pg_migrations:
                 await db.execute(mig)
+        finally:
+            await db.execute("SELECT pg_advisory_unlock(18273645)")
 
         return
 

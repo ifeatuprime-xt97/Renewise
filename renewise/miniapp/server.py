@@ -237,8 +237,13 @@ async def api_config() -> dict:
         https://t.me/{bot_username}?start=renew_{group_id}
     Intentionally unauthenticated — bot username is public.
     """
+    from renewise.utils.coingecko import get_ton_usd_price
     username = _bot_cache["username"] or await _resolve_bot_username()
-    return {"bot_username": username}
+    try:
+        ton_usd = await get_ton_usd_price()
+    except Exception:
+        ton_usd = None
+    return {"bot_username": username, "ton_usd_price": ton_usd}
 
 
 # ---------------------------------------------------------------------------
