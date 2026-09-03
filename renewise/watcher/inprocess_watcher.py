@@ -501,7 +501,8 @@ async def _expire_stale_charges_inprocess() -> None:
             SET status = 'expired'
             WHERE status = 'pending'
             AND expires_at IS NOT NULL
-            AND expires_at < NOW()
+            AND expires_at < NOW() - INTERVAL '5 minutes'
+            AND tx_hash IS NULL
             """
         )
         

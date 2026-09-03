@@ -1014,8 +1014,8 @@ async def api_developer_charge_recheck(
     vault_address = row["vault_address"]
     required_nano = row["required_nano_amount"]
 
-    # If already completed/expired, just return current status
-    if row["status"] != "pending":
+    # If already completed, just return current status
+    if row["status"] == "completed":
         return {
             "vault_address": vault_address,
             "status": row["status"],
