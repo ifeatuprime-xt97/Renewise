@@ -236,17 +236,15 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         usd_line = ""
 
     caption = (
-        f"📲 <b>Payment Details</b>\n\n"
+        f"� <b>Payment</b>\n\n"
         f"<b>Amount to send:</b>\n"
         f"<code>{amount_ton:.9f} TON</code>  {usd_line}\n\n"
-        f"Choose how to pay:\n"
-        f"• <b>Telegram Wallet</b> tap the button below, instant.\n"
-        f"• <b>Other TON Wallet</b> tap the button below, opens your installed TON wallet app with everything pre-filled.\n"
-        f"• <b>Scan QR code</b> use a TON wallet on a second device.\n\n"
-        f"⚠️ <b>A TON wallet is required to pay.</b> Plain transfers without the correct "
-        f"payment payload will not activate your subscription.\n\n"
-        f"Send the <b>exact amount shown</b> sending less won't activate your subscription, "
-        f"sending more triggers an automatic partial refund."
+        f"<b>How to pay:</b>\n"
+        f"• Tap the button below to open your wallet\n"
+        f"• Or scan the QR code with your mobile wallet\n\n"
+        f"💡 <b>Your wallet may show a warning.</b> This is normal for first payments. "
+        f"Your TON is safe and will be split automatically on the blockchain.\n\n"
+        f"Send the <b>exact amount shown</b> overpayments are refunded automatically."
     )
 
     try:
@@ -281,16 +279,11 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 f"📲 <b>Payment Details</b>\n\n"
                 f"<b>Amount to send:</b>\n"
                 f"<code>{amount_ton:.9f} TON</code>\n\n"
-                f"Choose how to pay:\n"
-                f"• <b>Telegram Wallet</b> tap the button below, instant.\n"
-                f"• <b>Other TON Wallet</b> tap the button below, opens your installed TON wallet app.\n"
-                f"• <b>Scan QR code</b> use a TON wallet on a second device.\n\n"
-                f"⚠️ <b>A TON wallet is required to pay.</b> Plain transfers will not "
-                f"activate your subscription.\n\n"
-                f"Send the <b>exact amount shown</b> sending less won't activate your subscription, "
-                f"sending more triggers an automatic partial refund.\n\n"
-                f"<i>(QR code unavailable please start a chat with this bot first "
-                f"to receive it as an image next time.)</i>"
+                f"<b>How to pay:</b>\n"
+                f"• Tap the button below to open your wallet\n"
+                f"• Or start a chat with this bot to get the QR code\n\n"
+                f"💡 <b>Your wallet may show a warning.</b> This is normal — your TON is safe!\n\n"
+                f"Send the <b>exact amount shown</b> — overpayments are refunded automatically."
             )
             try:
                 await query.edit_message_text(

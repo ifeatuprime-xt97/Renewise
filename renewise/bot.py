@@ -333,12 +333,11 @@ async def _send_renewal_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE, 
             f"{fee_breakdown}"
             f"<b>Amount to send:</b>\n"
             f"<code>{exact_ton:.9f} TON</code>\n\n"
-            f"Choose how to pay:\n"
-            f"• <b>Telegram Wallet</b> tap the button below, instant.\n"
-            f"• <b>Other TON Wallet</b> tap the button below, opens your installed TON wallet app.\n"
-            f"• <b>Scan QR code</b> use a TON wallet on a second device.\n\n"
-            f"⚠️ <b>A TON wallet is required to pay.</b>\n\n"
-            f"<i>Your subscription will automatically extend once the transaction confirms.</i>"
+            f"<b>How to pay:</b>\n"
+            f"• Tap the button below to open your wallet\n"
+            f"• Or scan the QR code\n\n"
+            f"💡 <b>Your wallet may show a warning.</b> This is normal — your TON is safe!\n\n"
+            f"<i>Your subscription extends automatically after payment confirms.</i>"
         )
 
         kb = payment_details_kb(payment.payment_url, _support_url())
@@ -474,11 +473,9 @@ async def _send_payment_details(
         f"Choose how to pay:\n"
         f"• <b>Telegram Wallet</b> - tap the button below, instant.\n"
         f"• <b>Other TON Wallet</b> - tap the button below, opens your installed TON wallet app with everything pre-filled.\n"
-        f"• <b>Scan QR code</b> - use a TON wallet on a second device.\n\n"
-        f"⚠️ <b>A TON wallet is required to pay.</b> Plain bank transfers or crypto "
-        f"exchanges will not activate your subscription.\n\n"
-        f"Send the <b>exact amount shown</b> - sending less won't activate your subscription, "
-        f"sending more triggers an automatic partial refund if more than {OVERPAYMENT_REFUND_THRESHOLD_USD:.2f}."
+        f"• Or scan the QR code\n\n"
+        f"💡 <b>Your wallet may show a warning.</b> This is normal — your TON is safe!\n\n"
+        f"Send the <b>exact amount shown</b> — overpayments are refunded automatically."
     )
 
     kb = payment_details_kb(payment.payment_url, _support_url())
