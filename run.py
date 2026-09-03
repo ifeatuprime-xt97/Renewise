@@ -27,6 +27,33 @@ logging.basicConfig(
 log = logging.getLogger("run")
 
 
+async def clear_telegram_updates(token: str, bot_name: str = "bot") -> None:
+    """
+    Clear any pending Telegram updates to forcibly take over from old instances.
+    
+    This ensures only ONE bot instance is running by claiming the update stream.
+    Old instances will immediately get 409 Conflict errors and stop.
+    """
+    try:
+        from telegram import Bot
+        bot = Bot(token=token)
+        
+        # Get and discard all pending updates - this claims the update stream
+        # and kicks out any other instance polling the same bot token
+        async with bot:
+            updates = await bot.get_updates(offset=-1, timeout=1)
+            if updates:
+                # Acknowledge the last update to mark everything as read
+                last_update_id = updates[-1].update_id
+                await bot.get_updates(offset=last_update_id + 1, limit=1, timeout=1)
+                log.info("✓ Cleared %d pending update(s) for %s — old instances terminated", 
+                         len(updates), bot_name)
+            else:
+                log.info("✓ No pending updates for %s — clean start", bot_name)
+    except Exception as exc:
+        log.warning("Could not clear updates for %s (non-fatal): %s", bot_name, exc)
+
+
 async def run_main_bot() -> None:
     """Async wrapper around the main bot Application."""
     from renewise.config import BOT_TOKEN
@@ -43,6 +70,10 @@ async def run_main_bot() -> None:
         Application, ChatMemberHandler, ChatJoinRequestHandler,
         CallbackQueryHandler, CommandHandler, MessageHandler, filters,
     )
+    
+    # Clear pending updates BEFORE starting the application
+    # This terminates any old instances still running
+    await clear_telegram_updates(BOT_TOKEN, "main bot")
 
     # post_init_with_watcher wraps the existing post_init and additionally
     # launches the payment watcher task once the Application is fully ready.
@@ -131,6 +162,9 @@ async def run_superadmin_bot() -> None:
     if not SUPERADMIN_BOT_TOKEN:
         log.warning("SUPERADMIN_BOT_TOKEN not set — superadmin bot skipped.")
         return
+    
+    # Clear pending updates for superadmin bot too
+    await clear_telegram_updates(SUPERADMIN_BOT_TOKEN, "superadmin bot")
 
     # Import the superadmin bot's build function
     import renewise.superadmin.bot as sa_module
