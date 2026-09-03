@@ -191,6 +191,87 @@ async def api_public_checkout(request: Request, charge_id: int) -> dict:
         }
 
 
+@app.post("/api/public/checkout/{charge_id}/recheck")
+@limiter.limit("6/minute")
+async def api_public_checkout_recheck(request: Request, charge_id: int) -> dict:
+    """
+    Public endpoint — called by the checkout page "I've Paid" button.
+    Scans TonCenter for unprocessed transactions on the charge vault and
+    completes the charge if a sufficient payment is found.
+
+    Rate-limited to 6/min per IP to prevent abuse.
+    Returns {"status": "completed"|"pending"|"expired", "tx_hash": str|null}
+    """
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        row = await db.fetchrow(
+            "SELECT id, mode, status, vault_address, required_nano_amount "
+            "FROM platform_charges WHERE id = $1",
+            charge_id,
+        )
+    if not row:
+        raise HTTPException(status_code=404, detail="Charge not found")
+
+    # Already done — just return current state
+    if row["status"] == "completed":
+        return {"status": "completed", "tx_hash": None}
+
+    if not row["vault_address"]:
+        return {"status": row["status"], "tx_hash": None}
+
+    vault_address = row["vault_address"]
+    required_nano = row["required_nano_amount"]
+    # Route to the right TonCenter network based on the charge mode
+    network = "testnet" if row["mode"] == "test" else "mainnet"
+
+    from renewise.watcher.toncenter import fetch_transactions, extract_tx_hash, extract_in_msg_value
+    from renewise.watcher.db import is_tx_processed, mark_tx_processed
+    from renewise.db.queries import get_platform_charge_by_vault
+    from renewise.services.webhooks import dispatch_webhook
+
+    try:
+        txs = await fetch_transactions(vault_address, limit=20, network=network)
+    except Exception as exc:
+        log.warning("public recheck: fetch failed for charge %d: %s", charge_id, exc)
+        return {"status": row["status"], "tx_hash": None}
+
+    for tx in txs:
+        tx_hash     = extract_tx_hash(tx)
+        amount_nano = extract_in_msg_value(tx)
+        if not tx_hash or await is_tx_processed(tx_hash):
+            continue
+
+        # Skip clearly insufficient amounts
+        if required_nano and amount_nano < required_nano:
+            continue
+
+        # Resolve the charge (handles all address variant forms)
+        charge = await get_platform_charge_by_vault(vault_address)
+        if not charge or charge["status"] not in ("pending", "expired"):
+            break
+
+        claimed = await mark_tx_processed(tx_hash, charge["id"])
+        if not claimed:
+            continue  # race — another worker got it first
+
+        async with _conn() as db:
+            await db.execute(
+                "UPDATE platform_charges SET status = 'completed', "
+                "completed_at = NOW(), tx_hash = $1 WHERE id = $2",
+                tx_hash, charge["id"],
+            )
+        log.info("public recheck: completed charge %d via tx=%s", charge_id, tx_hash)
+        asyncio.create_task(dispatch_webhook(charge["id"]))
+        return {"status": "completed", "tx_hash": tx_hash}
+
+    # No sufficient unprocessed tx found — return current status
+    async with _conn() as db:
+        updated = await db.fetchval(
+            "SELECT status FROM platform_charges WHERE id = $1", charge_id
+        )
+    return {"status": updated or row["status"], "tx_hash": None}
+
+
 @app.get("/logo")
 async def logo() -> FileResponse:
     return FileResponse(_STATIC_DIR / "public" / "logo.jpeg")

@@ -246,6 +246,24 @@
       color: rgba(255,255,255,0.25);
     }
 
+    .ive-paid-btn {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      background: rgba(0,200,120,0.12);
+      border: 1px solid rgba(0,200,120,0.35);
+      border-radius: 14px;
+      color: #00c878;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .ive-paid-btn:active  { background: rgba(0,200,120,0.22); }
+    .ive-paid-btn:disabled { opacity: 0.5; cursor: default; }
+
     /* ── Powered-by footer ── */
     .powered-by {
       margin-top: 20px;
@@ -298,7 +316,10 @@
         <!-- Wallet buttons will be injected here by JavaScript with actual payment URLs -->
       </div>
 
-      <p class="polling-note">Polling for confirmation every 3 seconds…</p>
+      <button class="ive-paid-btn" id="ive-paid-btn" onclick="ivePaid()">
+        ✅ I've Paid
+      </button>
+      <p class="polling-note" id="polling-note">Checking every 3 seconds automatically…</p>
     </div>
 
     <!-- ── SUCCESS ── -->
@@ -469,6 +490,47 @@
       } else {
         showView('checkout-view');
       }
+    }
+
+    // ─── "I've Paid" manual recheck ─────────────────────────────────────────
+    var _ivePaidInFlight = false;
+
+    function ivePaid() {
+      if (_ivePaidInFlight) return;
+      _ivePaidInFlight = true;
+
+      var btn  = document.getElementById('ive-paid-btn');
+      var note = document.getElementById('polling-note');
+      btn.disabled    = true;
+      btn.textContent = 'Checking…';
+      if (note) note.textContent = 'Scanning the blockchain now…';
+
+      fetch('/api/public/checkout/' + chargeId + '/recheck', { method: 'POST' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          _ivePaidInFlight = false;
+          if (data && data.status === 'completed') {
+            renderStatus({ status: 'completed' });
+            return;
+          }
+          // Not found yet — re-enable the button with feedback
+          btn.disabled    = false;
+          btn.textContent = '✅ I\'ve Paid';
+          if (note) note.textContent = 'No payment detected yet — try again in a moment.';
+          // Reset the note text after 4 s
+          setTimeout(function () {
+            if (note) note.textContent = 'Checking every 3 seconds automatically…';
+          }, 4000);
+        })
+        .catch(function () {
+          _ivePaidInFlight = false;
+          btn.disabled    = false;
+          btn.textContent = '✅ I\'ve Paid';
+          if (note) note.textContent = 'Could not reach server — please try again.';
+          setTimeout(function () {
+            if (note) note.textContent = 'Checking every 3 seconds automatically…';
+          }, 4000);
+        });
     }
 
     function init() {
