@@ -219,6 +219,7 @@ async def _process_payment_inprocess(
     tx_hash: str,
     amount_nano: int,
     insufficient_seen: set[str] | None = None,
+    network: str | None = None,
 ) -> None:
     """
     Process a single confirmed vault payment entirely in-process.
@@ -306,7 +307,7 @@ async def _process_payment_inprocess(
         # immune to exchange rate drift.
         try:
             from renewise.watcher.toncenter import call_get_method
-            result = await call_get_method(vault_address, "required_payment", [])
+            result = await call_get_method(vault_address, "required_payment", [], network=network)
             if result is not None:
                 required = int(result)
                 log.info(
@@ -603,10 +604,10 @@ async def poll_vaults_inprocess(app: "Application") -> None:
     # Ensure watcher DB tables exist (idempotent)
     await migrate()
     log.info(
-        "In-process watcher started (poll interval=%ds, network=%s, url=%s)",
+        "In-process watcher started (poll interval=%ds, mainnet=%s, testnet=%s)",
         POLL_INTERVAL_SECONDS,
-        "TESTNET" if TONCENTER_TESTNET else "MAINNET",
-        TONCENTER_BASE_URL,
+        TONCENTER_BASE_URL if not TONCENTER_TESTNET else "https://toncenter.com/api/v2",
+        "https://testnet.toncenter.com/api/v2",
     )
 
     # Per-address seen-set: vault_address → set of tx hashes already handled.
@@ -658,7 +659,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                 # ALWAYS log polling activity so we can see the watcher is alive
                 log.info("inprocess watcher: polling %d vault(s)", len(vaults))
 
-                for vault_address in vaults:
+                for vault_address, network in vaults:
                     # Normalize address to raw 0:<hex> form so all friendly-address
                     # variants (EQ/UQ/kQ/0Q) of the same vault map to the same
                     # seen-set key and TonCenter query uses a stable canonical form.
@@ -670,7 +671,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                         canonical = vault_address
 
                     try:
-                        txs = await fetch_transactions(canonical, limit=20)
+                        txs = await fetch_transactions(canonical, limit=20, network=network)
                     except Exception as exc:
                         err_str = str(exc)
                         if "429" in err_str:
@@ -734,6 +735,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                             _process_payment_inprocess(
                                 app, canonical, tx_hash, amount_nano,
                                 insufficient_seen=_insufficient,
+                                network=network,
                             ),
                             name=f"pay_{tx_hash[:12]}",
                         )

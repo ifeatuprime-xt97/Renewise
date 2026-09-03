@@ -553,26 +553,38 @@ async def get_subscription_by_vault(vault_address: str) -> Row | None:
         )
 
 
-async def get_vaults_to_watch() -> list[str]:
+async def get_vaults_to_watch() -> list[tuple[str, str]]:
+    """
+    Return (vault_address, network) pairs for all vaults that need watching.
+    network is 'testnet' for test-mode platform charges, 'mainnet' for everything else.
+    Bot subscriptions always use the global TONCENTER_TESTNET setting.
+    """
+    from renewise.watcher.config import TONCENTER_TESTNET
+    bot_network = "testnet" if TONCENTER_TESTNET else "mainnet"
+
     async with _db() as db:
         rows = await db.fetch(
-            "SELECT DISTINCT vr.vault_address "
+            # Bot subscription vaults — use global network setting
+            "SELECT DISTINCT vr.vault_address, $1::text AS network "
             "FROM vault_registry vr "
             "JOIN subscriptions s ON s.id = vr.subscription_id "
             "WHERE s.status IN ('pending', 'active') "
             "UNION "
-            "SELECT DISTINCT vault_address "
+            "SELECT DISTINCT vault_address, $1::text AS network "
             "FROM subscriptions "
             "WHERE vault_address IS NOT NULL "
             "AND status IN ('pending', 'active') "
             "UNION "
-            "SELECT DISTINCT vault_address "
+            # Platform charges — route by mode column
+            "SELECT DISTINCT vault_address, "
+            "  CASE WHEN mode = 'test' THEN 'testnet' ELSE 'mainnet' END AS network "
             "FROM platform_charges "
             "WHERE vault_address IS NOT NULL "
             "AND status IN ('pending', 'expired') "
-            "AND tx_hash IS NULL"         # stop watching once payment confirmed
+            "AND tx_hash IS NULL",
+            bot_network,
         )
-        return [r["vault_address"] for r in rows]
+        return [(r["vault_address"], r["network"]) for r in rows]
 
 async def get_platform_charge_by_vault(vault_address: str) -> Row | None:
     """

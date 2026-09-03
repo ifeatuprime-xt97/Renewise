@@ -22,6 +22,8 @@ import aiohttp
 
 from renewise.watcher.config import (
     TONCENTER_API_KEYS,
+    TONCENTER_API_KEYS_MAINNET,
+    TONCENTER_API_KEYS_TESTNET_LIST,
     TONCENTER_BASE_URL,
     TONCENTER_TESTNET,
     POLL_INTERVAL_SECONDS,
@@ -97,6 +99,24 @@ class TonCenterKeyManager:
 
 _key_manager = TonCenterKeyManager(TONCENTER_API_KEYS)
 
+# Per-network key managers — always available regardless of TONCENTER_TESTNET setting.
+# Used when the watcher needs to query both networks in the same process.
+_key_manager_mainnet = TonCenterKeyManager(TONCENTER_API_KEYS_MAINNET)
+_key_manager_testnet = TonCenterKeyManager(TONCENTER_API_KEYS_TESTNET_LIST)
+
+_MAINNET_URL = "https://toncenter.com/api/v2"
+_TESTNET_URL = "https://testnet.toncenter.com/api/v2"
+
+
+def _url_and_manager(network: str | None) -> tuple[str, TonCenterKeyManager]:
+    """Return (base_url, key_manager) for the requested network."""
+    if network == "testnet":
+        return _TESTNET_URL, _key_manager_testnet
+    if network == "mainnet":
+        return _MAINNET_URL, _key_manager_mainnet
+    # None → use global config (legacy / bot subscriptions)
+    return TONCENTER_BASE_URL, _key_manager
+
 
 # ── Raw API calls ─────────────────────────────────────────────────────────────
 
@@ -105,10 +125,13 @@ async def fetch_transactions(
     limit: int = 20,
     lt: int | None = None,
     hash_: str | None = None,
+    network: str | None = None,
 ) -> list[dict[str, Any]]:
     """
     Fetch confirmed transactions for a single vault address.
     Returns raw TonCenter transaction dicts, newest first.
+
+    network: 'testnet', 'mainnet', or None (uses global TONCENTER_TESTNET config).
     """
     params: dict[str, Any] = {"address": address, "limit": limit}
     if lt is not None:
@@ -116,9 +139,10 @@ async def fetch_transactions(
     if hash_ is not None:
         params["hash"] = hash_
 
-    url = f"{TONCENTER_BASE_URL}/getTransactions"
+    base_url, km = _url_and_manager(network)
+    url = f"{base_url}/getTransactions"
     async with aiohttp.ClientSession() as session:
-        data = await _key_manager.fetch_with_retry(session, url, params=params)
+        data = await km.fetch_with_retry(session, url, params=params)
         if not data.get("ok"):
             raise RuntimeError(f"TonCenter error: {data}")
         return data.get("result", [])
@@ -141,19 +165,14 @@ async def call_get_method(
     address: str,
     method: str,
     stack: list[Any] | None = None,
+    network: str | None = None,
 ) -> Any:
     """
     Call a get-method on a smart contract via TonCenter /runGetMethod.
-
-    Returns the first stack value as a Python int (for numeric getters like
-    required_payment() and overage()), or None on any failure.
-
-    This is used to read the vault's locked-in required_payment() value
-    directly from the contract rather than re-deriving it from the live
-    exchange rate — so the watcher's threshold always matches what the
-    contract actually enforced on-chain.
+    network: 'testnet', 'mainnet', or None (uses global config).
     """
-    url = f"{TONCENTER_BASE_URL}/runGetMethod"
+    base_url, km = _url_and_manager(network)
+    url = f"{base_url}/runGetMethod"
     params: dict[str, Any] = {
         "address": address,
         "method":  method,
@@ -161,7 +180,7 @@ async def call_get_method(
     }
     try:
         async with aiohttp.ClientSession() as session:
-            data = await _key_manager.fetch_with_retry(session, url, params=params)
+            data = await km.fetch_with_retry(session, url, params=params)
         if not data.get("ok"):
             log.warning("call_get_method %s.%s failed: %s", address, method, data)
             return None
