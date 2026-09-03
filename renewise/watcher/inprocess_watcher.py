@@ -225,6 +225,8 @@ async def _process_payment_inprocess(
         log.debug("inprocess: already processed tx=%s", tx_hash)
         return
 
+    log.info("inprocess: NEW transaction detected - tx=%s vault=%s amount=%d", tx_hash, vault_address, amount_nano)
+
     # Step 2 — resolve vault → subscription context
     reg = await get_vault_registration(vault_address)
     if not reg:

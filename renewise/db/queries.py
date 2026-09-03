@@ -574,11 +574,28 @@ async def get_vaults_to_watch() -> list[str]:
         return [r["vault_address"] for r in rows]
 
 async def get_platform_charge_by_vault(vault_address: str) -> Row | None:
+    import logging
+    log = logging.getLogger(__name__)
+    
     async with _db() as db:
-        return await db.fetchrow(
+        log.info(f"get_platform_charge_by_vault: looking up vault={vault_address}")
+        charge = await db.fetchrow(
             "SELECT * FROM platform_charges WHERE vault_address = $1",
             vault_address,
         )
+        if charge:
+            log.info(f"get_platform_charge_by_vault: FOUND charge_id={charge['id']} status={charge['status']}")
+        else:
+            log.warning(f"get_platform_charge_by_vault: NOT FOUND for vault={vault_address}")
+            # Show what's actually in the database
+            all_pending = await db.fetch(
+                "SELECT id, vault_address, status FROM platform_charges WHERE status = 'pending' LIMIT 5"
+            )
+            log.warning(f"get_platform_charge_by_vault: Found {len(all_pending)} pending charges in DB:")
+            for pc in all_pending:
+                match = "MATCH!" if pc["vault_address"] == vault_address else "no match"
+                log.warning(f"  id={pc['id']} vault={pc['vault_address']} ({match})")
+        return charge
 
 
 # ── processed_tx_hashes ───────────────────────────────────────────────────────
