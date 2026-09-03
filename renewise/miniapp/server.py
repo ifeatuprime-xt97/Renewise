@@ -1050,6 +1050,59 @@ async def api_developer_charge_recheck(
         log.exception(f"Recheck failed for charge {charge_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch transactions: {str(e)}")
 
+
+@app.get("/api/developer/debug/charges")
+@limiter.limit("10/minute")
+async def api_developer_debug_charges(
+    request: Request,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Debug endpoint: show recent platform charges with vault addresses.
+    """
+    telegram_user_id = user["id"]
+    from renewise.db.connection import _db as _conn
+    
+    async with _conn() as db:
+        # Get user's recent charges
+        charges = await db.fetch(
+            """
+            SELECT c.id, c.platform_id, p.platform_name, c.external_reference,
+                   c.status, c.vault_address, c.required_nano_amount, c.tx_hash,
+                   c.created_at
+            FROM platform_charges c
+            JOIN platforms p ON p.id = c.platform_id
+            WHERE p.owner_telegram_id = $1
+            ORDER BY c.created_at DESC
+            LIMIT 10
+            """,
+            telegram_user_id
+        )
+        
+        # Check which vaults are being watched
+        from renewise.db.queries import get_vaults_to_watch
+        watched_vaults = await get_vaults_to_watch()
+        
+        results = []
+        for c in charges:
+            results.append({
+                "id": c["id"],
+                "platform": c["platform_name"],
+                "external_ref": c["external_reference"],
+                "status": c["status"],
+                "vault_address": c["vault_address"],
+                "required_nano": c["required_nano_amount"],
+                "tx_hash": c["tx_hash"],
+                "created_at": c["created_at"].isoformat() if c["created_at"] else None,
+                "is_being_watched": c["vault_address"] in watched_vaults if c["vault_address"] else False
+            })
+        
+        return {
+            "charges": results,
+            "total_watched_vaults": len(watched_vaults),
+            "note": "is_being_watched=true means the watcher is monitoring this vault"
+        }
+
 @app.post("/api/developer/platforms")
 @limiter.limit("10/minute")
 async def api_developer_platforms_create(

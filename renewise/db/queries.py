@@ -574,27 +574,32 @@ async def get_vaults_to_watch() -> list[str]:
         return [r["vault_address"] for r in rows]
 
 async def get_platform_charge_by_vault(vault_address: str) -> Row | None:
+    """
+    Look up platform charge by vault address (exact match).
+    The address should be exactly as stored in the database.
+    """
     import logging
     log = logging.getLogger(__name__)
     
+    log.info(f"get_platform_charge_by_vault: looking up vault={vault_address} (length={len(vault_address)})")
+    
     async with _db() as db:
-        log.info(f"get_platform_charge_by_vault: looking up vault={vault_address}")
         charge = await db.fetchrow(
-            "SELECT * FROM platform_charges WHERE vault_address = $1",
+            "SELECT * FROM platform_charges WHERE vault_address = $1 AND status = 'pending'",
             vault_address,
         )
         if charge:
-            log.info(f"get_platform_charge_by_vault: FOUND charge_id={charge['id']} status={charge['status']}")
+            log.info(f"get_platform_charge_by_vault: FOUND charge_id={charge['id']}")
         else:
             log.warning(f"get_platform_charge_by_vault: NOT FOUND for vault={vault_address}")
-            # Show what's actually in the database
+            # Show what's in the database for debugging
             all_pending = await db.fetch(
-                "SELECT id, vault_address, status FROM platform_charges WHERE status = 'pending' LIMIT 5"
+                "SELECT id, vault_address, status, LENGTH(vault_address) as addr_len FROM platform_charges WHERE status = 'pending' LIMIT 5"
             )
-            log.warning(f"get_platform_charge_by_vault: Found {len(all_pending)} pending charges in DB:")
+            log.warning(f"get_platform_charge_by_vault: {len(all_pending)} pending charges in DB:")
             for pc in all_pending:
-                match = "MATCH!" if pc["vault_address"] == vault_address else "no match"
-                log.warning(f"  id={pc['id']} vault={pc['vault_address']} ({match})")
+                match_check = "EXACT MATCH!" if pc["vault_address"] == vault_address else f"no match (len={pc['addr_len']})"
+                log.warning(f"  id={pc['id']} vault={pc['vault_address']} {match_check}")
         return charge
 
 
