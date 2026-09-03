@@ -666,16 +666,33 @@ async def poll_vaults_inprocess(app: "Application") -> None:
 
                     if canonical not in seen:
                         seen[canonical] = set()
+                        # Determine if this is a brand-new vault (just added to
+                        # platform_charges or subscriptions) vs one that has been
+                        # watched before and had history we should skip.
+                        #
+                        # For KNOWN old vaults: mark all existing txs as seen
+                        # to avoid replaying history on every restart.
+                        #
+                        # For NEW vaults: we must still process unprocessed txs
+                        # because the payment may have landed BEFORE the watcher
+                        # first saw the vault (deploy-on-first-message means the
+                        # vault can receive, split and empty in one block — by
+                        # the time we first check it has 0 balance but the tx
+                        # is in the history).
                         for tx in txs:
                             h = extract_tx_hash(tx)
                             if not h:
                                 continue
                             if await is_tx_processed(h):
+                                # Already handled in a previous run — skip
                                 seen[canonical].add(h)
+                            # Leave unprocessed txs OUT of seen so they get
+                            # picked up by the loop below on this same cycle.
                         log.info(
                             "inprocess: seeded %d already-processed tx(s) for vault %s "
-                            "(%d total on-chain)",
+                            "(%d total on-chain) — will process %d unprocessed tx(s)",
                             len(seen[canonical]), canonical, len(txs),
+                            len(txs) - len(seen[canonical]),
                         )
 
                     for tx in txs:
@@ -686,6 +703,10 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                             continue
 
                         seen[canonical].add(tx_hash)
+                        log.info(
+                            "inprocess: NEW transaction detected - tx=%s vault=%s amount=%d",
+                            tx_hash, canonical, amount_nano,
+                        )
                         t = asyncio.create_task(
                             _process_payment_inprocess(
                                 app, canonical, tx_hash, amount_nano,
