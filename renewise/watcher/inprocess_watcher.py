@@ -637,8 +637,8 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                     _last_charge_expire = now
 
                 vaults = await get_vaults_to_watch()
-                if vaults:
-                    log.debug("inprocess watcher: polling %d vault(s)", len(vaults))
+                # ALWAYS log polling activity so we can see the watcher is alive
+                log.info("inprocess watcher: polling %d vault(s)", len(vaults))
 
                 for vault_address in vaults:
                     # Normalize address to bounceable form so both UQ/EQ variants
