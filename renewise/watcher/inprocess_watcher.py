@@ -28,7 +28,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from renewise.watcher.config import POLL_INTERVAL_SECONDS
+from renewise.watcher.config import POLL_INTERVAL_SECONDS, TONCENTER_TESTNET, TONCENTER_BASE_URL
 # Reuse the existing TonCenter client — correct URL + key rotation already there
 from renewise.watcher.toncenter import fetch_transactions, extract_tx_hash, extract_in_msg_value
 from renewise.watcher.db import (
@@ -602,7 +602,12 @@ async def poll_vaults_inprocess(app: "Application") -> None:
     """
     # Ensure watcher DB tables exist (idempotent)
     await migrate()
-    log.info("In-process watcher started (poll interval=%ds)", POLL_INTERVAL_SECONDS)
+    log.info(
+        "In-process watcher started (poll interval=%ds, network=%s, url=%s)",
+        POLL_INTERVAL_SECONDS,
+        "TESTNET" if TONCENTER_TESTNET else "MAINNET",
+        TONCENTER_BASE_URL,
+    )
 
     # Per-address seen-set: vault_address → set of tx hashes already handled.
     # On the very first poll for each vault we seed this set from existing txs
