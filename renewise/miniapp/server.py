@@ -990,7 +990,7 @@ async def api_developer_charge_recheck(
 ) -> dict:
     """
     Manually trigger a recheck of a pending platform charge's vault for new transactions.
-    Useful for debugging when transactions don't auto-confirm.
+    Actually processes any unprocessed transactions found — same logic as the watcher.
     """
     telegram_user_id = user["id"]
     from renewise.db.connection import _db as _conn
@@ -1004,51 +1004,116 @@ async def api_developer_charge_recheck(
             """,
             charge_id, telegram_user_id,
         )
-    
+
     if not row:
         raise HTTPException(status_code=404, detail="Charge not found")
-    
+
     if not row["vault_address"]:
         raise HTTPException(status_code=400, detail="Charge has no vault address")
-    
+
     vault_address = row["vault_address"]
     required_nano = row["required_nano_amount"]
-    
-    # Fetch recent transactions from TonCenter
+
+    # If already completed/expired, just return current status
+    if row["status"] != "pending":
+        return {
+            "vault_address": vault_address,
+            "status": row["status"],
+            "processed": False,
+            "note": f"Charge is already {row['status']} — nothing to recheck.",
+        }
+
     from renewise.watcher.toncenter import fetch_transactions, extract_tx_hash, extract_in_msg_value
-    import logging
-    log = logging.getLogger(__name__)
-    
+    from renewise.watcher.db import is_tx_processed
+    from renewise.db.queries import get_platform_charge_by_vault
+
     try:
-        txs = await fetch_transactions(vault_address, limit=10)
-        log.info(f"Recheck: found {len(txs)} transaction(s) for vault {vault_address}")
-        
-        # Check if any transaction meets the required amount
-        matching_txs = []
+        txs = await fetch_transactions(vault_address, limit=20)
+        log.info("recheck: found %d transaction(s) for vault %s", len(txs), vault_address)
+
+        processed_count = 0
+        skipped_count = 0
+        tx_details = []
+
         for tx in txs:
             tx_hash = extract_tx_hash(tx)
             amount_nano = extract_in_msg_value(tx)
-            
-            if tx_hash and amount_nano:
-                matching_txs.append({
-                    "tx_hash": tx_hash,
-                    "amount_nano": amount_nano,
-                    "amount_ton": round(amount_nano / 1e9, 9),
-                    "sufficient": amount_nano >= (required_nano or 0)
-                })
-        
+            if not tx_hash:
+                continue
+
+            already_done = await is_tx_processed(tx_hash)
+            tx_details.append({
+                "tx_hash": tx_hash,
+                "amount_nano": amount_nano,
+                "amount_ton": round(amount_nano / 1e9, 9),
+                "sufficient": amount_nano >= (required_nano or 0),
+                "already_processed": already_done,
+            })
+
+            if already_done:
+                skipped_count += 1
+                continue
+
+            # Process the transaction — directly update DB without needing
+            # the bot Application (platform charges don't send Telegram messages).
+            try:
+                from renewise.watcher.db import mark_tx_processed
+                charge = await get_platform_charge_by_vault(vault_address)
+                if charge and charge["status"] == "pending":
+                    # Claim idempotency
+                    claimed = await mark_tx_processed(tx_hash, charge["id"])
+                    if claimed:
+                        # Check amount is sufficient
+                        if required_nano and amount_nano < required_nano:
+                            log.warning(
+                                "recheck: insufficient amount %d < %d for charge %d",
+                                amount_nano, required_nano, charge_id
+                            )
+                        else:
+                            # Update charge to completed
+                            async with _conn() as db:
+                                await db.execute(
+                                    "UPDATE platform_charges SET status = 'completed', "
+                                    "completed_at = NOW(), tx_hash = $1 WHERE id = $2",
+                                    tx_hash, charge_id
+                                )
+                            processed_count += 1
+                            log.info(
+                                "recheck: completed charge %d via tx=%s",
+                                charge_id, tx_hash
+                            )
+                            # Fire webhook in background (best-effort)
+                            try:
+                                from renewise.services.webhooks import dispatch_webhook
+                                asyncio.create_task(dispatch_webhook(charge_id))
+                            except Exception:
+                                pass
+                            break  # charge is done, no need to check more txs
+            except Exception as proc_exc:
+                log.exception("recheck: failed to process tx=%s: %s", tx_hash, proc_exc)
+
+        # Re-fetch the charge to get the updated status
+        async with _conn() as db:
+            updated = await db.fetchrow(
+                "SELECT status, tx_hash, completed_at FROM platform_charges WHERE id = $1",
+                charge_id
+            )
+
         return {
             "vault_address": vault_address,
             "required_nano": required_nano,
             "required_ton": round(required_nano / 1e9, 9) if required_nano else None,
-            "transactions_found": len(matching_txs),
-            "transactions": matching_txs,
-            "note": "If a matching transaction was found, the watcher should process it within 5 seconds. Refresh the charge details to see if status changed."
+            "transactions_found": len(txs),
+            "transactions_processed": processed_count,
+            "transactions_skipped": skipped_count,
+            "transactions": tx_details,
+            "charge_status": updated["status"] if updated else row["status"],
+            "tx_hash": updated["tx_hash"] if updated else None,
         }
-        
+
     except Exception as e:
-        log.exception(f"Recheck failed for charge {charge_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch transactions: {str(e)}")
+        log.exception("recheck failed for charge %d: %s", charge_id, e)
+        raise HTTPException(status_code=500, detail=f"Failed to recheck: {str(e)}")
 
 
 @app.get("/api/developer/debug/charges")
