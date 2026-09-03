@@ -71,7 +71,7 @@ async def poll_vaults(q: "Queue") -> None:
                 vaults = await queries.get_vaults_to_watch()
                 logger.debug("Watching %d vault(s)", len(vaults))
 
-                for vault_address in vaults:
+                for vault_address, _network in vaults:
                     # Normalise to raw 0:<hex> so TonCenter receives a stable,
                     # network-agnostic form regardless of which friendly variant
                     # (EQ/UQ/kQ/0Q) was stored in the DB.

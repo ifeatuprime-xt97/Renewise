@@ -1059,36 +1059,37 @@ async def api_developer_charge_recheck(
             try:
                 from renewise.watcher.db import mark_tx_processed
                 charge = await get_platform_charge_by_vault(vault_address)
-                if charge and charge["status"] == "pending":
-                    # Claim idempotency
+                if charge and charge["status"] in ("pending", "expired"):
+                    # Check amount FIRST — don't burn the idempotency hash on an
+                    # insufficient payment (mirrors _process_platform_charge_inprocess).
+                    if required_nano and amount_nano < required_nano:
+                        log.warning(
+                            "recheck: insufficient amount %d < %d for charge %d",
+                            amount_nano, required_nano, charge_id
+                        )
+                        continue  # leave tx retryable, don't claim
+                    # Claim idempotency atomically — only after amount passes
                     claimed = await mark_tx_processed(tx_hash, charge["id"])
                     if claimed:
-                        # Check amount is sufficient
-                        if required_nano and amount_nano < required_nano:
-                            log.warning(
-                                "recheck: insufficient amount %d < %d for charge %d",
-                                amount_nano, required_nano, charge_id
+                        # Update charge to completed
+                        async with _conn() as db:
+                            await db.execute(
+                                "UPDATE platform_charges SET status = 'completed', "
+                                "completed_at = NOW(), tx_hash = $1 WHERE id = $2",
+                                tx_hash, charge_id
                             )
-                        else:
-                            # Update charge to completed
-                            async with _conn() as db:
-                                await db.execute(
-                                    "UPDATE platform_charges SET status = 'completed', "
-                                    "completed_at = NOW(), tx_hash = $1 WHERE id = $2",
-                                    tx_hash, charge_id
-                                )
-                            processed_count += 1
-                            log.info(
-                                "recheck: completed charge %d via tx=%s",
-                                charge_id, tx_hash
-                            )
-                            # Fire webhook in background (best-effort)
-                            try:
-                                from renewise.services.webhooks import dispatch_webhook
-                                asyncio.create_task(dispatch_webhook(charge_id))
-                            except Exception:
-                                pass
-                            break  # charge is done, no need to check more txs
+                        processed_count += 1
+                        log.info(
+                            "recheck: completed charge %d via tx=%s",
+                            charge_id, tx_hash
+                        )
+                        # Fire webhook in background (best-effort)
+                        try:
+                            from renewise.services.webhooks import dispatch_webhook
+                            asyncio.create_task(dispatch_webhook(charge_id))
+                        except Exception:
+                            pass
+                        break  # charge is done, no need to check more txs
             except Exception as proc_exc:
                 log.exception("recheck: failed to process tx=%s: %s", tx_hash, proc_exc)
 
@@ -1147,7 +1148,8 @@ async def api_developer_debug_charges(
         # Check which vaults are being watched
         from renewise.db.queries import get_vaults_to_watch
         watched_vaults = await get_vaults_to_watch()
-        
+        watched_vault_addresses = {addr for addr, _net in watched_vaults}
+
         results = []
         for c in charges:
             results.append({
@@ -1159,9 +1161,9 @@ async def api_developer_debug_charges(
                 "required_nano": c["required_nano_amount"],
                 "tx_hash": c["tx_hash"],
                 "created_at": c["created_at"].isoformat() if c["created_at"] else None,
-                "is_being_watched": c["vault_address"] in watched_vaults if c["vault_address"] else False
+                "is_being_watched": c["vault_address"] in watched_vault_addresses if c["vault_address"] else False
             })
-        
+
         return {
             "charges": results,
             "total_watched_vaults": len(watched_vaults),
