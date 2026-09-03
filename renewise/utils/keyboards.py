@@ -80,9 +80,9 @@ def payment_details_kb(payment_url: str, support_url: str = "") -> InlineKeyboar
     Four wallet options arranged compactly, then I've Paid / Contact Support / Cancel.
 
     All wallet buttons use the same ton:// link — the OS routes it to whichever
-    TON wallet the user has installed as their default handler for the ton:// scheme.
+    GRAM wallet the user has installed as their default handler for the ton:// scheme.
     We label them individually so users recognise their wallet name, but the URL
-    is identical for all four (ton:// is the universal TON deep-link standard).
+    is identical for all four (ton:// is the universal deep-link standard).
 
     Row 1: Telegram Wallet | Tonkeeper
     Row 2: MyTonWallet     | TonHub

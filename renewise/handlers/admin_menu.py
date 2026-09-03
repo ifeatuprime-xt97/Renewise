@@ -382,7 +382,7 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     address = update.message.text.strip()
     if not await validate_ton_address(address):
         await update.message.reply_text(
-            "❌ Invalid TON address format. Please try again:",
+            "❌ Invalid wallet address format. Please try again:",
             parse_mode="HTML",
             reply_markup=cancel_input_kb(),
         )
@@ -1169,10 +1169,10 @@ async def _send_payment_history_page(
             uname = f" (@{html.escape(r['username'])})" if r["username"] else ""
             icon = status_icon.get(r["status"], "•")
             # price_locked_in is stored as USD dollars (e.g. 10.0 = $10.00).
-            # Values > 10_000 are legacy nano-TON entries.
+            # Values > 10_000 are legacy nano-GRAM entries.
             raw = r["price_locked_in"]
             price_str = (
-                f"{raw / 1e9:.4f} TON" if raw and raw > 10_000
+                f"{raw / 1e9:.4f} GRAM" if raw and raw > 10_000
                 else (f"${raw:.2f}" if raw else "N/A")
             )
             tx_snip = (
@@ -1259,7 +1259,7 @@ async def cb_payment_detail(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
     
     raw = row["price_locked_in"]
     price_str = (
-        f"{raw / 1e9:.4f} TON" if raw and raw > 10_000
+        f"{raw / 1e9:.4f} GRAM" if raw and raw > 10_000
         else (f"${raw:.2f}" if raw else "N/A")
     )
     

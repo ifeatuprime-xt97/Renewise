@@ -1,7 +1,7 @@
 """
 renewise/utils/coingecko.py
 
-TON/USD price feed with multi-provider support.
+Gram/USD price feed with multi-provider support.
 
 Fetch order on each cache miss:
   1. CoinGecko   (free, no key required)
@@ -13,7 +13,7 @@ the timestamp, so provider 2 is only ever called when provider 1 fails.
 
 Constants
 ─────────
-CACHE_TTL       — how long a fresh price is trusted (default 15 min)
+CACHE_TTL       — how long a fresh price is trusted (default 30 min)
 STALE_THRESHOLD — age at which the fallback is flagged as stale (default 2 h)
 FLOOR_PRICE     — hard fallback used only on the very first process start if
                   both providers fail before any price has ever been fetched
@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-CACHE_TTL       = 900    # 15 minutes: how long a price is considered fresh
+CACHE_TTL       = 1800   # 30 minutes: how long a price is considered fresh
 STALE_THRESHOLD = 7200   # 2 hours: after this, log WARNING + publish Redis alert
 FLOOR_PRICE     = 1.5    # last-resort fallback price (USD) before first successful fetch
 
@@ -67,7 +67,7 @@ async def _publish_stale_alert(hours_old: float, price: float) -> None:
 # ── Individual provider fetchers ──────────────────────────────────────────────
 
 async def _fetch_coingecko(session: aiohttp.ClientSession) -> float:
-    """Fetch TON price from CoinGecko (free tier, no key needed)."""
+    """Fetch Gram price from CoinGecko (free tier, no key needed)."""
     async with session.get(
         "https://api.coingecko.com/api/v3/simple/price"
         "?ids=the-open-network&vs_currencies=usd",
@@ -81,18 +81,24 @@ async def _fetch_coingecko(session: aiohttp.ClientSession) -> float:
 
 
 async def _fetch_okx(session: aiohttp.ClientSession) -> float:
-    """Fetch TON price from OKX public ticker (no key needed)."""
+    """Fetch Gram price from OKX public ticker (no key needed)."""
     async with session.get(
         "https://www.okx.com/api/v5/market/ticker?instId=TON-USDT",
         timeout=aiohttp.ClientTimeout(total=5),
     ) as resp:
         resp.raise_for_status()
         data = await resp.json()
-        return float(data["data"][0]["last"])
+        # OKX returns code "0" on success; any other code means an error body
+        if data.get("code") != "0":
+            raise RuntimeError(f"OKX returned error: code={data.get('code')} msg={data.get('msg')}")
+        rows = data.get("data") or []
+        if not rows:
+            raise RuntimeError("OKX returned empty data array for TON-USDT")
+        return float(rows[0]["last"])
 
 
 async def _fetch_coinmarketcap(session: aiohttp.ClientSession) -> float:
-    """Fetch TON price from CoinMarketCap (requires CMC_API_KEY)."""
+    """Fetch Gram price from CoinMarketCap (requires CMC_API_KEY)."""
     if not CMC_API_KEY:
         raise RuntimeError("CMC_API_KEY not configured — skipping CoinMarketCap")
     async with session.get(
@@ -103,13 +109,26 @@ async def _fetch_coinmarketcap(session: aiohttp.ClientSession) -> float:
     ) as resp:
         resp.raise_for_status()
         data = await resp.json()
-        return float(data["data"]["TON"]["quote"]["USD"]["price"])
+        coin_data = data.get("data", {})
+        if "TON" not in coin_data:
+            # CMC may return a status error body instead of coin data
+            status = data.get("status", {})
+            raise RuntimeError(
+                f"CMC response missing 'TON' key — "
+                f"error_code={status.get('error_code')} "
+                f"error_message={status.get('error_message')!r}"
+            )
+        # CMC can return a list or a dict depending on how many symbols matched
+        entry = coin_data["TON"]
+        if isinstance(entry, list):
+            entry = entry[0]
+        return float(entry["quote"]["USD"]["price"])
 
 # ── Main public API ───────────────────────────────────────────────────────────
 
 async def get_ton_usd_price() -> float:
     """
-    Return the current TON/USD price with a 15-minute in-process cache.
+    Return the current Gram/USD price with a 30-minute in-process cache.
 
     Provider waterfall (each is only tried if the previous fails):
       1. CoinGecko
@@ -130,7 +149,7 @@ async def get_ton_usd_price() -> float:
             price = await _fetch_coingecko(session)
             _cache["price_usd"] = price
             _cache["timestamp"] = now
-            log.debug("TON price from CoinGecko: $%.4f", price)
+            log.debug("Gram price from CoinGecko: $%.4f", price)
             return price
         except Exception as exc:
             log.warning("CoinGecko fetch failed: %s", exc)
@@ -140,7 +159,7 @@ async def get_ton_usd_price() -> float:
             price = await _fetch_okx(session)
             _cache["price_usd"] = price
             _cache["timestamp"] = now
-            log.info("TON price from OKX (CoinGecko fallback): $%.4f", price)
+            log.info("Gram price from OKX (CoinGecko fallback): $%.4f", price)
             return price
         except Exception as exc:
             log.warning("OKX fetch failed: %s", exc)
@@ -150,7 +169,7 @@ async def get_ton_usd_price() -> float:
             price = await _fetch_coinmarketcap(session)
             _cache["price_usd"] = price
             _cache["timestamp"] = now
-            log.info("TON price from CoinMarketCap (CoinGecko+OKX fallback): $%.4f", price)
+            log.info("Gram price from CoinMarketCap (CoinGecko+OKX fallback): $%.4f", price)
             return price
         except Exception as exc:
             log.warning("CoinMarketCap fetch failed: %s", exc)

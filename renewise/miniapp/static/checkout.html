@@ -286,7 +286,7 @@
       </div>
 
       <div class="amount-usd"    id="amount-usd">$0.00</div>
-      <div class="amount-crypto" id="amount-crypto">0 TON</div>
+      <div class="amount-crypto" id="amount-crypto">0 GRAM</div>
 
       <div class="qr-container">
         <div id="qrcode"></div>
@@ -376,7 +376,7 @@
               <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/>
             </svg>
             <div>
-              <strong style="color:#fff">Your wallet may show a warning.</strong> This is normal for first-time payments. Your funds are secured by the TON blockchain and will be split automatically.
+              <strong style="color:#fff">Your wallet may show a warning.</strong> This is normal for first-time payments. Your funds are secured by the blockchain and will be split automatically.
             </div>
           </div>
         </div>
@@ -486,7 +486,7 @@
         var amtTon = (_requiredNano / 1e9).toFixed(4);
 
         document.getElementById('amount-usd').textContent    = '$' + amtUsd;
-        document.getElementById('amount-crypto').textContent = amtTon + ' TON';
+        document.getElementById('amount-crypto').textContent = amtTon + ' GRAM';
         document.getElementById('order-ref').textContent     = '#' + charge.external_reference;
 
         // Render wallet links as native <a> tags

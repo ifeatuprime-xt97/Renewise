@@ -153,7 +153,7 @@
       transition: transform .18s;
     }
 
-    /* active: TON (GRAM) blue pill */
+    /* active: GRAM blue pill */
     .nav-item.active {
       color: var(--accent);
       background: rgba(0, 152, 234, .15);
@@ -1893,7 +1893,7 @@
 
         <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">1. What Renewise Is</h2>
         <p style="margin:0 0 16px;">Renewise is a Telegram bot and Mini App that lets group and channel admins charge
-          for membership access. Members pay in <strong>GRAM (TON)</strong>. Payments go directly to a smart contract
+          for membership access. Members pay in <strong>GRAM</strong>. Payments go directly to a smart contract
           that atomically splits funds between the admin and Renewise's platform fee no middleman holds your money.
         </p>
 
@@ -1902,7 +1902,7 @@
           funds. Completed
           on-chain splits are final and cannot be reversed. Overpayments above $1.00 USD are detected by Renewise's
           backend
-          and refunded to the member's TON (GRAM) wallet via a dedicated on-chain trigger, typically within 24 hours.
+          and refunded to the member's GRAM wallet via a dedicated on-chain trigger, typically within 24 hours.
         </p>
 
         <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">3. Fees</h2>
@@ -1946,7 +1946,7 @@
 
         <h2 style="font-size:15px;font-weight:800;color:#fff;margin:0 0 10px;">10. On-Chain Data is Public</h2>
         <p style="margin:0 0 16px;">Every payment transaction including amounts and wallet addresses is permanently
-          and publicly visible on the TON (GRAM) blockchain. This is a property of the blockchain, not a choice Renewise
+          and publicly visible on the GRAM blockchain. This is a property of the blockchain, not a choice Renewise
           makes.
         </p>
 
@@ -2280,12 +2280,12 @@
           </tr>
           <tr>
             <td><code>sk_test_</code></td>
-            <td>TON Testnet</td>
+            <td>GRAM Testnet</td>
             <td>testnet.tonscan.org</td>
           </tr>
           <tr>
             <td><code>sk_live_</code></td>
-            <td>TON Mainnet</td>
+            <td>GRAM Mainnet</td>
             <td>tonscan.org</td>
           </tr>
         </table><br>
@@ -2329,7 +2329,7 @@
           </tr>
           <tr>
             <td><code>required_nano_amount</code></td>
-            <td>Exact nanoTON to send</td>
+            <td>Exact nano-GRAM to send</td>
           </tr>
           <tr>
             <td><code>status</code></td>
@@ -2361,15 +2361,15 @@
           🚫 <b>Never show the raw <code>vault_address</code> to users.</b>
         </div>
         Renewise uses a <b>Deploy-on-first-message</b> architecture. The vault smart contract is deployed by the first
-        TON transaction that carries its <code>StateInit</code> payload and that payload is embedded in the
+        GRAM transaction that carries its <code>StateInit</code> payload and that payload is embedded in the
         <code>payment_url</code> deep-link.<br><br>
         If a user manually copies the raw address and sends from an exchange (Binance, OKX…), the <code>StateInit</code>
         is missing, the contract does not deploy, and the payment stalls.<br><br>
         <b>Correct approach:</b><br>
-        • <b>Telegram Mini App (mobile)</b> embed <code>payment_url</code> in a "Pay with TON" button.<br>
+        • <b>Telegram Mini App (mobile)</b> embed <code>payment_url</code> in a "Pay with GRAM" button.<br>
         • <b>Desktop / Web</b> render <code>payment_url</code> as a QR code for Tonkeeper / TonHub.<br><br>
         Since Renewise is designed for Telegram, your bot/mini-app should be the delivery mechanism. Using the API
-        outside of Telegram is permitted only when you accept full responsibility for ensuring users never send TON via
+        outside of Telegram is permitted only when you accept full responsibility for ensuring users never send GRAM via
         manual address copy.
       </div>
 
@@ -2430,7 +2430,7 @@
         flow.<br><br>
         <b>🔴 Mainnet Mode</b><br>
         To test live Mainnet charges, paste your <code>sk_live_</code> key into the Sandbox (we don't save it). It
-        simulates real charges but requires real TON to complete.<br><br>
+        simulates real charges but requires real GRAM to complete.<br><br>
         In both modes, Renewise fires live webhooks to your server immediately upon successful payment detection.
       </div>
 
@@ -2851,7 +2851,7 @@ http_response_code(200);</pre>
         <b>1️⃣ Add the bot as admin</b><br>
         Add Renewise to your group or channel as an Admin with the required permissions.<br><br>
         <b>2️⃣ Set your price</b><br>
-        Choose a USD price and billing interval. Members pay the equivalent amount in TON at the live exchange
+        Choose a USD price and billing interval. Members pay the equivalent amount in GRAM at the live exchange
         rate.<br><br>
         <b>3️⃣ Automatic renewal &amp; removal</b><br>
         The bot handles reminders, payments, and kicking unpaid members automatically. Payouts go directly to your
@@ -2882,7 +2882,7 @@ http_response_code(200);</pre>
       <div class="accordion-content">
         Renewise automatically handles reminders! Subscribers will receive a direct message from the bot 72
         hours before their subscription expires.<br><br>
-        They can renew directly through that message using their TON (GRAM) wallet without needing to open the app.
+        They can renew directly through that message using their GRAM wallet without needing to open the app.
       </div>
 
       <!-- Contact Support -->
@@ -2948,13 +2948,13 @@ http_response_code(200);</pre>
 
         <b>1. What Renewise Is</b><br>
         Renewise is a Telegram bot and Mini App that lets admins charge for group/channel membership. Members pay in
-        GRAM (TON) via a smart contract that atomically splits funds between the admin and Renewise's platform
+        GRAM via a smart contract that atomically splits funds between the admin and Renewise's platform
         fee.<br><br>
 
         <b>2. Non-Custodial Architecture</b><br>
         Renewise never holds admin or member funds. Completed on-chain splits are final and irreversible. Overpayments
         above $1.00
-        USD are detected by Renewise's backend and refunded to the member's TON (GRAM) wallet via a dedicated on-chain
+        USD are detected by Renewise's backend and refunded to the member's GRAM wallet via a dedicated on-chain
         trigger.<br><br>
 
         <b>3. Fees</b><br>
@@ -3157,7 +3157,7 @@ http_response_code(200);</pre>
     <div class="wiz-step" id="wiz-step-3">
       <div class="glass fee-box" id="wiz-fee-box"></div>
       <div class="field" style="margin-top:18px">
-        <label>TON Payout Wallet Address</label>
+        <label>GRAM Payout Wallet Address</label>
         <input id="wiz-wallet" type="text" placeholder="EQ…">
         <div class="field-err" id="wiz-wallet-err"></div>
       </div>
@@ -3440,7 +3440,7 @@ http_response_code(200);</pre>
 
     <div class="glass" style="padding:20px">
       <div class="field">
-        <label>TON Payout Wallet Address</label>
+        <label>GRAM Payout Wallet Address</label>
         <input id="wallet-input" type="text" placeholder="EQ…">
         <div class="field-err" id="wallet-err"></div>
       </div>
@@ -3899,15 +3899,15 @@ http_response_code(200);</pre>
         const uid = d.telegram_user_id || '—';
         const price = (d.price_locked_in != null && d.price_locked_in < 1000)
           ? `$${Number(d.price_locked_in).toFixed(2)}`
-          : d.price_locked_in ? `${(d.price_locked_in / 1e9).toFixed(4)} TON` : '—';
+          : d.price_locked_in ? `${(d.price_locked_in / 1e9).toFixed(4)} GRAM` : '—';
         const interval = d.billing_interval_days === 7 ? 'week' : 'month';
         const vault = d.vault_address || null;
         const vaultS = vault ? `${vault.slice(0, 10)}…${vault.slice(-6)}` : '—';
         const tx = d.last_payment_tx_hash || null;
         const txS = tx ? `${tx.slice(0, 16)}…` : '—';
-        const tonReq = d.required_ton != null ? `${d.required_ton} TON` : '—';
+        const tonReq = d.required_ton != null ? `${d.required_ton} GRAM` : '—';
         const paidSoFar = (d.amount_paid_so_far != null && d.amount_paid_so_far > 0)
-          ? `${(d.amount_paid_so_far / 1e9).toFixed(9)} TON`
+          ? `${(d.amount_paid_so_far / 1e9).toFixed(9)} GRAM`
           : null;
         const start = d.start_date || '—';
         const renew = d.next_renewal_date || '—';
@@ -3918,11 +3918,11 @@ http_response_code(200);</pre>
           ['Telegram ID', `<code>${uid}</code>`],
           ['Status', pill(d.status)],
           ['Price Paid', `<b>${price}</b> / ${interval}`],
-          ['TON Required', tonReq],
+          ['GRAM Required', tonReq],
           ...(paidSoFar ? [['Paid So Far', `<span style="color:var(--warn)">${paidSoFar}</span>`]] : []),
           ...(d.admin_payout_ton != null ? [
             ['Platform Fee', `${(d.platform_fee_pct || 5.3).toFixed(2)}% (buyer ${(d.buyer_fee_pct || 2).toFixed(2)}% + admin ${(d.admin_fee_pct || 3.3).toFixed(2)}%)`],
-            ['Your Payout', `<b style="color:var(--success)">${d.admin_payout_ton} TON</b>`],
+            ['Your Payout', `<b style="color:var(--success)">${d.admin_payout_ton} GRAM</b>`],
           ] : []),
           ['Start Date', start],
           ['Next Renewal', renew],
@@ -3967,7 +3967,7 @@ http_response_code(200);</pre>
         // Render from the summary data already in the list row (no network call)
         const price = (tx.price_locked_in != null && tx.price_locked_in < 1000)
           ? `$${Number(tx.price_locked_in).toFixed(2)}`
-          : tx.price_locked_in ? `${(tx.price_locked_in / 1e9).toFixed(4)} TON` : '—';
+          : tx.price_locked_in ? `${(tx.price_locked_in / 1e9).toFixed(4)} GRAM` : '—';
         const txHash = tx.last_payment_tx_hash;
         body.innerHTML = `
           <div style="display:flex;flex-direction:column;gap:0">
@@ -4078,7 +4078,7 @@ http_response_code(200);</pre>
         const statusColors = { completed: 'var(--success)', pending: '#fbbf24', expired: 'rgba(255,255,255,.5)', failed: 'var(--danger)' };
         const statusColor  = statusColors[d.status] || 'rgba(255,255,255,.5)';
         const amtUsd  = fmtUsd(d.amount_usd_cents);
-        const tonReq  = d.required_ton != null ? `${d.required_ton} TON` : '—';
+        const tonReq  = d.required_ton != null ? `${d.required_ton} GRAM` : '—';
         const vault   = d.vault_address || null;
         const vaultS  = vault ? `${vault.slice(0, 10)}…${vault.slice(-6)}` : '—';
         const tx      = d.tx_hash || null;
@@ -4093,7 +4093,7 @@ http_response_code(200);</pre>
           ['Amount',       `<b>${amtUsd}</b>`],
           ['Mode',         modeBadge],
           ['Status',       `<span style="color:${statusColor};font-weight:700">${d.status.toUpperCase()}</span>`],
-          ['TON Required', tonReq],
+          ['GRAM Required', tonReq],
           ...(d.buyer_fee_pct != null ? [
             ['Buyer Fee',    `${d.buyer_fee_pct.toFixed(2)}%`],
             ['Platform Fee', `${d.platform_fee_pct.toFixed(2)}%`],
@@ -4518,7 +4518,7 @@ http_response_code(200);</pre>
               <h2 style="font-size:22px;font-weight:800;margin-bottom:10px;color:#fff;letter-spacing:-.2px">About Renewise</h2>
               <p style="font-size:14.5px;color:rgba(255,255,255,.6);margin-bottom:24px;line-height:1.6">
                 Renewise makes it easy to monetize your Telegram Groups and Channels.<br><br>
-                Accept payments in TON (GRAM) and manage subscriptions automatically, right inside Telegram.
+                Accept payments in GRAM and manage subscriptions automatically, right inside Telegram.
               </p>
               <button class="btn btn-primary" onclick="startWizard()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -4786,7 +4786,7 @@ http_response_code(200);</pre>
 
         rows.forEach(tx => {
           const price = tx.price_locked_in > 10000
-            ? (tx.price_locked_in / 1e9).toFixed(4) + ' TON'
+            ? (tx.price_locked_in / 1e9).toFixed(4) + ' GRAM'
             : '$' + (tx.price_locked_in).toFixed(2);
           const item = document.createElement('div');
           item.className = 'hist-item';
@@ -4849,7 +4849,7 @@ http_response_code(200);</pre>
         // Show the result as a tappable card that opens PmtDetail
         const price = (result.price_locked_in != null && result.price_locked_in < 1000)
           ? `$${Number(result.price_locked_in).toFixed(2)}`
-          : result.price_locked_in ? `${(result.price_locked_in / 1e9).toFixed(4)} TON` : '—';
+          : result.price_locked_in ? `${(result.price_locked_in / 1e9).toFixed(4)} GRAM` : '—';
         const tx = result.last_payment_tx_hash || '';
         const txS = tx ? tx.slice(0, 14) + '…' : '—';
 
@@ -5559,7 +5559,7 @@ http_response_code(200);</pre>
                 </div>
                 <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px; text-shadow:0 1px 2px rgba(0,0,0,.5)">Go Live on Mainnet</div>
                 <div style="font-size:12px; color:rgba(255,255,255,.6); margin-bottom:16px; line-height:1.5; max-width:280px; margin-left:auto; margin-right:auto">
-                  Your app is currently running in Testnet mode. Generate Live Keys to start accepting real TON payments.
+                  Your app is currently running in Testnet mode. Generate Live Keys to start accepting real GRAM payments.
                 </div>
                 <button class="btn" style="background:linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%); color:#fff; font-weight:800; font-size:13px; padding:10px 24px; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(0,152,234,.2), inset 0 1px 0 rgba(255,255,255,.3)" onclick="generateLiveKeys(${p.id})">
                   Generate Live Keys
@@ -5845,7 +5845,7 @@ http_response_code(200);</pre>
             </div>
             <div style="font-size:12px;color:rgba(255,255,255,.45);display:flex;gap:12px;flex-wrap:wrap">
               <span>${date}</span>
-              ${p.amount_ton != null ? `<span style="color:var(--accent);font-weight:600">${p.amount_ton} TON</span>` : ''}
+              ${p.amount_ton != null ? `<span style="color:var(--accent);font-weight:600">${p.amount_ton} GRAM</span>` : ''}
             </div>
           `;
           el.appendChild(card);
@@ -6216,14 +6216,14 @@ http_response_code(200);</pre>
           <div style="font-size:36px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:4px">
             $${amtUsd}
           </div>
-          <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px">${amtTon} TON</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px">${amtTon} GRAM</div>
 
           <div style="background:#fff;padding:14px;border-radius:16px;display:inline-block;margin-bottom:20px">
             <div id="sandbox-qr"></div>
           </div>
 
           <p style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:16px">
-            Scan with any TON wallet or tap a button below
+            Scan with any GRAM wallet or tap a button below
           </p>
 
           <div style="background:rgba(0,152,234,0.08);border:1px solid rgba(0,152,234,0.2);border-radius:12px;padding:12px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,0.7);text-align:left;line-height:1.5">
@@ -6232,7 +6232,7 @@ http_response_code(200);</pre>
                 <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="0.5" fill="currentColor"/>
               </svg>
               <div>
-                <strong style="color:#fff">Your wallet may show a warning.</strong> This is normal for first-time payments. Your funds are secured by the TON blockchain and will be split automatically.
+                <strong style="color:#fff">Your wallet may show a warning.</strong> This is normal for first-time payments. Your funds are secured by the blockchain and will be split automatically.
               </div>
             </div>
           </div>
@@ -6467,7 +6467,7 @@ http_response_code(200);</pre>
               </div>
               <h2 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">Build with Renewise</h2>
               <p style="font-size:13.5px;color:rgba(255,255,255,.55);margin-bottom:20px;line-height:1.6">
-                Integrate TON payments into your own Telegram bot or Mini App using the Renewise Payments API.
+                Integrate GRAM payments into your own Telegram bot or Mini App using the Renewise Payments API.
               </p>
               <button class="btn btn-primary" style="border-radius:var(--r-sm)" onclick="openCreatePlatform()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -6675,7 +6675,7 @@ http_response_code(200);</pre>
                 </div>
                 <div style="flex:1">
                   <div style="font-size:13px;font-weight:700;color:#fff">Ready for Mainnet</div>
-                  <div style="font-size:11.5px;color:rgba(255,255,255,.45);margin-top:2px">Generate live keys when you're ready to accept real TON.</div>
+                  <div style="font-size:11.5px;color:rgba(255,255,255,.45);margin-top:2px">Generate live keys when you're ready to accept real GRAM.</div>
                 </div>
                 <button onclick="generateLiveKeys(${p.id})" style="flex-shrink:0;background:var(--accent);border:none;color:#fff;border-radius:10px;font-family:inherit;font-size:12px;font-weight:800;padding:8px 14px;cursor:pointer">Go Live</button>
               </div>
@@ -6897,7 +6897,7 @@ http_response_code(200);</pre>
 
         if (config.walletField) {
           fieldsHtml = `<div style="margin-bottom:14px">
-            <label style="font-size:12px;color:rgba(255,255,255,.6);display:block;margin-bottom:4px">TON Wallet Address</label>
+            <label style="font-size:12px;color:rgba(255,255,255,.6);display:block;margin-bottom:4px">GRAM Wallet Address</label>
             <input id="pin-field-wallet" type="text" placeholder="EQ… or UQ…"
               style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;
                      padding:12px 14px;color:#fff;font-size:13px;outline:none;box-sizing:border-box" />
@@ -6954,7 +6954,7 @@ http_response_code(200);</pre>
         ? 'Enter your passkey to authorize this change.'
         : hasLive
           ? 'Mainnet wallet required for live payouts.'
-          : 'Testnet or mainnet address accepted. Test charges use testnet TON.';
+          : 'Testnet or mainnet address accepted. Test charges use testnet GRAM.';
 
       const result = await showPinModal({
         title: hasExistingWallet ? 'Change Payout Wallet' : 'Set Payout Wallet',
@@ -6993,10 +6993,10 @@ http_response_code(200);</pre>
 
         // Show testnet notice for test-only platforms, or network warning for other issues
         if (saveData.warning) {
-          const isTestNotice = saveData.warning.includes('testnet TON');
+          const isTestNotice = saveData.warning.includes('testnet GRAM');
           if (isTestNotice) {
             // Show as a toast — informational, not blocking
-            showSuccessToast('🧪 Test mode: pay with testnet TON', { color: '#8b5cf6', duration: 3500 });
+            showSuccessToast('🧪 Test mode: pay with testnet GRAM', { color: '#8b5cf6', duration: 3500 });
           } else {
             setTimeout(() => WebApp.showAlert('⚠️ ' + saveData.warning), 400);
           }
@@ -7145,8 +7145,8 @@ http_response_code(200);</pre>
           const memberPaysUsd = usd + buyer;
           const tonLine = TON_USD_PRICE
             ? `<div class="fee-row" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)">
-                <span class="fl" style="color:rgba(255,255,255,.5)">≈ TON at live rate</span>
-                <span class="fv" style="color:var(--accent)">${(memberPaysUsd / TON_USD_PRICE).toFixed(4)} TON</span>
+                <span class="fl" style="color:rgba(255,255,255,.5)">≈ GRAM at live rate</span>
+                <span class="fv" style="color:var(--accent)">${(memberPaysUsd / TON_USD_PRICE).toFixed(4)} GRAM</span>
                </div>`
             : '';
           document.getElementById('wiz-fee-box').innerHTML = `
@@ -7163,7 +7163,7 @@ http_response_code(200);</pre>
         submitWallet() {
           const addr = document.getElementById('wiz-wallet').value.trim();
           document.getElementById('wiz-wallet-err').textContent = '';
-          if (!addr) { document.getElementById('wiz-wallet-err').textContent = 'Please enter your TON (GRAM) wallet address.'; return; }
+          if (!addr) { document.getElementById('wiz-wallet-err').textContent = 'Please enter your GRAM wallet address.'; return; }
           _state.wallet = addr;
           const usd = (_state.priceUsdCents / 100).toFixed(2);
           const interval = _state.intervalDays === 7 ? 'Weekly' : 'Monthly';

@@ -12,7 +12,7 @@ Key design points
 • build_payment_link()     — returns a ton:// deep-link + exact amount.
 • The cell layout mirrors Tact's generated init-data serialiser exactly:
   fields are stored in declaration order, each with its `as` annotation width.
-• MIN_GAS_RESERVE must stay in sync with the contract constant (0.02 TON).
+• MIN_GAS_RESERVE must stay in sync with the contract constant (0.02 GRAM).
 """
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from pytoniq_core.boc.address import AddressError
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 # Must match PaymentVault.tact: const MIN_GAS_RESERVE: Int = ton("0.05")
-MIN_GAS_RESERVE_NANO: int = 50_000_000  # 0.05 TON in nanoTON
+MIN_GAS_RESERVE_NANO: int = 50_000_000  # 0.05 GRAM in nanogram
 
 # Pay{} opcode — taken directly from the compiled ABI (PaymentVault_PaymentVault.abi):
 # {"name":"Pay","header":3108783413,...}
@@ -39,7 +39,7 @@ PAY_OPCODE: int = 0xB94C4535
 # 2132218047 == 0x7F1710BF
 REFUND_OPCODE: int = 0x7F1710BF
 
-# TON workchain (basechain = 0)
+# GRAM workchain (basechain = 0)
 WORKCHAIN: int = 0
 
 
@@ -47,11 +47,11 @@ WORKCHAIN: int = 0
 
 @dataclass(frozen=True)
 class VaultParams:
-    admin_wallet:    Address   # admin's TON address
-    platform_wallet: Address   # platform's TON address
+    admin_wallet:    Address   # admin's wallet address
+    platform_wallet: Address   # platform's wallet address
     log_address:     Address   # off-chain watcher address
     trigger_wallet:  Address   # dedicated hot wallet that sends Refund{} messages
-    price:           int       # nanoTON
+    price:           int       # nanogram
     buyer_fee_bps:   int       # e.g. 200 = 2.00%
     admin_fee_bps:   int       # e.g. 330 = 3.30%
     subscription_id: int       # DB subscription row id (off-chain correlation)
@@ -61,7 +61,7 @@ class VaultParams:
 class PaymentLink:
     vault_address:    str    # user-friendly bounceable address string
     ton_deep_link:    str    # ton://transfer/... for Tonkeeper / TonHub QR
-    required_nano:    int    # exact nanoTON the buyer must send (incl. gas reserve)
+    required_nano:    int    # exact nanogram the buyer must send (incl. gas reserve)
     state_init_boc:   bytes  # raw BOC bytes of the StateInit cell
     body_boc:         bytes  # raw BOC bytes of the Pay{} body cell
 
@@ -185,7 +185,7 @@ def compute_vault_address(p: VaultParams, code_cell: Cell | None = None) -> Addr
         code_cell = _load_code_cell()
     data_cell = _build_data_cell(p)
 
-    # TON address = hash of the serialised StateInit cell.
+    # Address = hash of the serialised StateInit cell.
     # The StateInit cell MUST include the 5 flag bits, exactly as in the
     # ton:// deep-link builder — without them the hash (and therefore the
     # address) is wrong.
@@ -225,7 +225,7 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     On first payment the wallet sends StateInit + Pay body together, deploying
     the vault and triggering the split atomically in one transaction.
     On renewals only the body is needed, but sending StateInit again is harmless
-    (TON ignores it when the contract is already deployed).
+    (the network ignores it when the contract is already deployed).
 
     The ton:// deep-link encodes:
       - destination: vault address
@@ -262,7 +262,7 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
 
     # IMPORTANT: use bounceable=True (EQ... prefix) so that if the contract's
     # require() check fails (e.g. underpayment), the sender's wallet will
-    # receive an automatic bounce and get their TON back.
+    # receive an automatic bounce and get their GRAM back.
     # Non-bounceable (UQ...) silently traps money on any execution failure.
     addr_str  = addr.to_str(is_bounceable=True, is_url_safe=True)
     body_b64  = base64.urlsafe_b64encode(body_boc).decode().rstrip("=")
@@ -284,7 +284,7 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     # send plain transfers with no StateInit, trapping funds permanently.
     # ton:// is supported in Telegram bot buttons and has no length limit.
     #
-    # TON ignores a duplicate StateInit on renewals (contract already deployed),
+    # The network ignores a duplicate StateInit on renewals (contract already deployed),
     # so sending &init= every time is safe and harmless.
     ton_button_link = (
         f"ton://transfer/{addr_str}"

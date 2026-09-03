@@ -17,7 +17,7 @@ REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 RQ_QUEUE_NAME: str = os.getenv("RQ_QUEUE_NAME", "renewise")
 
 # TONCENTER_API_KEYS_TESTNET and TONCENTER_API_KEYS (mainnet) are separate env vars
-# because TON's API portal issues per-network keys — a testnet key will be
+# because the API portal issues per-network keys — a testnet key will be
 # rejected on api.toncenter.com and vice-versa.
 #
 # For backward compat, the legacy TONCENTER_API_KEY single-key env var is still
@@ -49,7 +49,7 @@ TONCENTER_BASE_URL: str = (
 )
 
 # How many confirmed blocks (logical time units) before we treat a tx as final.
-# TON finalises in ~5 s; 1 confirmation is sufficient for most use-cases.
+# The network finalises in ~5 s; 1 confirmation is sufficient for most use-cases.
 MIN_CONFIRMATIONS: int = int(os.getenv("MIN_CONFIRMATIONS", "1"))
 
 # ── Polling fallback ──────────────────────────────────────────────────────────

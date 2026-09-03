@@ -30,6 +30,7 @@ CREATE_PROCESSED_TX = """
 CREATE TABLE IF NOT EXISTS processed_tx_hashes (
     tx_hash      TEXT PRIMARY KEY,
     sub_id       INTEGER,
+    is_partial   INTEGER NOT NULL DEFAULT 0,
     processed_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 """
@@ -70,12 +71,32 @@ async def migrate() -> None:
         async with _db() as db:
             for stmt in (
                 "ALTER TABLE processed_tx_hashes ADD COLUMN IF NOT EXISTS sub_id INTEGER",
+                "ALTER TABLE processed_tx_hashes ADD COLUMN IF NOT EXISTS is_partial INTEGER NOT NULL DEFAULT 0",
                 "ALTER TABLE reminder_log ADD COLUMN IF NOT EXISTS message_id INTEGER",
             ):
                 try:
                     await db.execute(stmt)
                 except Exception:
                     pass  # column already exists — safe
+        # Backfill: reset partial/incorrectly-processed txs before this fix.
+        # Arm 1: bot subscription txs whose subscription is still 'pending'
+        # Arm 2: platform charge txs whose charge is still 'pending'
+        try:
+            await db.execute(
+                "UPDATE processed_tx_hashes SET is_partial = 1 "
+                "WHERE sub_id IS NOT NULL AND is_partial = 0 "
+                "AND sub_id IN (SELECT id FROM subscriptions WHERE status = 'pending')"
+            )
+        except Exception:
+            pass
+        try:
+            await db.execute(
+                "UPDATE processed_tx_hashes SET is_partial = 1 "
+                "WHERE sub_id IS NOT NULL AND is_partial = 0 "
+                "AND sub_id IN (SELECT id FROM platform_charges WHERE status = 'pending')"
+            )
+        except Exception:
+            pass
         return
 
     # SQLite path
@@ -96,6 +117,28 @@ async def migrate() -> None:
         cols = {row[1] for row in await cur.fetchall()}
         if "sub_id" not in cols:
             await db.execute("ALTER TABLE processed_tx_hashes ADD COLUMN sub_id INTEGER")
+        if "is_partial" not in cols:
+            await db.execute("ALTER TABLE processed_tx_hashes ADD COLUMN is_partial INTEGER NOT NULL DEFAULT 0")
+
+        # Backfill: reset partial/incorrectly-processed txs before this fix.
+        # Arm 1: bot subscription txs whose subscription is still 'pending'
+        # Arm 2: platform charge txs whose charge is still 'pending'
+        try:
+            await db.execute(
+                "UPDATE processed_tx_hashes SET is_partial = 1 "
+                "WHERE sub_id IS NOT NULL AND is_partial = 0 "
+                "AND sub_id IN (SELECT id FROM subscriptions WHERE status = 'pending')"
+            )
+        except Exception:
+            pass
+        try:
+            await db.execute(
+                "UPDATE processed_tx_hashes SET is_partial = 1 "
+                "WHERE sub_id IS NOT NULL AND is_partial = 0 "
+                "AND sub_id IN (SELECT id FROM platform_charges WHERE status = 'pending')"
+            )
+        except Exception:
+            pass
 
         cur = await db.execute("PRAGMA table_info(reminder_log)")
         rl_cols = {row[1] for row in await cur.fetchall()}
@@ -124,8 +167,9 @@ async def register_vault(
 
 async def get_vault_registration(vault_address: str) -> Row | None:
     """
-    Look up vault by address. Tries the given address plus bounceable/
-    non-bounceable variants so UQ and EQ forms both resolve correctly.
+    Look up vault by address. Tries the given address plus all friendly-address
+    variants (bounceable/non-bounceable × mainnet/testnet) plus raw 0:<hex> form,
+    so EQ, UQ, kQ, 0Q, and raw forms of the same vault all resolve correctly.
     """
     variants = [vault_address]
     try:
@@ -133,8 +177,14 @@ async def get_vault_registration(vault_address: str) -> Row | None:
         a = _Addr(vault_address)
         variants = list({
             vault_address,
-            a.to_str(is_bounceable=True,  is_url_safe=True),
-            a.to_str(is_bounceable=False, is_url_safe=True),
+            # bounceable mainnet (EQ...) and testnet (kQ...)
+            a.to_str(is_bounceable=True,  is_url_safe=True, is_test_only=False),
+            a.to_str(is_bounceable=True,  is_url_safe=True, is_test_only=True),
+            # non-bounceable mainnet (UQ...) and testnet (0Q...)
+            a.to_str(is_bounceable=False, is_url_safe=True, is_test_only=False),
+            a.to_str(is_bounceable=False, is_url_safe=True, is_test_only=True),
+            # raw form
+            f"0:{a.hash_part.hex()}",
         })
     except Exception:
         pass
@@ -150,36 +200,42 @@ async def get_vault_registration(vault_address: str) -> Row | None:
 
 
 async def is_tx_processed(tx_hash: str) -> bool:
+    """Return True only if the tx was *fully* processed (not just a partial seen-record)."""
     async with _db() as db:
         val = await db.fetchval(
-            "SELECT 1 FROM processed_tx_hashes WHERE tx_hash=$1", tx_hash
+            "SELECT 1 FROM processed_tx_hashes WHERE tx_hash=$1 AND is_partial=0", tx_hash
         )
         return val is not None
 
 
-async def mark_tx_processed(tx_hash: str, sub_id: int | None = None) -> bool:
+async def mark_tx_processed(tx_hash: str, sub_id: int | None = None, is_partial: bool = False) -> bool:
     """
     Atomically insert tx hash. Returns True on first insert, False if duplicate.
+
+    is_partial=True records a partial-payment tx for auditing but does NOT
+    prevent the seeding loop from re-examining it on restart — only fully
+    processed txs (is_partial=False) are seeded into the skip-set.
+
     PostgreSQL: uses INSERT … ON CONFLICT DO NOTHING + checking affected rows.
     SQLite:     uses INSERT OR IGNORE + rowcount.
     """
+    partial_flag = 1 if is_partial else 0
     if USE_POSTGRES:
         async with _db() as db:
-            # asyncpg doesn't expose rowcount easily; use a CTE to detect insert
             row = await db.fetchrow(
                 "WITH ins AS ("
-                "  INSERT INTO processed_tx_hashes (tx_hash, sub_id) VALUES ($1,$2) "
+                "  INSERT INTO processed_tx_hashes (tx_hash, sub_id, is_partial) VALUES ($1,$2,$3) "
                 "  ON CONFLICT DO NOTHING RETURNING tx_hash"
                 ") SELECT COUNT(*) AS n FROM ins",
-                tx_hash, sub_id,
+                tx_hash, sub_id, partial_flag,
             )
             return bool(row and row["n"])
     else:
         import aiosqlite
         async with aiosqlite.connect(DATABASE_PATH) as db:
             cur = await db.execute(
-                "INSERT OR IGNORE INTO processed_tx_hashes (tx_hash, sub_id) VALUES (?,?)",
-                (tx_hash, sub_id),
+                "INSERT OR IGNORE INTO processed_tx_hashes (tx_hash, sub_id, is_partial) VALUES (?,?,?)",
+                (tx_hash, sub_id, partial_flag),
             )
             await db.commit()
             return cur.rowcount == 1

@@ -3,7 +3,7 @@ renewise/watcher/webhook.py
 
 aiohttp webhook server.
 
-TonCenter (and compatible TON indexers) can POST a JSON payload to this server
+TonCenter (and compatible blockchain indexers) can POST a JSON payload to this server
 whenever a confirmed transaction arrives on a subscribed address.
 
 Endpoint: POST /webhook
@@ -17,7 +17,7 @@ Payload (TonCenter format):
     "lt": "..."
   },
   "in_msg": {
-    "value": "1050000000"         ← nanoTON
+    "value": "1050000000"         ← nanogram
   }
 }
 

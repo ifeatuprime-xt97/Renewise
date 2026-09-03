@@ -359,9 +359,9 @@ async def _handle_insufficient_payment(
             chat_id=tg_user_id,
             text=(
                 f"⚠️ <b>Payment received but amount is too low.</b>\n\n"
-                f"We received <b>{sent_ton:.4f} TON</b> but need "
-                f"<b>{required_ton:.4f} TON</b> for <b>{group_name}</b>.\n\n"
-                f"You're short by <b>{shortfall_ton:.4f} TON</b>.\n\n"
+                f"We received <b>{sent_ton:.4f} GRAM</b> but need "
+                f"<b>{required_ton:.4f} GRAM</b> for <b>{group_name}</b>.\n\n"
+                f"You're short by <b>{shortfall_ton:.4f} GRAM</b>.\n\n"
                 f"Please send a new payment for the full amount using the same "
                 f"payment link. Your previous transaction cannot be topped up."
             ),

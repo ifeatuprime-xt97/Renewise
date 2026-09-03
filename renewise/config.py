@@ -38,7 +38,7 @@ ALLOWED_SUPERADMIN_IDS = [
 
 MEMBERS_PAGE_SIZE = 5
 
-# ── TON payment config (Phase 2) ──────────────────────────────────────────────
+# ── Payment config ────────────────────────────────────────────────────────────
 # Platform wallet that receives the combined 5.3% fee
 PLATFORM_WALLET: str = os.getenv("PLATFORM_WALLET", "")
 

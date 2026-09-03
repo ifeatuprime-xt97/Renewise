@@ -143,7 +143,7 @@ async def call_get_method(
     stack: list[Any] | None = None,
 ) -> Any:
     """
-    Call a get-method on a TON smart contract via TonCenter /runGetMethod.
+    Call a get-method on a smart contract via TonCenter /runGetMethod.
 
     Returns the first stack value as a Python int (for numeric getters like
     required_payment() and overage()), or None on any failure.
@@ -185,7 +185,7 @@ def extract_tx_hash(tx: dict[str, Any]) -> str:
 
 
 def extract_in_msg_value(tx: dict[str, Any]) -> int:
-    """Extract the nanoTON value of the inbound message."""
+    """Extract the nanogram value of the inbound message."""
     in_msg = tx.get("in_msg", {})
     return int(in_msg.get("value", 0))
 

@@ -133,7 +133,7 @@ async def handle_join_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
         f"\nWe're excited to have you just one quick step to get you in! 👇\n\n"
         f"<b>Subscription fee:</b>\n"
         f"{price_line}\n\n"
-        f"You pay in <b>GRAM (TON)</b>. Tap <b>Pay Now</b> to proceed. 👇"
+        f"You pay in <b>GRAM</b>. Tap <b>Pay Now</b> to proceed. 👇"
     )
 
     # Build the Pay Now deep-link button.
@@ -236,14 +236,14 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         usd_line = ""
 
     caption = (
-        f"� <b>Payment</b>\n\n"
+        f"💳 <b>Payment</b>\n\n"
         f"<b>Amount to send:</b>\n"
-        f"<code>{amount_ton:.9f} TON</code>  {usd_line}\n\n"
+        f"<code>{amount_ton:.9f} GRAM</code>  {usd_line}\n\n"
         f"<b>How to pay:</b>\n"
         f"• Tap the button below to open your wallet\n"
         f"• Or scan the QR code with your mobile wallet\n\n"
         f"💡 <b>Your wallet may show a warning.</b> This is normal for first payments. "
-        f"Your TON is safe and will be split automatically on the blockchain.\n\n"
+        f"Your GRAM is safe and will be split automatically on the blockchain.\n\n"
         f"Send the <b>exact amount shown</b> overpayments are refunded automatically."
     )
 
@@ -278,11 +278,11 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             fallback_text = (
                 f"📲 <b>Payment Details</b>\n\n"
                 f"<b>Amount to send:</b>\n"
-                f"<code>{amount_ton:.9f} TON</code>\n\n"
+                f"<code>{amount_ton:.9f} GRAM</code>\n\n"
                 f"<b>How to pay:</b>\n"
                 f"• Tap the button below to open your wallet\n"
                 f"• Or start a chat with this bot to get the QR code\n\n"
-                f"💡 <b>Your wallet may show a warning.</b> This is normal — your TON is safe!\n\n"
+                f"💡 <b>Your wallet may show a warning.</b> This is normal — your GRAM is safe!\n\n"
                 f"Send the <b>exact amount shown</b> — overpayments are refunded automatically."
             )
             try:

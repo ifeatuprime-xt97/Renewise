@@ -140,7 +140,7 @@ async def create_charge(
                         required_nano=_data["required_nano"],
                         payload=_data["vault_address"],
                         amount=_data["required_nano"] / 1e9,
-                        currency="TON",
+                        currency="GRAM",
                     )
         except HTTPException:
             raise

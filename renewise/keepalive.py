@@ -115,7 +115,7 @@ async def handle_health(_request: web.Request) -> web.Response:
 
 async def handle_generate_payment_link(request: web.Request) -> web.Response:
     """
-    Internal endpoint: generate a TON payment link for a platform charge.
+    Internal endpoint: generate a GRAM payment link for a platform charge.
 
     Called by the Mini App API (Vercel) which cannot run the contract locally.
     Protected by INTERNAL_API_SECRET — never expose this to the public.

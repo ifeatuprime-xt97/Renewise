@@ -407,7 +407,7 @@ async def api_my_payment_history(
     history = []
     for r in rows:
         r = dict(r)
-        # Convert required_nano_amount → TON for display convenience
+        # Convert required_nano_amount → GRAM for display convenience
         nano = r.get("required_nano_amount")
         r["amount_ton"] = round(nano / 1e9, 9) if nano else None
         history.append(r)
@@ -537,7 +537,7 @@ async def api_payment_detail(
 
     Returns all fields the list view already has, plus:
       - vault_address       — the smart contract address for this payment
-      - required_nano_amount — exact TON nanotons required
+      - required_nano_amount — exact nanotokens required
       - amount_paid_so_far  — running total for partial payments
       - telegram_user_id    — subscriber's Telegram ID
       - username            — subscriber's @handle (may be null)
@@ -567,7 +567,7 @@ async def api_payment_detail(
     tx = row.get("last_payment_tx_hash")
     row["tonviewer_url"] = f"https://tonviewer.com/{tx}" if tx else None
 
-    # Convert nano to TON for convenience
+    # Convert nano to GRAM for convenience
     nano = row.get("required_nano_amount")
     row["required_ton"] = round(nano / 1e9, 9) if nano else None
 
@@ -760,7 +760,7 @@ async def api_groups_create(
     if not await validate_ton_address(body.wallet_address):
         raise HTTPException(
             status_code=422,
-            detail="Invalid TON wallet address format",
+            detail="Invalid wallet address format",
         )
 
     # ── Fee transparency (mirrors cb_confirm_chat) ────────────────────────────
@@ -969,7 +969,7 @@ async def api_developer_charge_detail(
     r = dict(row)
     r["checkout_url"] = f"{base_url}/checkout/{r['id']}"
     r["required_nano"] = r.pop("required_nano_amount", None)
-    # Compute required TON for display
+    # Compute required GRAM for display
     nano = r.get("required_nano")
     r["required_ton"] = round(nano / 1e9, 9) if nano else None
     # Fee percentages for display
@@ -1230,7 +1230,7 @@ async def api_developer_update_wallet(
 
     # Validate format first
     if not await validate_ton_address(wallet_address):
-        raise HTTPException(status_code=422, detail="Invalid TON wallet address format")
+        raise HTTPException(status_code=422, detail="Invalid wallet address format")
 
     telegram_user_id = user["id"]
     platform = await verify_platform_ownership(platform_id, telegram_user_id)
@@ -1239,7 +1239,7 @@ async def api_developer_update_wallet(
     #
     # • Test-only platform (no live keys yet): accept both mainnet and testnet
     #   wallet addresses. Test charges route to testnet regardless of address
-    #   type — the developer is told to pay with testnet TON, not real money.
+    #   type — the developer is told to pay with testnet GRAM, not real money.
     #
     # • Live platform (live keys generated): enforce mainnet-only wallet when
     #   TONCENTER_TESTNET=false, because live charges settle real funds.
@@ -1264,10 +1264,10 @@ async def api_developer_update_wallet(
         raise HTTPException(status_code=403, detail="Incorrect or missing passcode")
 
     addr_network = _addr_net or "unknown"
-    # For test-only platforms, remind the dev to use testnet TON when paying
+    # For test-only platforms, remind the dev to use testnet GRAM when paying
     testnet_notice = (
-        "This wallet is set for test charges. When testing, pay with testnet TON — "
-        "not real money. Testnet TON is free from https://t.me/testgiver_ton_bot"
+        "This wallet is set for test charges. When testing, pay with testnet GRAM — "
+        "not real money. Testnet GRAM is free from https://t.me/testgiver_ton_bot"
         if not has_live_keys else None
     )
     warning = (
@@ -1660,7 +1660,7 @@ async def api_group_update_wallet(
     group = await verify_admin_or_403(telegram_user_id, group_id)
 
     if not await validate_ton_address(body.wallet_address):
-        raise HTTPException(status_code=422, detail="Invalid TON wallet address format")
+        raise HTTPException(status_code=422, detail="Invalid wallet address format")
 
     # On mainnet, reject testnet addresses outright — payouts will never arrive.
     # On testnet, both address types are accepted.

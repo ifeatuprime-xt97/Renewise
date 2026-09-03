@@ -271,9 +271,9 @@ async def get_trigger_wallet_balance(
     testnet: bool = False,
 ) -> float | None:
     """
-    Fetch the live TON balance of the trigger wallet via TonCenter v2 API.
+    Fetch the live GRAM balance of the trigger wallet via TonCenter v2 API.
 
-    Returns balance in TON (float), or None on any error / unconfigured state.
+    Returns balance in GRAM (float), or None on any error / unconfigured state.
     Does NOT raise — designed to fail gracefully in a UI context.
     """
     if not address:

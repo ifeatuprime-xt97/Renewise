@@ -85,9 +85,9 @@ async def _notify_insufficient_payment(
             chat_id=tg_user_id,
             text=(
                 f"⚠️ <b>Partial payment received.</b>\n\n"
-                f"You have paid a total of <b>{total_paid_ton:.4f} TON</b> but need "
-                f"<b>{required_ton:.4f} TON</b> for <b>{group_name}</b>.\n\n"
-                f"You're short by <b>{shortfall_ton:.4f} TON</b>.\n\n"
+                f"You have paid a total of <b>{total_paid_ton:.4f} GRAM</b> but need "
+                f"<b>{required_ton:.4f} GRAM</b> for <b>{group_name}</b>.\n\n"
+                f"You're short by <b>{shortfall_ton:.4f} GRAM</b>.\n\n"
                 f"Please send the remaining balance to the same "
                 f"payment link to activate your subscription."
             ),
@@ -113,7 +113,7 @@ async def _notify_overpayment(
 ) -> None:
     """
     DM the user when they overpaid by more than $1 USD.
-    Ask them for their TON wallet address so we can process the refund.
+    Ask them for their Gram wallet address so we can process the refund.
     The refund_id is stored in bot_data so the next message they send
     (or /refundwallet command) is captured as their wallet address.
     """
@@ -146,11 +146,11 @@ async def _notify_overpayment(
             chat_id=tg_user_id,
             text=(
                 f"💸 <b>You overpaid — we owe you a refund!</b>\n\n"
-                f"You sent <b>{overpaid_ton:.4f} TON</b> more than required.\n"
-                f"Refund amount: <b>{refund_ton:.4f} TON</b> "
+                f"You sent <b>{overpaid_ton:.4f} GRAM</b> more than required.\n"
+                f"Refund amount: <b>{refund_ton:.4f} GRAM</b> "
                 f"(≈ <b>${refund_usd:.2f} USD</b>) after network fees.\n\n"
                 f"To receive your refund automatically, just <b>reply to this message</b> "
-                f"with your TON wallet address (starts with <code>UQ</code> or <code>EQ</code>).\n\n"
+                f"with your Gram wallet address (starts with <code>UQ</code> or <code>EQ</code>).\n\n"
                 f"You can find your address in Tonkeeper → Settings → Wallet Address."
             ),
             parse_mode="HTML",
@@ -170,21 +170,30 @@ async def _process_platform_charge_inprocess(
     amount_nano: int,
 ) -> None:
     """Process a completed platform API charge."""
-    log.info("inprocess_platform: tx=%s charge_id=%d amount=%d status=%s", 
+    log.info("inprocess_platform: tx=%s charge_id=%d amount=%d status=%s",
              tx_hash, charge["id"], amount_nano, charge.get("status"))
-    
-    # Claim idempotency
+
+    # Idempotency pre-check — skip txs already fully processed
+    if await is_tx_processed(tx_hash):
+        log.debug("inprocess_platform: already processed tx=%s", tx_hash)
+        return
+
+    required = charge["required_nano_amount"]
+
+    if required is not None and amount_nano < required:
+        log.warning(
+            "inprocess_platform: insufficient amount %d < %d for charge %d",
+            amount_nano, required, charge["id"],
+        )
+        # Record as partial so the seeding loop doesn't skip it on restart,
+        # but don't dispatch a webhook for a partial payment.
+        await mark_tx_processed(tx_hash, charge["id"], is_partial=True)
+        return
+
+    # Claim idempotency atomically — point of no return
     claimed = await mark_tx_processed(tx_hash, charge["id"])
     if not claimed:
         log.info("inprocess_platform: lost race on idempotency claim tx=%s", tx_hash)
-        return
-        
-    required = charge["required_nano_amount"]
-    
-    if required is not None and amount_nano < required:
-        log.warning("inprocess_platform: insufficient amount %d < %d for charge %d", amount_nano, required, charge["id"])
-        # For now, mark as failed, or wait for top-up? API doesn't support top-up yet. 
-        # But we still record it so we don't re-process. We won't dispatch webhook for partial payment.
         return
     
     log.info("inprocess_platform: marking charge %d as completed (tx=%s)", charge["id"], tx_hash)
@@ -266,7 +275,7 @@ async def _process_payment_inprocess(
     # SOURCE OF TRUTH: sub["required_nano_amount"] is stored at payment-link
     # generation time from the vault's own price + buyer_fee + gas_reserve
     # calculation. It is locked in at that moment and must NOT be re-derived
-    # from the live exchange rate — if TON price moves between the first partial
+    # from the live exchange rate — if Gram price moves between the first partial
     # payment and a top-up, re-deriving would shift the threshold and
     # incorrectly reject a payment that the vault itself accepted.
     #
@@ -333,7 +342,10 @@ async def _process_payment_inprocess(
             "inprocess: partial payment accumulated %d < %d | vault=%s tx=%s",
             new_total_paid, required, vault_address, tx_hash,
         )
-        await mark_tx_processed(tx_hash, sub_id)
+        # NOTE: do NOT call mark_tx_processed here. Partial payments must remain
+        # re-processable after a restart so that a top-up tx causes the watcher
+        # to re-examine the running total. The in-memory insufficient_seen set
+        # is sufficient to deduplicate notifications within a single run.
         from renewise.db.queries import update_amount_paid_so_far
         await update_amount_paid_so_far(sub["id"], new_total_paid)
         if insufficient_seen is not None and tx_hash not in insufficient_seen:
@@ -399,9 +411,9 @@ async def _process_payment_inprocess(
                 "overpaid_nano=%d overpaid_usd=%.2f tx=%s",
                 user_id, amount_nano, new_total_paid, required, overpaid_nano, overpaid_usd, tx_hash,
             )
-            # The vault deducts its own Refund{} gas fee (0.005 TON) on execution.
+            # The vault deducts its own Refund{} gas fee (0.005 GRAM) on execution.
             # We record the full overpaid_nano so the DB matches what the vault holds.
-            # The actual TON the user receives = overpaid_nano - 0.005 TON (on-chain).
+            # The actual GRAM the user receives = overpaid_nano - 0.005 GRAM (on-chain).
             VAULT_REFUND_GAS_NANO = 5_000_000  # matches contract: ton("0.005")
             refund_nano = max(0, overpaid_nano - VAULT_REFUND_GAS_NANO)
             refund_usd  = (refund_nano / 1_000_000_000) * ton_rate if refund_nano else 0.0
@@ -641,11 +653,13 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                 log.info("inprocess watcher: polling %d vault(s)", len(vaults))
 
                 for vault_address in vaults:
-                    # Normalize address to bounceable form so both UQ/EQ variants
-                    # of the same vault map to the same seen-set key and registry lookup.
+                    # Normalize address to raw 0:<hex> form so all friendly-address
+                    # variants (EQ/UQ/kQ/0Q) of the same vault map to the same
+                    # seen-set key and TonCenter query uses a stable canonical form.
                     try:
                         from pytoniq_core import Address as _Addr
-                        canonical = _Addr(vault_address).to_str(is_bounceable=True, is_url_safe=True)
+                        _a = _Addr(vault_address)
+                        canonical = f"0:{_a.hash_part.hex()}"
                     except Exception:
                         canonical = vault_address
 
@@ -684,9 +698,12 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                             if not h:
                                 continue
                             if await is_tx_processed(h):
-                                # Already handled in a previous run — skip
+                                # Fully processed in a previous run — skip forever.
+                                # Partial-payment txs are NOT returned by is_tx_processed
+                                # (they have is_partial=1), so they are left out of seen
+                                # and will be re-examined this cycle.
                                 seen[canonical].add(h)
-                            # Leave unprocessed txs OUT of seen so they get
+                            # Leave unprocessed and partial txs OUT of seen so they get
                             # picked up by the loop below on this same cycle.
                         log.info(
                             "inprocess: seeded %d already-processed tx(s) for vault %s "

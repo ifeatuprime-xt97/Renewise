@@ -2,7 +2,7 @@
 Payment service — Phase 2 implementation.
 
 Replaces the Phase 1 stub. The bot layer calls only the two public functions
-defined here; all TON-specific logic lives in renewise/ton/vault.py.
+defined here; all chain-specific logic lives in renewise/ton/vault.py.
 
 Payment confirmation flow
 ─────────────────────────
@@ -63,9 +63,9 @@ class PaymentRequest:
     payment_url:   str    # ton:// deep-link for Tonkeeper / TonHub
     vault_address: str    # raw vault address (for chain-watcher indexing)
     payload:       str    # opaque string — vault address used as unique key
-    amount:        float  # human-readable TON (price + buyer_fee, no gas reserve)
+    amount:        float  # human-readable GRAM (price + buyer_fee, no gas reserve)
     currency:      str
-    required_nano: int    # exact nanoTON the user must send (stored in DB for race-free verification)
+    required_nano: int    # exact nanogram the user must send (stored in DB for race-free verification)
 
 
 # ── Public interface ──────────────────────────────────────────────────────────
@@ -81,11 +81,11 @@ async def generate_payment_request(
     user_id is the Telegram user id (not the DB id).
 
     Price is taken from group.price_usd_cents and converted to GRAM at the
-    live USD/TON exchange rate fetched from CoinGecko. This ensures users
+    live USD/GRAM exchange rate fetched from CoinGecko. This ensures users
     always pay the correct USD-equivalent amount regardless of token price.
 
     The vault is NOT deployed yet deployment happens atomically on first
-    payment via TON's deploy-on-first-message pattern.
+    payment via the deploy-on-first-message pattern.
     """
     group = await queries.get_group_by_id(group_id)
     if not group:
@@ -97,7 +97,7 @@ async def generate_payment_request(
 
     # ── Convert USD cents → GRAM at the live exchange rate ───────────────────
     # price_usd_cents is the authoritative USD price (e.g. 999 = $9.99).
-    # get_ton_usd_price() returns the current market price of 1 TON in USD,
+    # get_ton_usd_price() returns the current market price of 1 GRAM in USD,
     # falling back to a cached value if the feed is stale (never raises).
     price_usd_cents: int = group["price_usd_cents"]
     price_usd: float = price_usd_cents / 100.0
@@ -180,7 +180,7 @@ async def generate_payment_request(
         vault_address=link.vault_address,
         payload=link.vault_address,   # vault address is the unique payment identifier
         amount=total_gram,
-        currency="TON",
+        currency="GRAM",
         required_nano=link.required_nano,
     )
 
@@ -192,7 +192,7 @@ async def generate_platform_payment_request(
 ) -> PaymentRequest:
     """
     Variant of generate_payment_request for Developer API platform charges.
-    Generates a TON payment link for an API charge.
+    Generates a Gram payment link for an API charge.
     """
     admin_wallet_str = platform.get("wallet_address")
     if not admin_wallet_str:
@@ -256,7 +256,7 @@ async def generate_platform_payment_request(
         vault_address=link.vault_address,
         payload=link.vault_address,
         amount=total_gram,
-        currency="TON",
+        currency="GRAM",
         required_nano=link.required_nano,
     )
 

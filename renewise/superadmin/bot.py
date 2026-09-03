@@ -67,13 +67,13 @@ async def access_control(update: Update, context):
 
 _TW_LOW_TON      = 0.10   # warn below this
 _TW_CRITICAL_TON = 0.02   # critical below this
-_GAS_PER_REFUND  = 0.01   # TON attached per Refund{} message
+_GAS_PER_REFUND  = 0.01   # GRAM attached per Refund{} message
 
 
 def _trigger_health(balance: float | None, configured: bool) -> tuple[str, str]:
     """
     Returns (icon, label) for the trigger wallet.
-    balance is in TON, or None if fetch failed.
+    balance is in GRAM, or None if fetch failed.
     configured=False when TRIGGER_WALLET/TRIGGER_MNEMONIC are absent.
     """
     if not configured:
@@ -81,10 +81,10 @@ def _trigger_health(balance: float | None, configured: bool) -> tuple[str, str]:
     if balance is None:
         return "❓", "Balance unavailable (TonCenter error)"
     if balance < _TW_CRITICAL_TON:
-        return "🔴", f"CRITICAL — {balance:.4f} TON"
+        return "🔴", f"CRITICAL — {balance:.4f} GRAM"
     if balance < _TW_LOW_TON:
-        return "🟡", f"Low — {balance:.4f} TON"
-    return "🟢", f"Healthy — {balance:.4f} TON"
+        return "🟡", f"Low — {balance:.4f} GRAM"
+    return "🟢", f"Healthy — {balance:.4f} GRAM"
 
 
 async def _guard_group_exists(update: Update, group_id: int) -> bool:
@@ -234,7 +234,7 @@ async def show_overview(update: Update, context):
     # Estimate how many more refunds the trigger can cover
     if tw_balance is not None and tw_balance > 0:
         can_cover = int(tw_balance / _GAS_PER_REFUND)
-        gas_note  = f"Can cover ~{can_cover} more refund{'s' if can_cover != 1 else ''} at 0.01 TON/each"
+        gas_note  = f"Can cover ~{can_cover} more refund{'s' if can_cover != 1 else ''} at 0.01 GRAM/each"
     elif tw_configured:
         gas_note = "⚠️ Cannot cover any refunds — top up required!"
     else:
@@ -457,7 +457,7 @@ async def show_sa_payment_history(update: Update, context, group_id: int, page: 
             uname = f" (@{html.escape(r['username'])})" if r["username"] else ""
             raw   = r["price_locked_in"] or 0
             # price_locked_in is stored in USD dollars (e.g. 9.99 = $9.99)
-            price_str = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} TON"
+            price_str = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} GRAM"
             tx = f"<code>{r['last_payment_tx_hash'][:12]}…</code>" if r["last_payment_tx_hash"] else "—"
             lines.append(
                 f"{icon_map.get(r['status'], '•')} <b>{name}</b>{uname}\n"
@@ -559,7 +559,7 @@ async def show_user_detail(update: Update, context, telegram_user_id: int):
         icon_map = {"active": "✅", "comped": "🎁", "expired": "⏰", "cancelled": "❌", "pending": "⏳"}
         for s in user["subscriptions"][:8]:  # cap at 8 to stay within message limits
             raw = s.get("price_locked_in") or 0
-            price_str = f"${float(raw):.2f}" if float(raw) < 1000 else f"{float(raw) / 1e9:.4f} TON"
+            price_str = f"${float(raw):.2f}" if float(raw) < 1000 else f"{float(raw) / 1e9:.4f} GRAM"
             title = html.escape(s.get("chat_title") or str(s["telegram_chat_id"]))
             text += (
                 f"{icon_map.get(s['status'], '•')} <i>{title}</i> | {price_str}\n"
@@ -778,7 +778,7 @@ async def show_tx_feed(update: Update, context, status_filter: str, page: int):
                     "cancelled": "❌", "pending": "⏳"}
         for r in rows:
             raw        = float(r.get("price_locked_in") or 0)
-            price_str  = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} TON"
+            price_str  = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} GRAM"
             name       = html.escape(r.get("first_name") or "Unknown")
             uname      = f"@{html.escape(r['username'])}" if r.get("username") else str(r["telegram_user_id"])
             group_title = html.escape(r.get("chat_title") or f"Group {r['group_id']}")
@@ -951,7 +951,7 @@ async def show_sub_actions(update: Update, context, sub_id: int, group_id: int):
         return
 
     raw       = float(sub.get("price_locked_in") or 0)
-    price_str = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} TON"
+    price_str = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} GRAM"
     name      = html.escape(sub.get("first_name") or "Unknown")
     uname     = f" (@{html.escape(sub['username'])})" if sub.get("username") else ""
     status    = sub.get("status", "?")
@@ -1035,7 +1035,7 @@ async def show_trigger_status(update: Update, context):
     if tw_balance is not None and tw_balance > 0:
         can_cover = int(tw_balance / _GAS_PER_REFUND)
         gas_note  = (
-            f"At 0.01 TON/refund, this covers <b>~{can_cover} more refund"
+            f"At 0.01 GRAM/refund, this covers <b>~{can_cover} more refund"
             f"{'s' if can_cover != 1 else ''}</b>."
         )
     elif tw_configured:
@@ -1106,7 +1106,7 @@ async def show_refunds_page(update: Update, context, page: int):
                 f"{icon.get(r['status'], '•')} <b>#{r['id']}</b> | "
                 f"{html.escape(r['chat_title'] or '?')} | "
                 f"User <code>{r['telegram_user_id']}</code>\n"
-                f"   {ton:.4f} TON ≈${r['refund_usd']:.2f} → <code>{w_s}</code>\n"
+                f"   {ton:.4f} GRAM ≈${r['refund_usd']:.2f} → <code>{w_s}</code>\n"
                 f"   {r['status']} | {(r['resolved_at'] or r['created_at'] or '')[:16]}\n"
             )
         text = "\n".join(lines)
@@ -1410,7 +1410,7 @@ async def perform_lookup(update: Update, context, term: str) -> None:
             for s in subs:
                 raw = s.get("price_locked_in") or 0
                 # price_locked_in is USD dollars (e.g. 9.99 = $9.99)
-                price_str = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} TON"
+                price_str = f"${raw:.2f}" if raw < 1000 else f"{raw / 1e9:.4f} GRAM"
                 text += (
                     f"• Chat <code>{s['telegram_chat_id']}</code> | "
                     f"{s['status'].upper()} | {price_str}\n"

@@ -30,14 +30,14 @@ _TERMS_TEXT = (
     "📋 <b>Renewise Terms of Service & Privacy Policy</b>\n\n"
 
     "<b>What Renewise does</b>\n"
-    "Renewise lets Telegram group and channel admins charge for membership in GRAM (TON). "
+    "Renewise lets Telegram group and channel admins charge for membership in GRAM. "
     "Payments go directly to a smart contract that atomically splits funds between the admin "
     "and Renewise's platform fee no middleman ever holds your money.\n\n"
 
     "<b>Non-custodial architecture</b>\n"
     "Renewise never holds admin or member funds. Completed on-chain splits are final and "
     "irreversible. Overpayments are automatically detected and refunded to the member's "
-    "TON wallet on request.\n\n"
+    "GRAM wallet on request.\n\n"
 
     "<b>Payout wallet security</b>\n"
     "You can protect your payout wallet with a 4-digit passkey. Once set, any wallet "
@@ -52,7 +52,7 @@ _TERMS_TEXT = (
     "Your Telegram user ID, first name, username, subscription records, "
     "payment transaction hashes, and payout wallet address (admins only). "
     "We do not store private keys or wallet seed phrases. "
-    "On-chain data is publicly visible on the TON blockchain by its nature.\n\n"
+    "On-chain data is publicly visible on the blockchain by its nature.\n\n"
 
     "<b>Data we share</b>\n"
     "Only with TonCenter (on-chain transaction verification) and CoinGecko (live exchange rates). "
@@ -138,7 +138,7 @@ async def post_init(app: Application) -> None:
 
     # ── Trigger wallet startup health check ───────────────────────────────────
     # Fetch live balance and DM superadmins if the wallet is unconfigured,
-    # critical (<0.02 TON), or low (<0.10 TON).
+    # critical (<0.02 GRAM), or low (<0.10 GRAM).
     # This fires ONCE at startup only — no recurring spam.
     from renewise.config import (
         TRIGGER_MNEMONIC as _TM,
@@ -186,27 +186,27 @@ async def post_init(app: Application) -> None:
                 log.warning("Could not fetch trigger wallet balance at startup (TonCenter error).")
             elif _balance < _TW_CRITICAL:
                 log.error(
-                    "🔴 TRIGGER WALLET CRITICAL: %.6f TON refunds will fail immediately!", _balance
+                    "🔴 TRIGGER WALLET CRITICAL: %.6f GRAM refunds will fail immediately!", _balance
                 )
                 await _send_sa_alert(
                     f"🔴 <b>Trigger Wallet CRITICAL</b>\n\n"
-                    f"Balance: <b>{_balance:.6f} TON</b> (need ≥ 0.10 TON)\n"
+                    f"Balance: <b>{_balance:.6f} GRAM</b> (need ≥ 0.10 GRAM)\n"
                     f"Automatic refunds will fail until the wallet is topped up.\n\n"
                     f"Top up address: <code>{_TW}</code>\n\n"
                     f"Use /start → ⚡ Trigger Wallet for real-time status."
                 )
             elif _balance < _TW_LOW:
                 log.warning(
-                    "🟡 TRIGGER WALLET LOW: %.6f TON consider topping up soon.", _balance
+                    "🟡 TRIGGER WALLET LOW: %.6f GRAM consider topping up soon.", _balance
                 )
                 await _send_sa_alert(
                     f"🟡 <b>Trigger Wallet Low</b>\n\n"
-                    f"Balance: <b>{_balance:.6f} TON</b> (recommended ≥ 0.10 TON)\n"
+                    f"Balance: <b>{_balance:.6f} GRAM</b> (recommended ≥ 0.10 GRAM)\n"
                     f"Consider topping up soon to avoid refund delays.\n\n"
                     f"Address: <code>{_TW}</code>"
                 )
             else:
-                log.info("🟢 Trigger wallet healthy: %.6f TON", _balance)
+                log.info("🟢 Trigger wallet healthy: %.6f GRAM", _balance)
         except Exception as _exc:
             log.warning("Trigger wallet startup check failed: %s", _exc)
 
@@ -322,7 +322,7 @@ async def _send_renewal_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE, 
                 f"  Subscription: <b>${price_usd:.2f}</b>\n"
                 f"  Service fee ({buyer_pct:.2f}%): <b>${fee_usd:.2f}</b>\n"
                 f"  ────────────────\n"
-                f"  Total: <b>${total_usd:.2f} ≈ {exact_ton:.6f} TON</b>\n\n"
+                f"  Total: <b>${total_usd:.2f} ≈ {exact_ton:.6f} GRAM</b>\n\n"
             )
         except Exception:
             exact_ton     = payment.required_nano / 1_000_000_000
@@ -332,11 +332,11 @@ async def _send_renewal_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE, 
             f"🔄 <b>Renew Subscription</b>\n\n"
             f"{fee_breakdown}"
             f"<b>Amount to send:</b>\n"
-            f"<code>{exact_ton:.9f} TON</code>\n\n"
+            f"<code>{exact_ton:.9f} GRAM</code>\n\n"
             f"<b>How to pay:</b>\n"
             f"• Tap the button below to open your wallet\n"
             f"• Or scan the QR code\n\n"
-            f"💡 <b>Your wallet may show a warning.</b> This is normal — your TON is safe!\n\n"
+            f"💡 <b>Your wallet may show a warning.</b> This is normal — your GRAM is safe!\n\n"
             f"<i>Your subscription extends automatically after payment confirms.</i>"
         )
 
@@ -451,7 +451,7 @@ async def _send_payment_details(
         price_usd    = (group_row["price_usd_cents"] / 100.0) if group_row else 0.0
         fee_usd      = price_usd * buyer_bps / 10000
         total_usd    = price_usd + fee_usd
-        # Exact TON from required_nano (what the wallet will actually deduct)
+        # Exact GRAM from required_nano (what the wallet will actually deduct)
         exact_ton    = payment.required_nano / 1_000_000_000
         exact_usd    = exact_ton * ton_rate
         fee_breakdown = (
@@ -459,7 +459,7 @@ async def _send_payment_details(
             f"  Subscription: <b>${price_usd:.2f}</b>\n"
             f"  Service fee ({buyer_pct:.2f}%): <b>${fee_usd:.2f}</b>\n"
             f"  ────────────────\n"
-            f"  Total: <b>${total_usd:.2f} ≈ {exact_ton:.6f} TON</b>\n\n"
+            f"  Total: <b>${total_usd:.2f} ≈ {exact_ton:.6f} GRAM</b>\n\n"
         )
     except Exception:
         exact_ton     = payment.required_nano / 1_000_000_000
@@ -469,12 +469,12 @@ async def _send_payment_details(
         f"📲 <b>Payment Details</b>\n\n"
         f"{fee_breakdown}"
         f"<b>Amount to send:</b>\n"
-        f"<code>{exact_ton:.9f} TON</code>\n\n"
+        f"<code>{exact_ton:.9f} GRAM</code>\n\n"
         f"Choose how to pay:\n"
         f"• <b>Telegram Wallet</b> - tap the button below, instant.\n"
-        f"• <b>Other TON Wallet</b> - tap the button below, opens your installed TON wallet app with everything pre-filled.\n"
+        f"• <b>Other GRAM Wallet</b> - tap the button below, opens your installed wallet app with everything pre-filled.\n"
         f"• Or scan the QR code\n\n"
-        f"💡 <b>Your wallet may show a warning.</b> This is normal — your TON is safe!\n\n"
+        f"💡 <b>Your wallet may show a warning.</b> This is normal — your GRAM is safe!\n\n"
         f"Send the <b>exact amount shown</b> — overpayments are refunded automatically."
     )
 
@@ -584,7 +584,7 @@ async def _start_inner(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             await _reply(
                 "🔔 <b>Renewal Reminders are Active!</b>\n\n"
                 "You will automatically receive a direct message from me 24 hours before your subscription expires. "
-                "You can renew directly through that message using your TON wallet.\n\n"
+                "You can renew directly through that message using your GRAM wallet.\n\n"
                 "If your subscription expires, you'll be safely removed from the group, but you can always rejoin later by purchasing a new subscription.",
                 parse_mode="HTML"
             )
@@ -614,12 +614,12 @@ async def _start_inner(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await _reply(
             "👋 <b>Welcome to Renewise!</b>\n\n"
             "Turn your Telegram group or channel into a paid community "
-            "members pay in GRAM (TON), payouts go directly to your wallet, "
+            "members pay in GRAM, payouts go directly to your wallet, "
             "no middleman holds your money.\n\n"
             "🔒 <b>Your wallet is yours.</b> Set a 4-digit passkey to protect "
             "payout wallet changes after setup.\n\n"
             "💳 <b>Fees:</b> 2.00% buyer fee + 3.30% admin fee, always shown before any payment.\n\n"
-            "👨‍💻 <b>For Developers:</b> Accept TON payments in your own app or bot "
+            "👨‍💻 <b>For Developers:</b> Accept GRAM payments in your own app or bot "
             "using the Renewise Payments API.\n\n"
             "Tap <b>Set Up My First Paywall</b> to get started, "
             "or open the Mini App from the menu button.",
@@ -728,7 +728,7 @@ async def cb_start_how_it_works(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
         "<b>4️⃣ Automatic renewal & removal</b>\n"
         "Before their subscription expires, members get a renewal reminder. "
         "If they don't renew, I remove them automatically. "
-        "You receive payouts directly to your TON wallet no middleman.",
+        "You receive payouts directly to your GRAM wallet no middleman.",
         parse_mode="HTML",
         reply_markup=kb,
     )
@@ -819,7 +819,7 @@ async def cb_start_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             "👋 <b>Welcome to Renewise!</b>\n\n"
             "I turn your Telegram group or channel into a paid community "
             "members pay in GRAM, you get paid directly, no middleman holding your funds.\n\n"
-            "👨‍💻 <b>For Developers:</b> You can also use my Developer API to accept TON payments in your own apps and websites.\n\n"
+            "👨‍💻 <b>For Developers:</b> You can also use my Developer API to accept GRAM payments in your own apps and websites.\n\n"
             "Use the <b>Menu Button</b> (bottom left) to open the Mini App and get started!"
         )
     else:

@@ -9,7 +9,7 @@ Flow
     → vault holds overage in overage_held (on-chain state)
     → refund record created in DB (status=pending_wallet)
     → bot_data["pending_refunds"][tg_user_id] = refund_id
-    → user DMed asking for their TON wallet address (with inline prompt button)
+    → user DMed asking for their GRAM wallet address (with inline prompt button)
 
   User replies with their wallet address  ← handled here
     → validated with validate_ton_address() (format + checksum)
@@ -76,7 +76,7 @@ async def cb_refund_prompt(
     await ctx.bot.send_message(
         chat_id=update.effective_user.id,
         text=(
-            "💳 <b>Reply with your TON wallet address</b>\n\n"
+            "💳 <b>Reply with your wallet address</b>\n\n"
             "Just send your address in the next message it starts with "
             "<code>UQ</code> or <code>EQ</code>.\n\n"
             "Example:\n"
@@ -138,7 +138,7 @@ async def _process_wallet_submission(
     is_valid = await validate_ton_address(wallet)
     if not is_valid:
         await reply_fn(
-            "❌ <b>That doesn't look like a valid TON address.</b>\n\n"
+            "❌ <b>That doesn't look like a valid wallet address.</b>\n\n"
             "Please send an address starting with <code>UQ</code> or <code>EQ</code>.\n\n"
             "You can copy it from Tonkeeper → Settings → Wallet Address.",
             parse_mode="HTML",
@@ -170,7 +170,7 @@ async def _process_wallet_submission(
     # ── Step 5: send the Refund{} trigger to the vault ───────────────────────
     # The trigger wallet sends Refund{recipient} to the vault contract.
     # The vault verifies sender == trigger_wallet and releases overage_held
-    # to recipient. The trigger wallet only needs enough TON for gas (~0.01 TON).
+    # to recipient. The trigger wallet only needs enough GRAM for gas (~0.01 GRAM).
     if not TRIGGER_MNEMONIC:
         # Trigger wallet not configured — wallet is saved, notify superadmins.
         log.warning(
@@ -186,7 +186,7 @@ async def _process_wallet_submission(
                         f"💸 <b>Manual refund needed (trigger wallet not configured)</b>\n\n"
                         f"Refund ID: <code>{refund_id}</code>\n"
                         f"User: <code>{tg_user_id}</code>\n"
-                        f"Amount: <b>{refund_ton:.4f} TON</b> (≈ ${refund_usd:.2f} USD)\n"
+                        f"Amount: <b>{refund_ton:.4f} GRAM</b> (≈ ${refund_usd:.2f} USD)\n"
                         f"Recipient: <code>{wallet}</code>\n\n"
                         f"Add <code>TRIGGER_MNEMONIC</code> to .env to automate refunds.\n"
                         f"View all refunds with /pendingrefunds."
@@ -197,7 +197,7 @@ async def _process_wallet_submission(
                 log.warning("Could not alert superadmin %s about manual refund: %s", admin_id, exc)
         await reply_fn(
             f"✅ <b>Wallet address saved!</b>\n\n"
-            f"We'll send <b>{refund_ton:.4f} TON</b> (≈ <b>${refund_usd:.2f} USD</b>) to:\n"
+            f"We'll send <b>{refund_ton:.4f} GRAM</b> (≈ <b>${refund_usd:.2f} USD</b>) to:\n"
             f"<code>{wallet}</code>\n\n"
             f"<i>Refunds are processed within 24 hours.</i>",
             parse_mode="HTML",
@@ -207,7 +207,7 @@ async def _process_wallet_submission(
     # Tell user we're processing
     await reply_fn(
         f"⏳ <b>Processing your refund…</b>\n\n"
-        f"Sending <b>{refund_ton:.4f} TON</b> to <code>{wallet}</code>.\n"
+        f"Sending <b>{refund_ton:.4f} GRAM</b> to <code>{wallet}</code>.\n"
         f"This usually takes under 30 seconds.",
         parse_mode="HTML",
     )
@@ -224,7 +224,7 @@ async def _process_wallet_submission(
                         f"🚨 <b>Refund failed vault address missing</b>\n\n"
                         f"Refund ID: <code>{refund_id}</code>\n"
                         f"User: <code>{tg_user_id}</code>\n"
-                        f"Amount: <b>{refund_ton:.4f} TON</b>\n"
+        f"Amount: <b>{refund_ton:.4f} GRAM</b>\n"
                         f"Recipient: <code>{wallet}</code>\n\n"
                         f"The vault_address is NULL in the subscriptions table. "
                         f"Manually look up the vault for subscription_id="
@@ -238,7 +238,7 @@ async def _process_wallet_submission(
         await reply_fn(
             "⚠️ <b>Could not locate your vault automatically.</b>\n\n"
             "Your wallet address has been saved. Our team will process your refund "
-            f"of <b>{refund_ton:.4f} TON</b> manually within 24 hours.",
+            f"of <b>{refund_ton:.4f} GRAM</b> manually within 24 hours.",
             parse_mode="HTML",
         )
         return
@@ -256,7 +256,7 @@ async def _process_wallet_submission(
 
         msg = (
             f"✅ <b>Refund triggered!</b>\n\n"
-            f"<b>Amount:</b> {refund_ton:.4f} TON (≈ ${refund_usd:.2f} USD)\n"
+            f"<b>Amount:</b> {refund_ton:.4f} GRAM (≈ ${refund_usd:.2f} USD)\n"
             f"<b>To:</b> <code>{wallet}</code>\n\n"
             f"<b>Trigger TX:</b>\n"
             f"<code>{result.tx_hash}</code>\n"
@@ -264,7 +264,7 @@ async def _process_wallet_submission(
         if explorer_url:
             msg += f"\n🔍 <a href=\"{explorer_url}\">View trigger tx on TonScan</a>\n"
         msg += (
-            f"\n<i>The vault contract will send the TON directly to your wallet. "
+            f"\n<i>The vault contract will send the GRAM directly to your wallet. "
             f"It may take a few seconds to appear on-chain.</i>"
         )
         await reply_fn(msg, parse_mode="HTML")
@@ -294,7 +294,7 @@ async def _process_wallet_submission(
         await reply_fn(
             f"⚠️ <b>Automatic refund failed.</b>\n\n"
             f"Don't worry your wallet address has been saved and a member of "
-            f"our team will process your refund of <b>{refund_ton:.4f} TON</b> manually.\n\n"
+            f"our team will process your refund of <b>{refund_ton:.4f} GRAM</b> manually.\n\n"
             f"<i>Expected within 24 hours.</i>",
             parse_mode="HTML",
         )
@@ -308,7 +308,7 @@ async def _process_wallet_submission(
                         f"Refund ID: <code>{refund_id}</code>\n"
                         f"User: <code>{tg_user_id}</code>\n"
                         f"Vault: <code>{vault_address}</code>\n"
-                        f"Amount: <b>{refund_ton:.4f} TON</b> (≈ ${refund_usd:.2f} USD)\n"
+                        f"Amount: <b>{refund_ton:.4f} GRAM</b> (≈ ${refund_usd:.2f} USD)\n"
                         f"Recipient: <code>{wallet}</code>\n"
                         f"Error: <code>{result.error}</code>\n\n"
                         f"<b>To refund manually:</b>\n"

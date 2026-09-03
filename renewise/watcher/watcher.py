@@ -1,7 +1,7 @@
 """
 renewise/watcher/watcher.py
 
-Polling loop that watches TON vault addresses for incoming payments
+Polling loop that watches vault addresses for incoming payments
 and enqueues RQ jobs to process them.
 
 The job function lives in renewise.watcher.tasks so it has a stable
@@ -72,7 +72,16 @@ async def poll_vaults(q: "Queue") -> None:
                 logger.debug("Watching %d vault(s)", len(vaults))
 
                 for vault_address in vaults:
-                    txs = await fetch_transactions(session, vault_address)
+                    # Normalise to raw 0:<hex> so TonCenter receives a stable,
+                    # network-agnostic form regardless of which friendly variant
+                    # (EQ/UQ/kQ/0Q) was stored in the DB.
+                    try:
+                        from pytoniq_core import Address as _Addr
+                        _a = _Addr(vault_address)
+                        canonical_addr = f"0:{_a.hash_part.hex()}"
+                    except Exception:
+                        canonical_addr = vault_address
+                    txs = await fetch_transactions(session, canonical_addr)
                     for tx in txs:
                         tx_hash, amount_nano = _extract_tx_fields(tx)
                         if not tx_hash:

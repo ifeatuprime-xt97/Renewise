@@ -575,40 +575,42 @@ async def get_vaults_to_watch() -> list[str]:
 
 async def get_platform_charge_by_vault(vault_address: str) -> Row | None:
     """
-    Look up platform charge by vault address (exact match).
-    The address should be exactly as stored in the database.
+    Look up platform charge by vault address. Tries all friendly-address
+    variants (EQ/UQ/kQ/0Q/raw) so the watcher can pass any canonical form.
     """
-    import logging
-    log = logging.getLogger(__name__)
-    
-    log.info(f"get_platform_charge_by_vault: looking up vault={vault_address} (length={len(vault_address)})")
-    
-    async with _db() as db:
-        charge = await db.fetchrow(
-            "SELECT * FROM platform_charges WHERE vault_address = $1 AND status = 'pending'",
+    variants = [vault_address]
+    try:
+        from pytoniq_core import Address as _Addr
+        a = _Addr(vault_address)
+        variants = list({
             vault_address,
-        )
-        if charge:
-            log.info(f"get_platform_charge_by_vault: FOUND charge_id={charge['id']}")
-        else:
-            log.warning(f"get_platform_charge_by_vault: NOT FOUND for vault={vault_address}")
-            # Show what's in the database for debugging
-            all_pending = await db.fetch(
-                "SELECT id, vault_address, status, LENGTH(vault_address) as addr_len FROM platform_charges WHERE status = 'pending' LIMIT 5"
+            a.to_str(is_bounceable=True,  is_url_safe=True, is_test_only=False),
+            a.to_str(is_bounceable=True,  is_url_safe=True, is_test_only=True),
+            a.to_str(is_bounceable=False, is_url_safe=True, is_test_only=False),
+            a.to_str(is_bounceable=False, is_url_safe=True, is_test_only=True),
+            f"0:{a.hash_part.hex()}",
+        })
+    except Exception:
+        pass
+
+    async with _db() as db:
+        for v in variants:
+            charge = await db.fetchrow(
+                "SELECT * FROM platform_charges WHERE vault_address = $1 AND status = 'pending'",
+                v,
             )
-            log.warning(f"get_platform_charge_by_vault: {len(all_pending)} pending charges in DB:")
-            for pc in all_pending:
-                match_check = "EXACT MATCH!" if pc["vault_address"] == vault_address else f"no match (len={pc['addr_len']})"
-                log.warning(f"  id={pc['id']} vault={pc['vault_address']} {match_check}")
-        return charge
+            if charge:
+                return charge
+    return None
 
 
 # ── processed_tx_hashes ───────────────────────────────────────────────────────
 
 async def is_tx_processed(tx_hash: str) -> bool:
+    """Return True only if the tx was *fully* processed (not a partial-payment record)."""
     async with _db() as db:
         val = await db.fetchval(
-            "SELECT 1 FROM processed_tx_hashes WHERE tx_hash=$1", tx_hash
+            "SELECT 1 FROM processed_tx_hashes WHERE tx_hash=$1 AND is_partial=0", tx_hash
         )
         return val is not None
 

@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
     STEP_INTERVAL,       # 4 – weekly / monthly
     STEP_PRICE,          # 5 – enter USD price
     STEP_PRICE_CONFIRM,  # 6 – confirm price + live GRAM equivalent
-    STEP_WALLET,         # 7 – enter TON wallet
+    STEP_WALLET,         # 7 – enter GRAM wallet
     STEP_FINAL_CONFIRM,  # 8 – final summary confirm
 ) = range(9)
 
@@ -528,7 +528,7 @@ async def msg_price(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(
         f"💰 <b>Price Confirmation</b>\n\n"
         f"You set the price to <b>${usd_price:.2f} USD</b>.\n"
-        f"At the current market rate ($1 TON = ${ton_price_usd:.2f}), members would pay approximately <b>{equivalent_gram:.2f} GRAM</b>.\n\n"
+        f"At the current market rate ($1 GRAM = ${ton_price_usd:.2f}), members would pay approximately <b>{equivalent_gram:.2f} GRAM</b>.\n\n"
         "Does this look correct?",
         parse_mode="HTML",
         reply_markup=kb,
@@ -578,7 +578,7 @@ async def _show_wallet_entry(query, interval) -> None:
     ])
     await query.edit_message_text(
         "💼 <b>Payout Wallet</b>\n\n"
-        "Please enter your TON wallet address where you'd like to receive payouts.\n\n"
+        "Please enter your GRAM wallet address where you'd like to receive payouts.\n\n"
         "<i>Don't have one? You can use the built-in @wallet in Telegram.</i>",
         parse_mode="HTML",
         reply_markup=kb,
@@ -613,7 +613,7 @@ async def msg_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     is_valid = await validate_ton_address(text)
     if not is_valid:
         await update.message.reply_text(
-            "❌ Invalid TON address format.\n\nPlease try again."
+            "❌ Invalid wallet address format.\n\nPlease try again."
         )
         return STEP_WALLET
 

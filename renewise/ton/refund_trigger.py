@@ -21,9 +21,9 @@ refunds the contract already computed and held. They cannot:
 Flow
 ────
 1. Load trigger wallet from TRIGGER_MNEMONIC
-2. Connect to TON network via LiteBalancer
+2. Connect to network via LiteBalancer
 3. Build Refund{recipient} body cell
-4. Send to vault_address with enough TON for gas (0.01 TON)
+4. Send to vault_address with enough GRAM for gas (0.01 GRAM)
 5. Poll seqno to confirm, fetch tx hash from TonCenter
 6. Return RefundTriggerResult
 """
@@ -44,7 +44,7 @@ _TESTNET_CONFIG_URL = "https://ton.org/testnet-global.config.json"
 _MAINNET_CONFIG_URL = "https://ton.org/global-config.json"
 
 # Gas attached to the Refund{} trigger message — covers compute + outgoing send
-REFUND_TRIGGER_GAS_NANO: int = 10_000_000  # 0.01 TON
+REFUND_TRIGGER_GAS_NANO: int = 10_000_000  # 0.01 GRAM
 
 TX_CONFIRM_TIMEOUT_S: int = 90
 TX_POLL_INTERVAL_S:   int = 4
