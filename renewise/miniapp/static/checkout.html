@@ -303,6 +303,13 @@
         <div class="order-ref"     id="order-ref">#---</div>
       </div>
 
+      <!-- shown only in test mode -->
+      <div id="testnet-banner" style="display:none;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.4);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.5;text-align:left">
+        🧪 <strong style="color:#a78bfa">Test mode</strong> — pay with <strong>testnet GRAM only</strong> (free from
+        <a href="https://t.me/testgiver_ton_bot" target="_blank" rel="noreferrer" style="color:#a78bfa">@testgiver_ton_bot</a>).
+        No real money is charged.
+      </div>
+
       <div class="amount-usd"    id="amount-usd">$0.00</div>
       <div class="amount-crypto" id="amount-crypto">0 GRAM</div>
 
@@ -543,6 +550,12 @@
         _paymentUrl   = charge.payment_url   || '';
         _vaultAddr    = charge.vault_address  || '';
         _requiredNano = charge.required_nano  || 0;
+
+        // Show testnet banner for test-mode charges
+        if (charge.mode === 'test') {
+          var banner = document.getElementById('testnet-banner');
+          if (banner) banner.style.display = 'block';
+        }
 
         var amtUsd = (charge.amount_usd_cents / 100).toFixed(2);
         var amtTon = (_requiredNano / 1e9).toFixed(4);

@@ -185,6 +185,7 @@ async def api_public_checkout(request: Request, charge_id: int) -> dict:
             "external_reference": row["external_reference"],
             "amount_usd_cents": row["amount_usd_cents"],
             "status": row["status"],
+            "mode": row["mode"],
             "vault_address": vault_address,
             "required_nano": required_nano,
             "payment_url": payment_url
