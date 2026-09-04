@@ -188,7 +188,8 @@ async def api_public_checkout(request: Request, charge_id: int) -> dict:
             "mode": row["mode"],
             "vault_address": vault_address,
             "required_nano": required_nano,
-            "payment_url": payment_url
+            "payment_url": payment_url,
+            "buyer_fee_bps": row["buyer_fee_bps"] or 0,
         }
 
 

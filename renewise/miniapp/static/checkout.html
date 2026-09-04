@@ -313,6 +313,9 @@
       <div class="amount-usd"    id="amount-usd">$0.00</div>
       <div class="amount-crypto" id="amount-crypto">0 GRAM</div>
 
+      <!-- fee breakdown — hidden until JS populates it -->
+      <div id="fee-breakdown" style="display:none;grid-template-columns:1fr auto;gap:3px 12px;font-size:11px;color:rgba(255,255,255,0.45);margin:6px 0 2px;text-align:left"></div>
+
       <div class="qr-container">
         <div id="qrcode"></div>
       </div>
@@ -557,12 +560,27 @@
           if (banner) banner.style.display = 'block';
         }
 
-        var amtUsd = (charge.amount_usd_cents / 100).toFixed(2);
-        var amtTon = (_requiredNano / 1e9).toFixed(4);
+        var buyerFeeBps = charge.buyer_fee_bps || 0;
+        var baseUsd     = charge.amount_usd_cents / 100;
+        var feeUsd      = baseUsd * buyerFeeBps / 10000;
+        var totalUsd    = baseUsd + feeUsd;
+        var amtTon      = (_requiredNano / 1e9).toFixed(4);
 
-        document.getElementById('amount-usd').textContent    = '$' + amtUsd;
+        document.getElementById('amount-usd').textContent    = '$' + totalUsd.toFixed(2);
         document.getElementById('amount-crypto').textContent = amtTon + ' GRAM';
         document.getElementById('order-ref').textContent     = '#' + charge.external_reference;
+
+        // Fee breakdown — show only when there is a non-zero buyer fee
+        if (buyerFeeBps > 0) {
+          var feePct  = (buyerFeeBps / 100).toFixed(2);
+          var breakdown = document.getElementById('fee-breakdown');
+          if (breakdown) {
+            breakdown.innerHTML =
+              '<span>Charge</span><span>$' + baseUsd.toFixed(2) + '</span>' +
+              '<span>Service fee (' + feePct + '%)</span><span>$' + feeUsd.toFixed(2) + '</span>';
+            breakdown.style.display = 'grid';
+          }
+        }
 
         // Render wallet links as native <a> tags
         renderWalletLinks(_paymentUrl);
