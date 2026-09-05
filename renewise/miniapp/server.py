@@ -2330,6 +2330,130 @@ async def api_developer_search(
 
 
 
+# ── Sandbox proxy endpoints (initData-authenticated, no raw key needed) ──────
+#
+# The sandbox UI used to store the raw sk_test_ key in a data-attribute and
+# pass it as Bearer auth. Now that test keys are SHA-256 hashed in the DB,
+# the raw key is never available after creation. These two endpoints proxy
+# sandbox charge creation and status polling using the miniapp's own initData
+# auth so the raw key never needs to leave the server.
+
+@app.post("/api/developer/platforms/{platform_id}/sandbox/charge")
+@limiter.limit("10/minute")
+async def api_sandbox_create_charge(
+    request: Request,
+    platform_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Create a sandbox (test-mode) charge for the authenticated user's platform.
+    Authenticated via Telegram initData — no raw secret key needed in the browser.
+    """
+    telegram_user_id = user["id"]
+
+    # Verify ownership
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        platform = await db.fetchrow(
+            "SELECT * FROM platforms WHERE id=$1 AND owner_telegram_id=$2 AND status='active'",
+            platform_id, telegram_user_id,
+        )
+    if not platform:
+        raise HTTPException(status_code=403, detail="Platform not found or unauthorized")
+
+    platform = dict(platform)
+
+    if not platform.get("wallet_address"):
+        raise HTTPException(status_code=400, detail="Platform has no payout wallet configured")
+
+    # Parse body
+    body = await request.json()
+    amount_usd_cents = int(body.get("amount_usd_cents", 0))
+    if amount_usd_cents < 10:
+        raise HTTPException(status_code=400, detail="Minimum charge is $0.10")
+
+    import time as _t
+    external_reference = body.get("external_reference") or f"sandbox_{int(_t.time())}"
+
+    # Create the charge directly — bypasses Bearer auth
+    from renewise.services.payment import generate_platform_payment_request
+    from renewise.db.connection import _db as _conn2
+
+    try:
+        async with _conn2() as db:
+            row = await db.fetchrow(
+                "INSERT INTO platform_charges "
+                "(platform_id, external_reference, mode, amount_usd_cents, status, buyer_fee_bps) "
+                "VALUES ($1,$2,'test',$3,'pending',$4) "
+                "ON CONFLICT(platform_id, external_reference) DO UPDATE "
+                "SET amount_usd_cents=EXCLUDED.amount_usd_cents "
+                "RETURNING id",
+                platform_id, external_reference, amount_usd_cents,
+                platform.get("buyer_fee_bps"),
+            )
+            charge_id = row["id"]
+
+        payment = await generate_platform_payment_request(platform, charge_id, amount_usd_cents)
+
+        async with _conn2() as db:
+            await db.execute(
+                "UPDATE platform_charges SET vault_address=$1, payment_url=$2, "
+                "required_nano_amount=$3 WHERE id=$4",
+                payment.vault_address, payment.payment_url, payment.required_nano, charge_id,
+            )
+
+        return {
+            "id":                charge_id,
+            "status":            "pending",
+            "mode":              "test",
+            "amount_usd_cents":  amount_usd_cents,
+            "external_reference": external_reference,
+            "vault_address":     payment.vault_address,
+            "payment_url":       payment.payment_url,
+            "required_nano_amount": payment.required_nano,
+        }
+    except Exception as exc:
+        log.error("sandbox charge creation failed for platform %d: %s", platform_id, exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/api/developer/platforms/{platform_id}/sandbox/charges/{charge_id}")
+@limiter.limit("60/minute")
+async def api_sandbox_get_charge(
+    request: Request,
+    platform_id: int,
+    charge_id: int,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """
+    Poll a sandbox charge status. Authenticated via initData — no raw key needed.
+    """
+    telegram_user_id = user["id"]
+
+    from renewise.db.connection import _db as _conn
+    async with _conn() as db:
+        # Verify ownership via platform
+        row = await db.fetchrow(
+            "SELECT c.* FROM platform_charges c "
+            "JOIN platforms p ON p.id=c.platform_id "
+            "WHERE c.id=$1 AND c.platform_id=$2 AND p.owner_telegram_id=$3",
+            charge_id, platform_id, telegram_user_id,
+        )
+    if not row:
+        raise HTTPException(status_code=404, detail="Charge not found")
+
+    return {
+        "id":                   row["id"],
+        "status":               row["status"],
+        "mode":                 row["mode"],
+        "amount_usd_cents":     row["amount_usd_cents"],
+        "vault_address":        row["vault_address"],
+        "payment_url":          row["payment_url"],
+        "required_nano_amount": row["required_nano_amount"],
+        "tx_hash":              row["tx_hash"],
+    }
+
+
 # ── GET /api/analytics ────────────────────────────────────────────────────────
 
 @app.get("/api/analytics")

@@ -6141,7 +6141,7 @@ http_response_code(200);</pre>
           return;
         }
         sel.innerHTML = platforms.map(p =>
-          `<option value="${p.id}" data-sk-test="${esc(p.secret_key_test)}" data-has-live="${!!p.publishable_key_live}" data-has-wallet="${!!p.wallet_address}">${esc(p.platform_name)}${!p.wallet_address ? ' ⚠️ No Wallet' : ''}</option>`
+          `<option value="${p.id}" data-has-live="${!!p.publishable_key_live}" data-has-wallet="${!!p.wallet_address}">${esc(p.platform_name)}${!p.wallet_address ? ' ⚠️ No Wallet' : ''}</option>`
         ).join('');
       } catch (e) {
         sel.innerHTML = '<option value="">Failed to load apps</option>';
@@ -6166,7 +6166,6 @@ http_response_code(200);</pre>
       const amtUsd = parseFloat(amtInput.value);
       if (!amtUsd || amtUsd < 0.10) { WebApp.showAlert('Minimum charge is $0.10'); return; }
 
-      const skTest = opt.dataset.skTest;
       const hasLive = opt.dataset.hasLive === 'true';
       if (_sandboxEnv === 'live' && !hasLive) {
         WebApp.showAlert('This app has no Live (Mainnet) keys yet. Generate them first in Developer Apps.');
@@ -6175,7 +6174,7 @@ http_response_code(200);</pre>
 
       // For live mode, the sk_live is never stored in the UI (shown only once on generation).
       // We prompt the dev to paste their key for Mainnet sandbox testing.
-      let secretKey = skTest;
+      let secretKey = null; // not used for test mode — proxy endpoint handles auth
       if (_sandboxEnv === 'live') {
         const enteredKey = await promptTextModal('Enter Live Secret Key', 'sk_live_…');
         if (!enteredKey || !enteredKey.trim().startsWith('sk_live_')) {
@@ -6195,11 +6194,23 @@ http_response_code(200);</pre>
 
       try {
         const ref = `sandbox_${Date.now()}`;
-        const r = await fetch(`${API}/platform/charges`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount_usd_cents: Math.round(amtUsd * 100), external_reference: ref })
-        });
+        let r;
+
+        if (_sandboxEnv === 'test') {
+          // Test mode: use initData-authenticated proxy endpoint (no raw key needed)
+          r = await apiFetch(`${API}/developer/platforms/${platformId}/sandbox/charge`, {
+            method: 'POST',
+            headers: H(),
+            body: JSON.stringify({ amount_usd_cents: Math.round(amtUsd * 100), external_reference: ref })
+          });
+        } else {
+          // Live mode: user supplied their sk_live_ key — use platform API directly
+          r = await fetch(`${API}/platform/charges`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount_usd_cents: Math.round(amtUsd * 100), external_reference: ref })
+          });
+        }
         if (!r.ok) {
           const data = await r.json().catch(() => ({}));
           const raw = data.detail || `HTTP ${r.status}`;
@@ -6224,7 +6235,9 @@ http_response_code(200);</pre>
         const charge = await r.json();
 
         _renderSandboxPending(charge, amtUsd, secretKey);
-        _sandboxPollCharge(charge.id, secretKey);   // charge.id, not charge.charge_id
+        // For test mode pass platformId so the poll uses the proxy endpoint.
+        // For live mode pass secretKey so it uses the platform Bearer endpoint.
+        _sandboxPollCharge(charge.id, _sandboxEnv === 'test' ? null : secretKey, _sandboxEnv === 'test' ? platformId : null);
       } catch (e) {
         _renderSandboxError(e.message || String(e));
       } finally {
@@ -6444,7 +6457,7 @@ http_response_code(200);</pre>
         </div>`;
     }
 
-    function _sandboxPollCharge(chargeId, sk) {
+    function _sandboxPollCharge(chargeId, sk, platformId) {
       let attempts = 0;
       const MAX = 120; // 6 min @ 3s
       _sandboxPollTimer = setInterval(async () => {
@@ -6455,12 +6468,16 @@ http_response_code(200);</pre>
           return;
         }
         try {
-          // Use a direct fetch with the platform Bearer key (not initData)
-          // apiFetch wraps with initData auth — not appropriate here.
-          // We catch 401 manually to stop polling on key revocation.
-          const r = await fetch(`${API}/platform/charges/${chargeId}`, {
-            headers: { 'Authorization': `Bearer ${sk}` }
-          });
+          let r;
+          if (platformId) {
+            // Test mode: use initData-authenticated proxy endpoint
+            r = await apiFetch(`${API}/developer/platforms/${platformId}/sandbox/charges/${chargeId}`, { headers: H() });
+          } else {
+            // Live mode: use platform Bearer key directly
+            r = await fetch(`${API}/platform/charges/${chargeId}`, {
+              headers: { 'Authorization': `Bearer ${sk}` }
+            });
+          }
           if (r.status === 401) {
             // Key rotated or revoked — stop polling, show error
             clearInterval(_sandboxPollTimer);
