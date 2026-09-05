@@ -64,7 +64,10 @@ WATCHER_STALE_SECONDS: int = 180             # 3 minutes
 TRIGGER_WALLET_CHECK_EVERY_N: int = 6
 
 # CoinGecko: alert if last success is older than this
-PRICE_FEED_STALE_SECONDS: int = 1800         # 30 minutes
+# Must be significantly longer than CACHE_TTL (30 min) to avoid false
+# alarms at cache expiry boundaries. 2 hours means the feed is genuinely
+# broken — not just mid-refresh.
+PRICE_FEED_STALE_SECONDS: int = 7200         # 2 hours
 
 # Pending refund alert threshold
 REFUND_ALERT_THRESHOLD: int = 5
@@ -116,17 +119,29 @@ _state = _MonitorState()
 
 async def _dm_superadmins(bot: "Bot", text: str) -> None:
     """
-    DM every superadmin. Truncates to Telegram's 4096-char limit.
+    DM every superadmin via the SUPERADMIN bot (not the main user-facing bot).
+    Truncates to Telegram's 4096-char limit.
     Never raises — a broken DM must not crash the monitor itself.
     """
-    from renewise.config import ALLOWED_SUPERADMIN_IDS
+    from renewise.config import ALLOWED_SUPERADMIN_IDS, SUPERADMIN_BOT_TOKEN
     if not ALLOWED_SUPERADMIN_IDS:
         return
     if len(text) > _TG_MAX_LEN:
         text = text[:_TG_MAX_LEN - 20] + "\n\n… <i>(truncated)</i>"
+
+    # Use the superadmin bot so alerts land in the superadmin channel,
+    # not in the admin's regular user-facing bot DM.
+    send_bot = bot  # fallback to main bot if superadmin token not set
+    if SUPERADMIN_BOT_TOKEN:
+        try:
+            from telegram import Bot as _Bot
+            send_bot = _Bot(SUPERADMIN_BOT_TOKEN)
+        except Exception as exc:
+            log.warning("monitor: could not init superadmin bot for DM: %s", exc)
+
     for uid in ALLOWED_SUPERADMIN_IDS:
         try:
-            await bot.send_message(chat_id=uid, text=text, parse_mode="HTML")
+            await send_bot.send_message(chat_id=uid, text=text, parse_mode="HTML")
         except Exception as exc:
             log.warning("monitor: could not DM superadmin %d: %s", uid, exc)
 
@@ -324,7 +339,6 @@ async def start_monitor(bot: "Bot") -> None:
         await _check_telegram_api(bot)
         await _check_watcher_heartbeat(bot)
         await _check_pending_refunds(bot)
-        await _check_price_feed(bot)
         # Trigger wallet only every Nth cycle to avoid hammering TonCenter
         if _state.cycle % TRIGGER_WALLET_CHECK_EVERY_N == 0:
             await _check_trigger_wallet(bot)
