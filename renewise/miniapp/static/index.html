@@ -3518,12 +3518,6 @@ http_response_code(200);</pre>
      PAGE — Analytics
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-analytics">
-    <div class="back-row">
-      <button class="back-btn" id="analytics-back-btn">
-        <svg viewBox="0 0 24 24" fill="none"><polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5"/></svg>
-        <span id="analytics-back-label">Dashboard</span>
-      </button>
-    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <h1 class="page-title">Analytics</h1>
       <span id="analytics-period-badge" style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px"></span>
@@ -3849,7 +3843,7 @@ http_response_code(200);</pre>
           const el = document.getElementById('nav-' + t);
           if (el) el.classList.toggle('active', t === page);
         });
-        const subPages = ['history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete', 'dev-app', 'dev-sandbox'];
+        const subPages = ['history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete', 'dev-app', 'dev-sandbox', 'analytics'];
         const bnc = document.getElementById('bottom-nav-creator');
         const bnd = document.getElementById('bottom-nav-dev');
 
@@ -6157,6 +6151,7 @@ http_response_code(200);</pre>
       const opt = sel.options[sel.selectedIndex];
       if (!opt || !opt.value) { WebApp.showAlert('Please select an app first.'); return; }
 
+      const platformId = parseInt(opt.value, 10);
       const hasWallet = opt.dataset.hasWallet === 'true';
       if (!hasWallet) {
         WebApp.showAlert('⚠️ This app has no Payout Wallet set. Please add one in Developer Apps first.');
@@ -7470,13 +7465,9 @@ http_response_code(200);</pre>
 
     function openAnalytics(mode) {
       _analyticsReturnPage = mode === 'developer' ? 'dev-dashboard' : 'dashboard';
-      const backLabel = document.getElementById('analytics-back-label');
-      if (backLabel) backLabel.textContent = mode === 'developer' ? 'My Apps' : 'Dashboard';
       App.nav('analytics');
       loadAnalytics(mode);
     }
-
-    document.getElementById('analytics-back-btn').onclick = () => App.nav(_analyticsReturnPage || 'dashboard');
 
     async function loadAnalytics(mode) {
       // Reset to skeletons
