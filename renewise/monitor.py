@@ -268,8 +268,9 @@ async def _check_trigger_wallet(bot: "Bot") -> None:
 
 async def _check_price_feed(bot: "Bot") -> None:
     try:
-        from renewise.utils.coingecko import _last_success_time  # type: ignore[attr-defined]
-        age = time.time() - _last_success_time
+        from renewise.utils.coingecko import _cache as _cg_cache
+        last_success = _cg_cache.get("timestamp", 0)
+        age = time.time() - last_success if last_success else PRICE_FEED_STALE_SECONDS + 1
         if age > PRICE_FEED_STALE_SECONDS:
             await _alert(
                 bot, _state.price_feed, "CoinGecko Price Feed",
@@ -279,8 +280,8 @@ async def _check_price_feed(bot: "Bot") -> None:
             )
         else:
             await _resolve(bot, _state.price_feed, "CoinGecko Price Feed")
-    except AttributeError:
-        pass  # _last_success_time not exposed — skip this check
+    except Exception:
+        pass  # non-critical check — never crash the monitor
 
 
 async def _check_pending_refunds(bot: "Bot") -> None:
