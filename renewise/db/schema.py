@@ -556,22 +556,14 @@ async def init_db() -> None:
                 EXCEPTION WHEN others THEN NULL; END; $$;
                 """,
                 # Rename secret_key_test → secret_key_test_hash and hash existing plaintext values.
-                # This migration is idempotent: the RENAME is wrapped in an exception handler,
-                # and the UPDATE only touches rows where the stored value does NOT look like a
-                # 64-char hex SHA-256 hash (i.e. still plaintext sk_test_... keys).
+                # The RENAME is safe to re-run (exception handler swallows duplicate-rename errors).
+                # The plaintext-to-hash step is done in Python below (after DDL migrations) because
+                # the digest() SQL function requires pgcrypto which is not available on Neon.
                 """
                 DO $$ BEGIN
                     ALTER TABLE platforms RENAME COLUMN secret_key_test TO secret_key_test_hash;
                 EXCEPTION WHEN undefined_column THEN NULL;
                          WHEN others THEN NULL; END; $$;
-                """,
-                # Hash any existing plaintext test keys that survived the rename.
-                # encode(digest(value, 'sha256'), 'hex') is pure SQL — no extension needed.
-                """
-                UPDATE platforms
-                SET secret_key_test_hash = encode(digest(secret_key_test_hash, 'sha256'), 'hex')
-                WHERE secret_key_test_hash IS NOT NULL
-                  AND length(secret_key_test_hash) != 64;
                 """,
                 # ── Column additions (skipped if column already exists) ────────
                 # platform_charges.payment_url — stores full ton:// deep-link with StateInit
@@ -605,6 +597,28 @@ async def init_db() -> None:
                 ]
                 for mig in pg_migrations:
                     await db.execute(mig)
+
+                # ── Python-side: hash any remaining plaintext test keys ────────
+                # Rows where secret_key_test_hash is not a 64-char hex string are
+                # still in plaintext (sk_test_...). Hash them now using hashlib so
+                # we don't need the pgcrypto extension (not available on Neon free).
+                import hashlib as _hl
+                plaintext_rows = await db.fetch(
+                    "SELECT id, secret_key_test_hash FROM platforms "
+                    "WHERE secret_key_test_hash IS NOT NULL "
+                    "AND length(secret_key_test_hash) != 64"
+                )
+                for row in plaintext_rows:
+                    hashed = _hl.sha256(row["secret_key_test_hash"].encode()).hexdigest()
+                    await db.execute(
+                        "UPDATE platforms SET secret_key_test_hash=$1 WHERE id=$2",
+                        hashed, row["id"],
+                    )
+                if plaintext_rows:
+                    import logging as _log
+                    _log.getLogger(__name__).info(
+                        "init_db: hashed %d plaintext test key(s)", len(plaintext_rows)
+                    )
             finally:
                 await db.execute("SELECT pg_advisory_unlock(18273645)")
 
