@@ -179,6 +179,14 @@ _key_manager = TonCenterKeyManager(TONCENTER_API_KEYS)
 _key_manager_mainnet = TonCenterKeyManager(TONCENTER_API_KEYS_MAINNET)
 _key_manager_testnet = TonCenterKeyManager(TONCENTER_API_KEYS_TESTNET_LIST)
 
+log.info(
+    "TonCenter key manager init — mainnet keys: %d, testnet keys: %d, active keys: %d (testnet=%s)",
+    len(TONCENTER_API_KEYS_MAINNET),
+    len(TONCENTER_API_KEYS_TESTNET_LIST),
+    len(TONCENTER_API_KEYS),
+    TONCENTER_TESTNET,
+)
+
 _MAINNET_URL = "https://toncenter.com/api/v2"
 _TESTNET_URL = "https://testnet.toncenter.com/api/v2"
 
@@ -186,9 +194,13 @@ _TESTNET_URL = "https://testnet.toncenter.com/api/v2"
 def _url_and_manager(network: str | None) -> tuple[str, TonCenterKeyManager]:
     """Return (base_url, key_manager) for the requested network."""
     if network == "testnet":
-        return _TESTNET_URL, _key_manager_testnet
+        # Fall back to global manager if testnet-specific list is empty
+        km = _key_manager_testnet if _key_manager_testnet.keys else _key_manager
+        return _TESTNET_URL, km
     if network == "mainnet":
-        return _MAINNET_URL, _key_manager_mainnet
+        # Fall back to global manager if mainnet-specific list is empty
+        km = _key_manager_mainnet if _key_manager_mainnet.keys else _key_manager
+        return _MAINNET_URL, km
     # None → use global config (legacy / bot subscriptions)
     return TONCENTER_BASE_URL, _key_manager
 

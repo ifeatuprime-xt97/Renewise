@@ -36,6 +36,12 @@ _testnet_keys_str  = os.getenv("TONCENTER_API_KEYS_TESTNET", "")
 TONCENTER_API_KEYS_MAINNET: list[str] = [k.strip() for k in _mainnet_keys_str.split(",") if k.strip()]
 TONCENTER_API_KEYS_TESTNET_LIST: list[str] = [k.strip() for k in _testnet_keys_str.split(",") if k.strip()]
 
+# If no testnet-specific keys are configured, reuse the mainnet keys.
+# Many TonCenter API keys work on both networks — this avoids requiring
+# a separate TONCENTER_API_KEYS_TESTNET entry for the common case.
+if not TONCENTER_API_KEYS_TESTNET_LIST:
+    TONCENTER_API_KEYS_TESTNET_LIST = TONCENTER_API_KEYS_MAINNET
+
 # The active key list — whichever network we're pointed at
 TONCENTER_API_KEYS: list[str] = TONCENTER_API_KEYS_TESTNET_LIST if TONCENTER_TESTNET else TONCENTER_API_KEYS_MAINNET
 
