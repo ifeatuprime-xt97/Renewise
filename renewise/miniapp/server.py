@@ -87,12 +87,9 @@ async def _resolve_bot_username() -> str | None:
 
 # ---------------------------------------------------------------------------
 # Rate limiter — keyed on the originating IP address.
-# Limits are applied per-decorator, so write endpoints get stricter caps.
-#
-# Backend: Redis when REDIS_URL points to a real Redis instance (production),
-# in-memory when it's the localhost default or Redis is unreachable (dev).
-# Redis-backed counters are shared across all workers, so the stated limits
-# are enforced globally rather than per-process.
+# Backend: Redis when REDIS_URL points to a real instance, in-memory otherwise.
+# Initialised lazily so a Redis connection timeout at import time never
+# crashes the Vercel cold-start (the limiter falls back to in-memory).
 # ---------------------------------------------------------------------------
 import os as _os
 _REDIS_URL = _os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -115,13 +112,38 @@ async def _lifespan(application: FastAPI):
     """Run DB migrations and resolve bot username once at startup."""
     from renewise.db.schema import init_db
     from renewise.db.queries import delete_stale_pending_subscriptions
-    await init_db()
-    await _resolve_bot_username()
-    # Run once immediately on startup, then every hour in the background.
-    await delete_stale_pending_subscriptions(older_than_hours=12)
-    cleanup_task = asyncio.create_task(_stale_pending_cleanup_loop())
+    import os as _os
+
+    try:
+        await init_db()
+    except Exception as exc:
+        log.error("lifespan: init_db failed: %s", exc, exc_info=True)
+        # Don't crash the whole app — DB may already be migrated
+
+    try:
+        await _resolve_bot_username()
+    except Exception as exc:
+        log.warning("lifespan: could not resolve bot username: %s", exc)
+
+    # Stale pending cleanup — skip on Vercel serverless (no persistent process)
+    # VERCEL env var is always set by Vercel's runtime; use it as the guard.
+    _is_serverless = bool(_os.getenv("VERCEL") or _os.getenv("VERCEL_ENV"))
+    cleanup_task = None
+    if not _is_serverless:
+        try:
+            await delete_stale_pending_subscriptions(older_than_hours=12)
+            cleanup_task = asyncio.create_task(_stale_pending_cleanup_loop())
+        except Exception as exc:
+            log.warning("lifespan: stale cleanup start failed: %s", exc)
+
     yield
-    cleanup_task.cancel()
+
+    if cleanup_task is not None and not cleanup_task.done():
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except (asyncio.CancelledError, Exception):
+            pass
 
 
 async def _stale_pending_cleanup_loop() -> None:
