@@ -569,38 +569,101 @@ async def get_subscription_by_vault(vault_address: str) -> Row | None:
         )
 
 
-async def get_vaults_to_watch() -> list[tuple[str, str]]:
+async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
     """
-    Return (vault_address, network) pairs for all vaults that need watching.
+    Return (vault_address, network, last_activity_epoch) triples for all
+    vaults that need watching.
+
+    last_activity_epoch is a Unix timestamp (float) representing how recently
+    something happened on this vault — used by the polling loop to tier vaults:
+
+      Hot  (last_activity < 30 min ago) → poll every POLL_INTERVAL_SECONDS
+      Warm (last_activity >= 30 min ago) → poll every WARM_POLL_SECONDS (60s)
+
+    Activity is derived from existing columns with no schema changes:
+      • Bot subscriptions  — MAX(updated_at, created_at) on the subscription row
+      • Platform charges   — MAX(created_at, completed_at) on the charge row
+
     network is 'testnet' for test-mode platform charges, 'mainnet' for everything else.
-    Bot subscriptions always use the global TONCENTER_TESTNET setting.
     """
+    from renewise.config import USE_POSTGRES
     from renewise.watcher.config import TONCENTER_TESTNET
     bot_network = "testnet" if TONCENTER_TESTNET else "mainnet"
 
     async with _db() as db:
-        rows = await db.fetch(
-            # Bot subscription vaults — use global network setting
-            "SELECT DISTINCT vr.vault_address, $1::text AS network "
-            "FROM vault_registry vr "
-            "JOIN subscriptions s ON s.id = vr.subscription_id "
-            "WHERE s.status IN ('pending', 'active') "
-            "UNION "
-            "SELECT DISTINCT vault_address, $1::text AS network "
-            "FROM subscriptions "
-            "WHERE vault_address IS NOT NULL "
-            "AND status IN ('pending', 'active') "
-            "UNION "
-            # Platform charges — route by mode column
-            "SELECT DISTINCT vault_address, "
-            "  CASE WHEN mode = 'test' THEN 'testnet' ELSE 'mainnet' END AS network "
-            "FROM platform_charges "
-            "WHERE vault_address IS NOT NULL "
-            "AND status IN ('pending', 'expired') "
-            "AND tx_hash IS NULL",
-            bot_network,
-        )
-        return [(r["vault_address"], r["network"]) for r in rows]
+        if USE_POSTGRES:
+            rows = await db.fetch(
+                # Bot subscription vaults — activity from subscription timestamps
+                "SELECT DISTINCT vr.vault_address, $1::text AS network, "
+                "  EXTRACT(EPOCH FROM GREATEST("
+                "    COALESCE(s.updated_at, s.created_at), "
+                "    COALESCE(s.created_at, NOW()) "
+                "  )) AS last_activity "
+                "FROM vault_registry vr "
+                "JOIN subscriptions s ON s.id = vr.subscription_id "
+                "WHERE s.status IN ('pending', 'active') "
+                "UNION "
+                "SELECT DISTINCT vault_address, $1::text AS network, "
+                "  EXTRACT(EPOCH FROM GREATEST("
+                "    COALESCE(updated_at, created_at), "
+                "    COALESCE(created_at, NOW()) "
+                "  )) AS last_activity "
+                "FROM subscriptions "
+                "WHERE vault_address IS NOT NULL "
+                "AND status IN ('pending', 'active') "
+                "UNION "
+                "SELECT DISTINCT vault_address, "
+                "  CASE WHEN mode = 'test' THEN 'testnet' ELSE 'mainnet' END AS network, "
+                "  EXTRACT(EPOCH FROM GREATEST("
+                "    COALESCE(created_at, NOW()), "
+                "    COALESCE(completed_at, created_at, NOW()) "
+                "  )) AS last_activity "
+                "FROM platform_charges "
+                "WHERE vault_address IS NOT NULL "
+                "AND status IN ('pending', 'expired') "
+                "AND tx_hash IS NULL",
+                bot_network,
+            )
+        else:
+            # SQLite: strftime('%s', ...) returns Unix epoch as text
+            rows = await db.fetch(
+                "SELECT DISTINCT vr.vault_address, $1 AS network, "
+                "  CAST(strftime('%s', MAX("
+                "    COALESCE(s.updated_at, s.created_at), "
+                "    COALESCE(s.created_at, CURRENT_TIMESTAMP) "
+                "  )) AS REAL) AS last_activity "
+                "FROM vault_registry vr "
+                "JOIN subscriptions s ON s.id = vr.subscription_id "
+                "WHERE s.status IN ('pending', 'active') "
+                "GROUP BY vr.vault_address "
+                "UNION "
+                "SELECT DISTINCT vault_address, $1 AS network, "
+                "  CAST(strftime('%s', MAX("
+                "    COALESCE(updated_at, created_at), "
+                "    COALESCE(created_at, CURRENT_TIMESTAMP) "
+                "  )) AS REAL) AS last_activity "
+                "FROM subscriptions "
+                "WHERE vault_address IS NOT NULL "
+                "AND status IN ('pending', 'active') "
+                "GROUP BY vault_address "
+                "UNION "
+                "SELECT DISTINCT vault_address, "
+                "  CASE WHEN mode = 'test' THEN 'testnet' ELSE 'mainnet' END AS network, "
+                "  CAST(strftime('%s', MAX("
+                "    COALESCE(created_at, CURRENT_TIMESTAMP), "
+                "    COALESCE(completed_at, created_at, CURRENT_TIMESTAMP) "
+                "  )) AS REAL) AS last_activity "
+                "FROM platform_charges "
+                "WHERE vault_address IS NOT NULL "
+                "AND status IN ('pending', 'expired') "
+                "AND tx_hash IS NULL "
+                "GROUP BY vault_address",
+                bot_network,
+            )
+        return [
+            (r["vault_address"], r["network"], float(r["last_activity"] or 0.0))
+            for r in rows
+        ]
 
 async def get_platform_charge_by_vault(vault_address: str) -> Row | None:
     """

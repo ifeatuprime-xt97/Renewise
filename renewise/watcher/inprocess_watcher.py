@@ -715,13 +715,25 @@ async def poll_vaults_inprocess(app: "Application") -> None:
     def _remove_done(t: asyncio.Task) -> None:
         _inflight.discard(t)
 
+    # ── Vault poll-tier constants ─────────────────────────────────────────────
+    # Hot  — vault active within HOT_WINDOW_SECONDS → poll every POLL_INTERVAL_SECONDS
+    # Warm — older than HOT_WINDOW_SECONDS           → poll every WARM_POLL_SECONDS
+    HOT_WINDOW_SECONDS: float = 1800.0   # 30 minutes
+    WARM_POLL_SECONDS:  float = 60.0     # 1 minute between warm polls
+
+    # Per-vault last-polled timestamp (canonical address → monotonic time).
+    # Checked before each fetch to skip vaults whose tier interval hasn't elapsed.
+    _last_polled: dict[str, float] = {}
+
     try:
         while True:
             poll_backoff = 0  # extra seconds to wait after a 429 this cycle
             try:
-                # Stale pending cleanup — once per hour
+                # ── Periodic maintenance jobs ─────────────────────────────────
                 import time as _time
                 now = _time.monotonic()
+                wall_now = _time.time()   # Unix epoch for activity comparison
+
                 if now - _last_cleanup >= 3600:
                     from renewise.db.queries import delete_stale_pending_subscriptions
                     deleted = await delete_stale_pending_subscriptions(older_than_hours=12)
@@ -729,26 +741,27 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                         log.info("inprocess: deleted %d stale pending subscription(s)", deleted)
                     _last_cleanup = now
 
-                if now - _last_wallet_apply >= 900:  # every 15 minutes
+                if now - _last_wallet_apply >= 900:
                     await _apply_wallet_changes_inprocess(app)
                     _last_wallet_apply = now
-                    
-                if now - _last_charge_expire >= 300:  # every 5 minutes
+
+                if now - _last_charge_expire >= 300:
                     await _expire_stale_charges_inprocess()
                     _last_charge_expire = now
 
-                if now - _last_refund_retry >= 600:  # every 10 minutes
+                if now - _last_refund_retry >= 600:
                     await _retry_pending_send_refunds_inprocess(app)
                     _last_refund_retry = now
 
+                # ── Fetch vault list with activity timestamps ─────────────────
                 vaults = await get_vaults_to_watch()
-                # ALWAYS log polling activity so we can see the watcher is alive
-                log.info("inprocess watcher: polling %d vault(s)", len(vaults))
 
-                for vault_address, network in vaults:
-                    # Normalize address to raw 0:<hex> form so all friendly-address
-                    # variants (EQ/UQ/kQ/0Q) of the same vault map to the same
-                    # seen-set key and TonCenter query uses a stable canonical form.
+                hot_count  = 0
+                warm_count = 0
+                skip_count = 0
+
+                for vault_address, network, last_activity_epoch in vaults:
+                    # Normalise address → stable canonical key
                     try:
                         from pytoniq_core import Address as _Addr
                         _a = _Addr(vault_address)
@@ -756,55 +769,70 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                     except Exception:
                         canonical = vault_address
 
+                    # ── Tier decision ─────────────────────────────────────────
+                    # A vault is HOT if its last DB activity was within
+                    # HOT_WINDOW_SECONDS.  This covers:
+                    #   • Brand-new pending subscriptions (just created)
+                    #   • Vaults where a payment was processed recently
+                    #   • Platform charges just issued
+                    # Everything else is WARM and polled at 1-minute intervals
+                    # to drastically reduce API call volume at scale.
+                    #
+                    # Special case: if last_activity_epoch is 0 (NULL in DB),
+                    # treat as hot so we never silently miss a new vault.
+                    activity_age = wall_now - last_activity_epoch if last_activity_epoch else 0.0
+                    is_hot = activity_age <= HOT_WINDOW_SECONDS
+
+                    last_poll = _last_polled.get(canonical, 0.0)
+                    time_since_poll = now - last_poll
+
+                    if is_hot:
+                        # Hot: poll every POLL_INTERVAL_SECONDS (already enforced
+                        # by the outer sleep — just always poll hot vaults)
+                        hot_count += 1
+                    else:
+                        # Warm: only poll when WARM_POLL_SECONDS have elapsed
+                        if time_since_poll < WARM_POLL_SECONDS:
+                            skip_count += 1
+                            continue
+                        warm_count += 1
+
+                    # ── TonCenter fetch ───────────────────────────────────────
                     try:
                         txs = await fetch_transactions(canonical, limit=20, network=network)
+                        _last_polled[canonical] = now
                     except Exception as exc:
                         err_str = str(exc)
                         if "429" in err_str:
-                            poll_backoff = max(poll_backoff, 30)
+                            # Key manager already handled cooldown internally;
+                            # set a modest outer backoff to give keys breathing room.
+                            poll_backoff = max(poll_backoff, 5)
                             log.warning(
-                                "inprocess: 429 rate-limit for vault %s — "
-                                "backing off %ds before next cycle",
+                                "inprocess: 429 on vault %s after key manager exhausted — "
+                                "outer backoff %ds",
                                 canonical, poll_backoff,
                             )
                         else:
                             log.warning("inprocess: fetch error for %s: %s", canonical, exc)
                         continue
 
+                    # ── Seed seen-set on first encounter ──────────────────────
                     if canonical not in seen:
                         seen[canonical] = set()
-                        # Determine if this is a brand-new vault (just added to
-                        # platform_charges or subscriptions) vs one that has been
-                        # watched before and had history we should skip.
-                        #
-                        # For KNOWN old vaults: mark all existing txs as seen
-                        # to avoid replaying history on every restart.
-                        #
-                        # For NEW vaults: we must still process unprocessed txs
-                        # because the payment may have landed BEFORE the watcher
-                        # first saw the vault (deploy-on-first-message means the
-                        # vault can receive, split and empty in one block — by
-                        # the time we first check it has 0 balance but the tx
-                        # is in the history).
                         for tx in txs:
                             h = extract_tx_hash(tx)
                             if not h:
                                 continue
                             if await is_tx_processed(h):
-                                # Fully processed in a previous run — skip forever.
-                                # Partial-payment txs are NOT returned by is_tx_processed
-                                # (they have is_partial=1), so they are left out of seen
-                                # and will be re-examined this cycle.
                                 seen[canonical].add(h)
-                            # Leave unprocessed and partial txs OUT of seen so they get
-                            # picked up by the loop below on this same cycle.
                         log.info(
                             "inprocess: seeded %d already-processed tx(s) for vault %s "
-                            "(%d total on-chain) — will process %d unprocessed tx(s)",
+                            "(%d total on-chain) — will process %d unprocessed",
                             len(seen[canonical]), canonical, len(txs),
                             len(txs) - len(seen[canonical]),
                         )
 
+                    # ── Process new transactions ──────────────────────────────
                     for tx in txs:
                         tx_hash     = extract_tx_hash(tx)
                         amount_nano = extract_in_msg_value(tx)
@@ -814,8 +842,9 @@ async def poll_vaults_inprocess(app: "Application") -> None:
 
                         seen[canonical].add(tx_hash)
                         log.info(
-                            "inprocess: NEW transaction detected - tx=%s vault=%s amount=%d",
+                            "inprocess: NEW tx detected — tx=%s vault=%s amount=%d tier=%s",
                             tx_hash, canonical, amount_nano,
+                            "hot" if is_hot else "warm",
                         )
                         t = asyncio.create_task(
                             _process_payment_inprocess(
@@ -828,15 +857,18 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                         _inflight.add(t)
                         t.add_done_callback(_remove_done)
 
+                log.info(
+                    "inprocess watcher: %d vault(s) total — "
+                    "hot=%d polled, warm=%d polled, warm=%d skipped",
+                    len(vaults), hot_count, warm_count, skip_count,
+                )
+
             except asyncio.CancelledError:
-                raise  # handled in outer try/finally
+                raise
             except Exception as exc:
                 log.error("inprocess watcher poll error: %s", exc)
             else:
-                # Update the heartbeat timestamp so the health monitor knows
-                # the watcher completed a full poll cycle without crashing.
                 import renewise.monitor as _monitor
-                import time as _time
                 _monitor.watcher_last_heartbeat = _time.monotonic()
 
             await asyncio.sleep(POLL_INTERVAL_SECONDS + poll_backoff)

@@ -33,36 +33,115 @@ from renewise.watcher.config import (
 log = logging.getLogger(__name__)
 
 class TonCenterKeyManager:
-    def __init__(self, keys: list[str]):
-        self.keys = keys
-        self.current_idx = 0
+    """
+    Cooldown-aware, least-recently-used TonCenter API key manager.
 
-    def get_key(self) -> str | None:
-        if not self.keys:
-            return None
-        return self.keys[self.current_idx]
+    Design
+    ──────
+    Each key tracks two timestamps:
+      • last_used_at   — monotonic time of the most recent successful request
+      • cooldown_until — monotonic time after which the key is usable again
 
-    def rotate(self) -> str | None:
-        if not self.keys:
-            return None
-        old_idx = self.current_idx
-        self.current_idx = (self.current_idx + 1) % len(self.keys)
-        log.warning("TonCenter rate limit hit (429). Rotating API key from index %d to %d.", old_idx, self.current_idx)
-        return self.keys[self.current_idx]
+    On every request:
+      1. Build the set of available keys (cooldown expired).
+      2. Pick the one with the oldest last_used_at (LRU) so load is spread
+         evenly across keys rather than hammering the first one.
+      3. If ALL keys are cooling down, wait for the shortest remaining
+         cooldown before retrying — no wasted requests.
 
-    async def fetch_with_retry(self, session: aiohttp.ClientSession, url: str, params: dict[str, Any] = None) -> dict[str, Any]:
+    On 429:
+      • Stamp the offending key with cooldown_until = now + COOLDOWN_SECONDS.
+      • Immediately try the next best available key rather than sleeping
+        the entire process.
+
+    Adding more keys to TONCENTER_API_KEYS automatically increases capacity —
+    no other changes needed.
+    """
+
+    # How long a key sits out after a 429 response (seconds)
+    COOLDOWN_SECONDS: float = 60.0
+
+    def __init__(self, keys: list[str]) -> None:
+        self.keys: list[str] = list(keys)
+        now = asyncio.get_event_loop().time() if self.keys else 0.0
+        # Per-key state: key → (last_used_at, cooldown_until)
+        self._last_used:   dict[str, float] = {k: 0.0  for k in self.keys}
+        self._cooldown_until: dict[str, float] = {k: 0.0 for k in self.keys}
+
+    def _best_key(self) -> tuple[str | None, float]:
         """
-        Execute a GET request with exponential backoff on 429.
-        Rotates keys between retries when multiple keys are available.
-        Raises the last exception if all retries are exhausted.
-        """
-        max_attempts = max(3, len(self.keys) + 1)
-        delay = 2.0  # initial backoff in seconds
+        Return (best_key, wait_seconds).
 
+        best_key    — the LRU key whose cooldown has expired, or None if all
+                      keys are still cooling down.
+        wait_seconds — seconds to sleep before the next key becomes available
+                       (0.0 when best_key is not None).
+        """
+        if not self.keys:
+            return None, 0.0
+
+        import time as _t
+        now = _t.monotonic()
+        available = [k for k in self.keys if self._cooldown_until[k] <= now]
+
+        if available:
+            # Pick the key that was used least recently
+            best = min(available, key=lambda k: self._last_used[k])
+            return best, 0.0
+
+        # All keys are cooling — return the shortest remaining wait
+        wait = min(self._cooldown_until[k] - now for k in self.keys)
+        return None, max(wait, 0.0)
+
+    def _mark_used(self, key: str) -> None:
+        import time as _t
+        self._last_used[key] = _t.monotonic()
+
+    def _mark_rate_limited(self, key: str) -> None:
+        import time as _t
+        now = _t.monotonic()
+        self._cooldown_until[key] = now + self.COOLDOWN_SECONDS
+        remaining = len([k for k in self.keys if self._cooldown_until[k] <= now])
+        log.warning(
+            "TonCenter 429 — key ...%s cooling for %.0fs. "
+            "%d/%d key(s) still available.",
+            key[-6:], self.COOLDOWN_SECONDS, remaining, len(self.keys),
+        )
+
+    async def fetch_with_retry(
+        self,
+        session: aiohttp.ClientSession,
+        url: str,
+        params: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Execute a GET request, rotating cooldown-aware keys on 429.
+
+        Strategy:
+          • On success: mark key as used, return response.
+          • On 429: cool the key, immediately retry with the next best key.
+          • If all keys are cooling: sleep until the shortest cooldown expires,
+            then retry. Max total attempts = max(3, n_keys × 2).
+          • On non-429 HTTP error or network error: raise immediately.
+        """
+        max_attempts = max(3, len(self.keys) * 2) if self.keys else 3
         last_exc: Exception | None = None
+
         for attempt in range(max_attempts):
-            headers = {}
-            key = self.get_key()
+            key, wait = self._best_key()
+
+            if key is None:
+                # All keys cooling — wait for the shortest cooldown
+                log.info(
+                    "TonCenter: all %d key(s) cooling, waiting %.1fs (attempt %d/%d)",
+                    len(self.keys), wait, attempt + 1, max_attempts,
+                )
+                await asyncio.sleep(wait + 0.1)  # +0.1s margin
+                key, _ = self._best_key()
+                if key is None:
+                    continue  # shouldn't happen but be safe
+
+            headers: dict[str, str] = {}
             if key:
                 headers["X-API-Key"] = key
 
@@ -72,26 +151,22 @@ class TonCenterKeyManager:
                     timeout=aiohttp.ClientTimeout(total=10),
                 ) as resp:
                     if resp.status == 429:
-                        # Rotate to the next key (if available) then back off
-                        if len(self.keys) > 1:
-                            self.rotate()
-                        wait = delay * (2 ** attempt)
-                        log.warning(
-                            "TonCenter 429 (attempt %d/%d) — backing off %.1fs",
-                            attempt + 1, max_attempts, wait,
-                        )
+                        if key:
+                            self._mark_rate_limited(key)
                         last_exc = aiohttp.ClientResponseError(
                             resp.request_info, resp.history, status=429
                         )
-                        await asyncio.sleep(wait)
-                        continue
+                        continue  # immediately try next available key
                     resp.raise_for_status()
+                    if key:
+                        self._mark_used(key)
                     return await resp.json()
+
             except aiohttp.ClientResponseError as exc:
                 if exc.status == 429:
+                    if key:
+                        self._mark_rate_limited(key)
                     last_exc = exc
-                    wait = delay * (2 ** attempt)
-                    await asyncio.sleep(wait)
                     continue
                 raise
 
