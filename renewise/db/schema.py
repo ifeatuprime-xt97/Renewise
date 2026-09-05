@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS platforms (
     publishable_key_live TEXT UNIQUE,
     secret_key_live_hash TEXT,
     publishable_key_test TEXT UNIQUE NOT NULL,
-    secret_key_test TEXT NOT NULL,
+    secret_key_test_hash TEXT NOT NULL,
     wallet_address TEXT,
     wallet_passcode_hash TEXT,
     buyer_fee_bps INTEGER,
@@ -444,7 +444,7 @@ async def init_db() -> None:
                 publishable_key_live TEXT UNIQUE,
                 secret_key_live_hash TEXT,
                 publishable_key_test TEXT UNIQUE NOT NULL,
-                secret_key_test      TEXT NOT NULL,
+                secret_key_test_hash TEXT NOT NULL,
                 wallet_address       TEXT,
                 wallet_passcode_hash TEXT,
                 buyer_fee_bps        INTEGER,
@@ -555,11 +555,23 @@ async def init_db() -> None:
                     ALTER TABLE platforms ALTER COLUMN secret_key_live_hash DROP NOT NULL;
                 EXCEPTION WHEN others THEN NULL; END; $$;
                 """,
-                # Rename secret_key_test_hash → secret_key_test (stores raw plaintext)
+                # Rename secret_key_test → secret_key_test_hash and hash existing plaintext values.
+                # This migration is idempotent: the RENAME is wrapped in an exception handler,
+                # and the UPDATE only touches rows where the stored value does NOT look like a
+                # 64-char hex SHA-256 hash (i.e. still plaintext sk_test_... keys).
                 """
                 DO $$ BEGIN
-                    ALTER TABLE platforms RENAME COLUMN secret_key_test_hash TO secret_key_test;
-                EXCEPTION WHEN others THEN NULL; END; $$;
+                    ALTER TABLE platforms RENAME COLUMN secret_key_test TO secret_key_test_hash;
+                EXCEPTION WHEN undefined_column THEN NULL;
+                         WHEN others THEN NULL; END; $$;
+                """,
+                # Hash any existing plaintext test keys that survived the rename.
+                # encode(digest(value, 'sha256'), 'hex') is pure SQL — no extension needed.
+                """
+                UPDATE platforms
+                SET secret_key_test_hash = encode(digest(secret_key_test_hash, 'sha256'), 'hex')
+                WHERE secret_key_test_hash IS NOT NULL
+                  AND length(secret_key_test_hash) != 64;
                 """,
                 # ── Column additions (skipped if column already exists) ────────
                 # platform_charges.payment_url — stores full ton:// deep-link with StateInit

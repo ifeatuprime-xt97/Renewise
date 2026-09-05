@@ -176,6 +176,8 @@ PROGRAM{
     DIV
     s6 s(-1) PUXC
     ADD
+    50000000 PUSHINT
+    ADD
   }>
   $SendParameters$_constructor_to_value_mode_body PROCINLINE:<{
     2SWAP

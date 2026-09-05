@@ -196,6 +196,111 @@ async def apply_wallet_changes_job() -> None:
         )
 
 
+# ── Job: pending_send refund retry ───────────────────────────────────────────
+
+async def pending_send_refund_retry_job() -> None:
+    """
+    Retry any overpayment refunds stuck in 'pending_send'.
+
+    A row lands in pending_send when:
+      (a) TRIGGER_MNEMONIC was not set at the time the user submitted their
+          wallet, or
+      (b) send_refund_trigger() failed (network timeout, LiteBalancer error)
+          AFTER set_refund_wallet had already transitioned the row.
+
+    We re-attempt every row older than 5 minutes so transient failures are
+    healed automatically without requiring superadmin intervention.
+
+    Only runs when TRIGGER_MNEMONIC is configured — skips silently otherwise
+    (rows will sit until a superadmin uses /pendingrefunds or the mnemonic
+    is added to the environment).
+    """
+    from renewise.config import TRIGGER_MNEMONIC, TRIGGER_WALLET
+    if not TRIGGER_MNEMONIC or not TRIGGER_WALLET:
+        log.debug("pending_send_refund_retry_job: TRIGGER_MNEMONIC not set — skipping")
+        return
+
+    from renewise.db.queries import get_pending_sends, mark_refund_sent
+    from renewise.ton.refund_trigger import send_refund_trigger
+
+    rows = await get_pending_sends(limit=50)
+    if not rows:
+        return
+
+    log.info("pending_send_refund_retry_job: %d refund(s) to retry", len(rows))
+
+    for row in rows:
+        refund_id      = row["id"]
+        wallet_address = row.get("refund_wallet")
+        refund_nano    = row.get("refund_nano", 0)
+        refund_usd     = row.get("refund_usd", 0.0)
+        tg_user_id     = row.get("telegram_user_id")
+
+        if not wallet_address:
+            log.warning(
+                "pending_send_refund_retry_job: refund_id=%d has no wallet address — skipping",
+                refund_id,
+            )
+            continue
+
+        # Resolve vault address from the subscription
+        from renewise.db.connection import _db as _conn
+        async with _conn() as db:
+            vault_row = await db.fetchrow(
+                "SELECT s.vault_address "
+                "FROM overpayment_refunds r "
+                "JOIN subscriptions s ON s.id = r.subscription_id "
+                "WHERE r.id = $1",
+                refund_id,
+            )
+        if not vault_row or not vault_row["vault_address"]:
+            log.warning(
+                "pending_send_refund_retry_job: refund_id=%d — no vault_address found, skipping",
+                refund_id,
+            )
+            continue
+
+        vault_address = vault_row["vault_address"]
+        result = await send_refund_trigger(
+            vault_address=vault_address,
+            recipient_address=wallet_address,
+        )
+
+        if result.success:
+            await mark_refund_sent(refund_id)
+            log.info(
+                "pending_send_refund_retry_job: refund_id=%d SENT tx=%s",
+                refund_id, result.tx_hash,
+            )
+            # Best-effort DM to notify the user their refund went through
+            if tg_user_id:
+                try:
+                    from renewise.config import BOT_TOKEN
+                    from telegram import Bot
+                    bot = Bot(BOT_TOKEN)
+                    refund_ton = refund_nano / 1_000_000_000
+                    await bot.send_message(
+                        chat_id=tg_user_id,
+                        text=(
+                            f"✅ <b>Refund sent!</b>\n\n"
+                            f"<b>{refund_ton:.4f} GRAM</b> (≈ ${refund_usd:.2f} USD) "
+                            f"has been sent to:\n<code>{wallet_address}</code>\n\n"
+                            f"<b>TX:</b> <code>{result.tx_hash}</code>"
+                        ),
+                        parse_mode="HTML",
+                    )
+                except Exception as dm_exc:
+                    log.warning(
+                        "pending_send_refund_retry_job: could not DM user %s: %s",
+                        tg_user_id, dm_exc,
+                    )
+        else:
+            log.warning(
+                "pending_send_refund_retry_job: refund_id=%d FAILED — %s",
+                refund_id, result.error,
+            )
+
+
 # ── Job: stale pending cleanup ───────────────────────────────────────────────
 
 async def stale_pending_cleanup_job() -> None:
@@ -242,6 +347,18 @@ async def run_scheduler() -> None:
         misfire_grace_time=300,
     )
 
+    # Pending-send refund retry — every 10 minutes
+    # Retries overpayment refunds stuck in 'pending_send' due to failed or
+    # unconfigured trigger wallet at the time the user submitted their wallet.
+    scheduler.add_job(
+        pending_send_refund_retry_job,
+        trigger="cron",
+        minute="0,10,20,30,40,50",
+        id="pending_send_refund_retry",
+        replace_existing=True,
+        misfire_grace_time=120,
+    )
+
     # Wallet change apply — every 15 minutes
     scheduler.add_job(
         apply_wallet_changes_job,
@@ -260,6 +377,7 @@ async def run_scheduler() -> None:
     await grace_enforcement_job()
     await stale_pending_cleanup_job()
     await apply_wallet_changes_job()
+    await pending_send_refund_retry_job()
 
     # Keep running until interrupted.
     # Use asyncio.get_running_loop() (not the deprecated get_event_loop()) and

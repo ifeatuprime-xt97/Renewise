@@ -88,8 +88,26 @@ async def _resolve_bot_username() -> str | None:
 # ---------------------------------------------------------------------------
 # Rate limiter — keyed on the originating IP address.
 # Limits are applied per-decorator, so write endpoints get stricter caps.
+#
+# Backend: Redis when REDIS_URL points to a real Redis instance (production),
+# in-memory when it's the localhost default or Redis is unreachable (dev).
+# Redis-backed counters are shared across all workers, so the stated limits
+# are enforced globally rather than per-process.
 # ---------------------------------------------------------------------------
-limiter = Limiter(key_func=get_remote_address)
+import os as _os
+_REDIS_URL = _os.getenv("REDIS_URL", "redis://localhost:6379/0")
+_is_real_redis = not _REDIS_URL.startswith("redis://localhost")
+
+if _is_real_redis:
+    try:
+        limiter = Limiter(key_func=get_remote_address, storage_uri=_REDIS_URL)
+        log.info("Rate limiter: Redis backend (%s)", _REDIS_URL.split("@")[-1])
+    except Exception as _e:
+        log.warning("Rate limiter: Redis init failed (%s) — falling back to in-memory", _e)
+        limiter = Limiter(key_func=get_remote_address)
+else:
+    limiter = Limiter(key_func=get_remote_address)
+    log.info("Rate limiter: in-memory backend (set REDIS_URL for shared multi-worker counters)")
 
 
 @asynccontextmanager

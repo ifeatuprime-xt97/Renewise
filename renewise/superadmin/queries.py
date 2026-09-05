@@ -387,37 +387,69 @@ async def get_platform_tx_feed(
     Joins processed_tx_hashes → subscriptions → users → groups.
     Falls back to subscriptions with a tx_hash when not yet in processed_tx_hashes.
     """
-    from renewise.config import USE_POSTGRES
-    where = "" if status_filter == "all" else f"AND s.status = '{status_filter}'"
-    query = (
-        "SELECT "
-        "  p.tx_hash, p.processed_at, "
-        "  s.id AS sub_id, s.status AS sub_status, s.price_locked_in, "
-        "  s.start_date, s.next_renewal_date, "
-        "  u.telegram_user_id, u.first_name, u.username, "
-        "  g.id AS group_id, g.chat_title, g.admin_telegram_id "
-        "FROM processed_tx_hashes p "
-        "JOIN subscriptions s ON s.id = p.sub_id "
-        "JOIN users u ON u.id = s.user_id "
-        "JOIN groups g ON g.id = s.group_id "
-        f"WHERE 1=1 {where} "
-        "ORDER BY p.processed_at DESC "
-        "LIMIT $1 OFFSET $2"
-    )
+    # SECURITY: status_filter is passed as a bound parameter — never interpolated.
+    # Valid values are enforced by the ALLOWED_STATUS_FILTERS set; anything else
+    # is silently treated as "all" so callers cannot inject arbitrary SQL.
+    _ALLOWED = {"all", "active", "expired", "cancelled", "pending", "comped"}
+    if status_filter not in _ALLOWED:
+        status_filter = "all"
+
     async with _db() as db:
-        rows = await db.fetch(query, limit, offset)
+        if status_filter == "all":
+            rows = await db.fetch(
+                "SELECT "
+                "  p.tx_hash, p.processed_at, "
+                "  s.id AS sub_id, s.status AS sub_status, s.price_locked_in, "
+                "  s.start_date, s.next_renewal_date, "
+                "  u.telegram_user_id, u.first_name, u.username, "
+                "  g.id AS group_id, g.chat_title, g.admin_telegram_id "
+                "FROM processed_tx_hashes p "
+                "JOIN subscriptions s ON s.id = p.sub_id "
+                "JOIN users u ON u.id = s.user_id "
+                "JOIN groups g ON g.id = s.group_id "
+                "ORDER BY p.processed_at DESC "
+                "LIMIT $1 OFFSET $2",
+                limit, offset,
+            )
+        else:
+            rows = await db.fetch(
+                "SELECT "
+                "  p.tx_hash, p.processed_at, "
+                "  s.id AS sub_id, s.status AS sub_status, s.price_locked_in, "
+                "  s.start_date, s.next_renewal_date, "
+                "  u.telegram_user_id, u.first_name, u.username, "
+                "  g.id AS group_id, g.chat_title, g.admin_telegram_id "
+                "FROM processed_tx_hashes p "
+                "JOIN subscriptions s ON s.id = p.sub_id "
+                "JOIN users u ON u.id = s.user_id "
+                "JOIN groups g ON g.id = s.group_id "
+                "WHERE s.status = $1 "
+                "ORDER BY p.processed_at DESC "
+                "LIMIT $2 OFFSET $3",
+                status_filter, limit, offset,
+            )
         return [dict(r) for r in rows]
 
 
 async def get_platform_tx_count(status_filter: str = "all") -> int:
-    where = "" if status_filter == "all" else f"AND s.status = '{status_filter}'"
-    query = (
-        "SELECT COUNT(*) FROM processed_tx_hashes p "
-        "JOIN subscriptions s ON s.id = p.sub_id "
-        f"WHERE 1=1 {where}"
-    )
+    # SECURITY: same parameterisation as get_platform_tx_feed above.
+    _ALLOWED = {"all", "active", "expired", "cancelled", "pending", "comped"}
+    if status_filter not in _ALLOWED:
+        status_filter = "all"
+
     async with _db() as db:
-        return int(await db.fetchval(query) or 0)
+        if status_filter == "all":
+            return int(await db.fetchval(
+                "SELECT COUNT(*) FROM processed_tx_hashes p "
+                "JOIN subscriptions s ON s.id = p.sub_id"
+            ) or 0)
+        else:
+            return int(await db.fetchval(
+                "SELECT COUNT(*) FROM processed_tx_hashes p "
+                "JOIN subscriptions s ON s.id = p.sub_id "
+                "WHERE s.status = $1",
+                status_filter,
+            ) or 0)
 
 
 async def get_platform_revenue_breakdown() -> dict:

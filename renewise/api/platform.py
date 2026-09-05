@@ -30,14 +30,17 @@ async def authenticate_platform(authorization: Annotated[str, Header()]) -> dict
     
     async with _db() as db:
         if is_test:
+            # Test keys are stored as SHA-256 hashes — hash the incoming key
+            # and compare against the stored hash. Same pattern as live keys.
+            secret_hash = hashlib.sha256(secret_key.encode("utf-8")).hexdigest()
             row = await db.fetchrow(
-                "SELECT * FROM platforms WHERE secret_key_test = $1", 
-                secret_key
+                "SELECT * FROM platforms WHERE secret_key_test_hash = $1",
+                secret_hash
             )
         else:
             secret_hash = hashlib.sha256(secret_key.encode("utf-8")).hexdigest()
             row = await db.fetchrow(
-                "SELECT * FROM platforms WHERE secret_key_live_hash = $1", 
+                "SELECT * FROM platforms WHERE secret_key_live_hash = $1",
                 secret_hash
             )
             

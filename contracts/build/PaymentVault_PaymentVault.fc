@@ -331,7 +331,7 @@ builder $PaymentVault$_store(builder build_0, (slice, slice, slice, slice, int, 
 
 ((slice, slice, slice, slice, int, int, int, int, int, int), int) $PaymentVault$_fun_required_payment((slice, slice, slice, slice, int, int, int, int, int, int) $self) impure inline_ref {
     var (($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid)) = $self;
-    var $fresh$ret_2 = ($self'price + (($self'price * $self'buyer_fee_bps) / 10000));
+    var $fresh$ret_2 = (($self'price + (($self'price * $self'buyer_fee_bps) / 10000)) + 50000000);
     return (($self'admin_wallet, $self'platform_wallet, $self'log_address, $self'trigger_wallet, $self'price, $self'buyer_fee_bps, $self'admin_fee_bps, $self'subscription_id, $self'overage_held, $self'accumulated_paid), $fresh$ret_2);
 }
 

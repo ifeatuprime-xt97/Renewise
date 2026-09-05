@@ -1,6 +1,6 @@
 # Tact compilation report
 Contract: PaymentVault
-BoC Size: 1137 bytes
+BoC Size: 1143 bytes
 
 ## Structures (Structs and Messages)
 Total structures: 15

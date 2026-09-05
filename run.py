@@ -76,7 +76,7 @@ async def run_main_bot() -> None:
     await clear_telegram_updates(BOT_TOKEN, "main bot")
 
     # post_init_with_watcher wraps the existing post_init and additionally
-    # launches the payment watcher task once the Application is fully ready.
+    # launches the payment watcher and health monitor once the Application is ready.
     async def post_init_with_watcher(application: Application) -> None:
         # Run the original post_init first (DB init, Redis listener, etc.)
         try:
@@ -94,6 +94,20 @@ async def run_main_bot() -> None:
             log.info("▶ In-process payment watcher started.")
         except Exception as exc:
             log.error("Failed to start in-process watcher: %s", exc, exc_info=True)
+
+        # Start the health monitor and install the global exception handler.
+        # Both use application.bot to send DMs to superadmins.
+        try:
+            from renewise.monitor import start_monitor, install_global_exception_handler
+            monitor_task = asyncio.create_task(
+                start_monitor(application.bot),
+                name="health_monitor",
+            )
+            application.bot_data["monitor_task"] = monitor_task
+            install_global_exception_handler(application.bot)
+            log.info("▶ Health monitor started.")
+        except Exception as exc:
+            log.error("Failed to start health monitor: %s", exc, exc_info=True)
     app = (
         Application.builder()
         .token(BOT_TOKEN)
@@ -138,7 +152,7 @@ async def run_main_bot() -> None:
             pass
         finally:
             # Cancel background tasks first
-            for task_key in ("watcher_task", "listener_task"):
+            for task_key in ("watcher_task", "listener_task", "monitor_task"):
                 task = app.bot_data.get(task_key)
                 if task and not task.done():
                     task.cancel()

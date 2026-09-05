@@ -344,6 +344,20 @@ async def create_subscription(
 async def activate_subscription(
     user_id: int, group_id: int, tx_hash: str | None = None
 ) -> str:
+    """
+    Activate (or renew) a subscription and advance its next_renewal_date.
+
+    The WHERE clause restricts to status IN ('pending','active') so that:
+      - 'pending'  → fresh activation (first payment confirmed)
+      - 'active'   → renewal (next cycle)
+      - 'cancelled' / 'expired' / 'comped' → NOT touched
+
+    This prevents the double-activation bug where a second concurrent
+    processed_tx_hashes claim (e.g. polling watcher + manual recheck arriving
+    in the same second) would advance next_renewal_date twice, giving the user
+    a free extra billing cycle.  mark_tx_processed is the primary idempotency
+    guard; this WHERE clause is the secondary defence at the DB layer.
+    """
     from renewise.config import USE_POSTGRES
     async with _db() as db:
         if USE_POSTGRES:
@@ -354,7 +368,8 @@ async def activate_subscription(
                 "  + (SELECT billing_interval_days || ' days' FROM groups WHERE id=group_id)::INTERVAL, "
                 "last_payment_tx_hash=$1, "
                 "updated_at=NOW() "
-                "WHERE user_id=$2 AND group_id=$3",
+                "WHERE user_id=$2 AND group_id=$3 "
+                "AND status IN ('pending','active')",
                 tx_hash, user_id, group_id,
             )
         else:
@@ -367,7 +382,8 @@ async def activate_subscription(
                 "  '+'||(SELECT billing_interval_days FROM groups WHERE id=group_id)||' days'), "
                 "last_payment_tx_hash=$1, "
                 "updated_at=CURRENT_TIMESTAMP "
-                "WHERE user_id=$2 AND group_id=$3",
+                "WHERE user_id=$2 AND group_id=$3 "
+                "AND status IN ('pending','active')",
                 tx_hash, user_id, group_id,
             )
         row = await db.fetchrow(
@@ -792,13 +808,28 @@ async def get_pending_refund_for_user(telegram_user_id: int) -> Row | None:
         )
 
 
-async def set_refund_wallet(refund_id: int, wallet: str) -> None:
+async def set_refund_wallet(refund_id: int, wallet: str) -> bool:
+    """
+    Atomically claim the refund row for sending by transitioning it from
+    'pending_wallet' → 'pending_send'.
+
+    The WHERE status='pending_wallet' guard ensures only ONE concurrent
+    submission wins the race — any duplicate call on the same refund_id
+    finds no matching row and returns False, preventing a double on-chain
+    Refund{} trigger.
+
+    Returns True if the row was claimed (caller should proceed),
+            False if it was already claimed by a concurrent submission (caller should bail).
+    """
     async with _db() as db:
-        await db.execute(
+        row = await db.fetchrow(
             "UPDATE overpayment_refunds "
-            "SET refund_wallet=$1, status='pending_send' WHERE id=$2",
+            "SET refund_wallet=$1, status='pending_send' "
+            "WHERE id=$2 AND status='pending_wallet' "
+            "RETURNING id",
             wallet, refund_id,
         )
+        return row is not None
 
 
 async def get_pending_sends(limit: int = 50) -> list[Row]:

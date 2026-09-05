@@ -197,7 +197,14 @@ contract PaymentVault {
     }
 
     get fun required_payment(): Int {
-        return self.price + (self.price * self.buyer_fee_bps / 10000);
+        // IMPORTANT: includes MIN_GAS_RESERVE so this getter matches exactly
+        // what the receive(Pay) handler enforces and what vault.py sends via
+        // required_payment_nano(). Any frontend or integration that calls this
+        // getter to determine how much to send will produce the correct amount.
+        // Previously this omitted MIN_GAS_RESERVE, causing callers who relied
+        // on the getter to underpay by 0.05 GRAM and hit the partial-payment
+        // accumulation path instead of triggering the split.
+        return self.price + (self.price * self.buyer_fee_bps / 10000) + self.MIN_GAS_RESERVE;
     }
 }
 

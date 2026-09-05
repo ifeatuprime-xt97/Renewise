@@ -179,6 +179,24 @@ async def post_init(app: Application) -> None:
         )
     else:
         log.info("Refund trigger wallet configured checking live balance…")
+        # ── Security notice ───────────────────────────────────────────────────
+        # TRIGGER_MNEMONIC is a hot-wallet private key stored in plaintext in
+        # .env on this server. If this process or server is compromised an
+        # attacker can drain overage_held from every vault to any address they
+        # choose.  Mitigations already in place:
+        #   • Vault enforces sender == trigger_wallet at the contract level.
+        #   • Only overage_held (user overpayments) can be redirected — platform
+        #     fees and admin payouts have already been split and forwarded.
+        #   • The trigger wallet should hold only ~2 GRAM for gas (minimal value).
+        # Recommended hardening (production):
+        #   • Set file permissions: chmod 600 .env
+        #   • Rotate TRIGGER_MNEMONIC immediately if any server breach is suspected.
+        #   • Monitor the trigger wallet address on-chain for unexpected sends.
+        log.warning(
+            "🔑 SECURITY: TRIGGER_MNEMONIC is loaded into memory. "
+            "Ensure .env has chmod 600 and the trigger wallet holds only ~2 GRAM. "
+            "Rotate immediately if a server breach is suspected."
+        )
         try:
             from renewise.superadmin.queries import get_trigger_wallet_balance as _tw_bal
             _balance = await _tw_bal(_TW, _TK, _TN)

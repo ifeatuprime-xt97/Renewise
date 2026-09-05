@@ -517,6 +517,86 @@ async def _expire_stale_charges_inprocess() -> None:
             log.info("_expire_stale_charges: expired %d charge(s)", count)
 
 
+# ── Pending-send refund retry (in-process, dev mode) ─────────────────────────
+
+async def _retry_pending_send_refunds_inprocess(app: "Application") -> None:
+    """
+    In-process equivalent of pending_send_refund_retry_job from scheduler.py.
+
+    Retries every overpayment refund row in 'pending_send' status. Rows reach
+    this state when either:
+      (a) TRIGGER_MNEMONIC was unset at the time the user submitted their wallet
+          (row was written by set_refund_wallet but trigger was never called), or
+      (b) send_refund_trigger() failed transiently and the row was never promoted
+          to 'sent'.
+
+    Runs every 10 minutes inside the watcher polling loop.
+    Only executes when TRIGGER_MNEMONIC is configured.
+    """
+    from renewise.config import TRIGGER_MNEMONIC, TRIGGER_WALLET
+    if not TRIGGER_MNEMONIC or not TRIGGER_WALLET:
+        return  # nothing we can do without the trigger key
+
+    from renewise.db.queries import get_pending_sends, mark_refund_sent
+    from renewise.ton.refund_trigger import send_refund_trigger
+
+    rows = await get_pending_sends(limit=50)
+    if not rows:
+        return
+
+    log.info("inprocess: retrying %d pending_send refund(s)", len(rows))
+
+    for row in rows:
+        refund_id      = row["id"]
+        wallet_address = row.get("refund_wallet")
+        refund_nano    = row.get("refund_nano", 0)
+        refund_usd     = row.get("refund_usd", 0.0)
+        tg_user_id     = row.get("telegram_user_id")
+
+        if not wallet_address:
+            log.warning("inprocess: refund_id=%d has no wallet address — skipping", refund_id)
+            continue
+
+        from renewise.db.connection import _db as _conn
+        async with _conn() as db:
+            vault_row = await db.fetchrow(
+                "SELECT s.vault_address "
+                "FROM overpayment_refunds r "
+                "JOIN subscriptions s ON s.id = r.subscription_id "
+                "WHERE r.id = $1",
+                refund_id,
+            )
+        if not vault_row or not vault_row["vault_address"]:
+            log.warning("inprocess: refund_id=%d — no vault_address, skipping", refund_id)
+            continue
+
+        result = await send_refund_trigger(
+            vault_address=vault_row["vault_address"],
+            recipient_address=wallet_address,
+        )
+
+        if result.success:
+            await mark_refund_sent(refund_id)
+            log.info("inprocess: refund_id=%d SENT tx=%s", refund_id, result.tx_hash)
+            if tg_user_id:
+                try:
+                    refund_ton = refund_nano / 1_000_000_000
+                    await app.bot.send_message(
+                        chat_id=tg_user_id,
+                        text=(
+                            f"✅ <b>Refund sent!</b>\n\n"
+                            f"<b>{refund_ton:.4f} GRAM</b> (≈ ${refund_usd:.2f} USD) "
+                            f"has been sent to:\n<code>{wallet_address}</code>\n\n"
+                            f"<b>TX:</b> <code>{result.tx_hash}</code>"
+                        ),
+                        parse_mode="HTML",
+                    )
+                except Exception as dm_exc:
+                    log.warning("inprocess: could not DM user %s after retry: %s", tg_user_id, dm_exc)
+        else:
+            log.warning("inprocess: refund_id=%d retry FAILED — %s", refund_id, result.error)
+
+
 # ── Wallet change apply (in-process, dev mode) ───────────────────────────────
 
 async def _apply_wallet_changes_inprocess(app: "Application") -> None:
@@ -624,6 +704,8 @@ async def poll_vaults_inprocess(app: "Application") -> None:
     _last_wallet_apply: float = 0.0
     # Charge expiration: run every 5 minutes
     _last_charge_expire: float = 0.0
+    # Pending-send refund retry: run every 10 minutes in dev mode.
+    _last_refund_retry: float = 0.0
 
     # Track in-flight payment tasks so they can be awaited/cancelled on shutdown.
     # WeakSet would lose references before tasks complete; use a plain set and
@@ -654,6 +736,10 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                 if now - _last_charge_expire >= 300:  # every 5 minutes
                     await _expire_stale_charges_inprocess()
                     _last_charge_expire = now
+
+                if now - _last_refund_retry >= 600:  # every 10 minutes
+                    await _retry_pending_send_refunds_inprocess(app)
+                    _last_refund_retry = now
 
                 vaults = await get_vaults_to_watch()
                 # ALWAYS log polling activity so we can see the watcher is alive
@@ -746,6 +832,12 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                 raise  # handled in outer try/finally
             except Exception as exc:
                 log.error("inprocess watcher poll error: %s", exc)
+            else:
+                # Update the heartbeat timestamp so the health monitor knows
+                # the watcher completed a full poll cycle without crashing.
+                import renewise.monitor as _monitor
+                import time as _time
+                _monitor.watcher_last_heartbeat = _time.monotonic()
 
             await asyncio.sleep(POLL_INTERVAL_SECONDS + poll_backoff)
 

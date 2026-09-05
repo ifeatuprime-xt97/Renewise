@@ -44,23 +44,26 @@ async def create_platform(owner_telegram_id: int, platform_name: str) -> tuple[d
     """
     Creates a new platform with TEST keys only. Live keys are opt-in.
     Returns the platform details and the RAW test secret key.
+    The raw key is shown to the developer once and never stored — only its
+    SHA-256 hash is persisted (matching the live key storage pattern).
     """
     publishable_key_test = f"pk_test_{os.urandom(16).hex()}"
     raw_secret_key_test = f"sk_test_{os.urandom(32).hex()}"
-    
+    secret_key_test_hash = _hash_secret(raw_secret_key_test)
+
     async with _db() as db:
         row = await db.fetchrow(
             """
             INSERT INTO platforms (
-                owner_telegram_id, platform_name, 
+                owner_telegram_id, platform_name,
                 publishable_key_live, secret_key_live_hash,
-                publishable_key_test, secret_key_test
+                publishable_key_test, secret_key_test_hash
             )
             VALUES ($1, $2, NULL, NULL, $3, $4)
             RETURNING id
             """,
-            owner_telegram_id, platform_name, 
-            publishable_key_test, raw_secret_key_test
+            owner_telegram_id, platform_name,
+            publishable_key_test, secret_key_test_hash
         )
         platform_id = row["id"]
 
@@ -137,9 +140,11 @@ async def regenerate_platform_keys(platform_id: int, mode: str, actor_telegram_i
                 secret_val, platform_id
             )
         else:
-            secret_val = raw_secret_key
+            # Test mode: store SHA-256 hash (same pattern as live keys).
+            # The raw key was shown to the developer on creation and is never stored.
+            secret_val = _hash_secret(raw_secret_key)
             await db.execute(
-                "UPDATE platforms SET secret_key_test = $1 WHERE id = $2",
+                "UPDATE platforms SET secret_key_test_hash = $1 WHERE id = $2",
                 secret_val, platform_id
             )
         
@@ -185,8 +190,8 @@ async def get_user_platforms(owner_telegram_id: int) -> list[dict]:
         rows = await db.fetch(
             """
             SELECT 
-                p.id, p.owner_telegram_id, p.platform_name, p.publishable_key_live, p.publishable_key_test, 
-                p.secret_key_test, p.wallet_address, p.wallet_passcode_hash, p.status, p.created_at,
+                p.id, p.owner_telegram_id, p.platform_name, p.publishable_key_live, p.publishable_key_test,
+                p.wallet_address, p.wallet_passcode_hash, p.status, p.created_at,
                 COALESCE(SUM(c.amount_usd_cents), 0) AS revenue_usd_cents,
                 COUNT(c.id) AS transactions_count
             FROM platforms p

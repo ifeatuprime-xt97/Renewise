@@ -161,8 +161,22 @@ async def _process_wallet_submission(
     refund_usd  = pending["refund_usd"]
     refund_ton  = refund_nano / 1_000_000_000
 
-    # ── Step 3: save wallet to DB (validates before any send) ─────────────────
-    await set_refund_wallet(refund_id, wallet)
+    # ── Step 3: atomically claim the refund row ───────────────────────────────
+    # set_refund_wallet uses WHERE status='pending_wallet' as a compare-and-swap.
+    # If two concurrent submissions race here, only the first UPDATE matches a row
+    # and returns True — the second finds nothing and returns False, stopping here.
+    claimed = await set_refund_wallet(refund_id, wallet)
+    if not claimed:
+        # Lost the race — another submission already claimed this refund.
+        # The contract's require(amount > 0) would stop the duplicate on-chain
+        # anyway, but we stop here in Python to avoid firing two trigger messages.
+        ctx.bot_data.get("pending_refunds", {}).pop(tg_user_id, None)
+        await reply_fn(
+            "ℹ️ Your refund is already being processed. "
+            "You will receive a confirmation once it completes.",
+            parse_mode="HTML",
+        )
+        return
 
     # ── Step 4: clear bot_data ────────────────────────────────────────────────
     ctx.bot_data.get("pending_refunds", {}).pop(tg_user_id, None)
