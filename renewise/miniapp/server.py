@@ -2306,3 +2306,402 @@ async def api_developer_search(
 
     return {"found": True, "results": results}
 
+
+
+# ── GET /api/analytics ────────────────────────────────────────────────────────
+
+@app.get("/api/analytics")
+@limiter.limit("20/minute")
+async def api_analytics(
+    request: Request,
+    user: Annotated[dict, Depends(get_telegram_user)],
+    mode: str = "creator",   # "creator" | "developer"
+) -> dict:
+    """
+    Unified analytics endpoint for both admin (creator) and developer views.
+
+    Returns different aggregates based on `mode`:
+      creator   — subscription/revenue metrics for all groups the user admins
+      developer — charge/revenue metrics for all platforms the user owns
+
+    All revenue figures include:
+      - usd_cents: USD value locked in at payment time (price_locked_in)
+      - nano: nanoTON amounts where available (for GRAM display)
+
+    Daily breakdown covers the last 30 days.
+    Recent transactions: last 20.
+    """
+    telegram_user_id = user["id"]
+
+    if mode == "developer":
+        return await _analytics_developer(telegram_user_id)
+    return await _analytics_creator(telegram_user_id)
+
+
+async def _analytics_creator(telegram_user_id: int) -> dict:
+    from renewise.db.connection import _db as _conn
+    from renewise.config import USE_POSTGRES
+    import time as _t
+
+    async with _conn() as db:
+        # ── KPIs ──────────────────────────────────────────────────────────────
+        # Total net revenue (price_locked_in minus admin fee)
+        groups = await db.fetch(
+            "SELECT id, admin_fee_bps, buyer_fee_bps FROM groups WHERE admin_telegram_id=$1",
+            telegram_user_id,
+        )
+        group_ids = [g["id"] for g in groups]
+        if not group_ids:
+            return _empty_creator_analytics()
+
+        # Build parameterised IN list
+        placeholders = ",".join(f"${i+1}" for i in range(len(group_ids)))
+
+        total_revenue_row = await db.fetchrow(
+            f"SELECT COALESCE(SUM(price_locked_in),0) AS rev "
+            f"FROM subscriptions WHERE group_id IN ({placeholders}) "
+            f"AND status IN ('active','comped','expired','cancelled')",
+            *group_ids,
+        )
+        gross_usd = float(total_revenue_row["rev"] or 0)
+
+        # Compute weighted average admin fee across groups (approximation)
+        from renewise.db.queries import get_global_fees
+        _, global_admin_bps = await get_global_fees()
+        avg_admin_bps = global_admin_bps
+        net_ratio = 1.0 - avg_admin_bps / 10000.0
+        net_usd = gross_usd * net_ratio
+        net_usd_cents = int(round(net_usd * 100))
+
+        # Gross nanoTON from vault registry / processed_tx_hashes (best effort)
+        nano_row = await db.fetchrow(
+            f"SELECT COALESCE(SUM(s.required_nano_amount),0) AS nano "
+            f"FROM subscriptions s "
+            f"WHERE s.group_id IN ({placeholders}) "
+            f"AND s.status IN ('active','comped','expired','cancelled') "
+            f"AND s.required_nano_amount IS NOT NULL",
+            *group_ids,
+        )
+        gross_nano = int(nano_row["nano"] or 0)
+        net_nano   = int(gross_nano * net_ratio)
+
+        # Active subscribers
+        active_row = await db.fetchrow(
+            f"SELECT COUNT(*) AS n FROM subscriptions "
+            f"WHERE group_id IN ({placeholders}) AND status='active'",
+            *group_ids,
+        )
+        total_active_subs = int(active_row["n"] or 0)
+
+        # This-month revenue + new subs
+        if USE_POSTGRES:
+            month_row = await db.fetchrow(
+                f"SELECT COALESCE(SUM(price_locked_in),0) AS rev, COUNT(*) AS new_subs "
+                f"FROM subscriptions WHERE group_id IN ({placeholders}) "
+                f"AND status IN ('active','comped') "
+                f"AND start_date >= DATE_TRUNC('month', NOW())",
+                *group_ids,
+            )
+        else:
+            month_row = await db.fetchrow(
+                f"SELECT COALESCE(SUM(price_locked_in),0) AS rev, COUNT(*) AS new_subs "
+                f"FROM subscriptions WHERE group_id IN ({placeholders}) "
+                f"AND status IN ('active','comped') "
+                f"AND start_date >= DATE(strftime('%Y-%m-01','now'))",
+                *group_ids,
+            )
+        month_usd_cents = int(round(float(month_row["rev"] or 0) * 100))
+        month_new_subs  = int(month_row["new_subs"] or 0)
+
+        # Churn: subs that expired/cancelled in last 30 days
+        if USE_POSTGRES:
+            churn_row = await db.fetchrow(
+                f"SELECT COUNT(*) AS n FROM subscriptions "
+                f"WHERE group_id IN ({placeholders}) "
+                f"AND status IN ('expired','cancelled') "
+                f"AND updated_at >= NOW() - INTERVAL '30 days'",
+                *group_ids,
+            )
+        else:
+            churn_row = await db.fetchrow(
+                f"SELECT COUNT(*) AS n FROM subscriptions "
+                f"WHERE group_id IN ({placeholders}) "
+                f"AND status IN ('expired','cancelled') "
+                f"AND updated_at >= datetime('now','-30 days')",
+                *group_ids,
+            )
+        churned_subs = int(churn_row["n"] or 0)
+        base_for_churn = total_active_subs + churned_subs
+        churn_rate_pct = (churned_subs / base_for_churn * 100) if base_for_churn else 0.0
+
+        # ── Daily revenue last 30 days ────────────────────────────────────────
+        if USE_POSTGRES:
+            daily_rows = await db.fetch(
+                f"SELECT DATE(start_date) AS day, "
+                f"  COALESCE(SUM(price_locked_in),0) AS usd "
+                f"FROM subscriptions "
+                f"WHERE group_id IN ({placeholders}) "
+                f"AND start_date >= NOW() - INTERVAL '30 days' "
+                f"AND status IN ('active','comped','expired','cancelled') "
+                f"GROUP BY 1 ORDER BY 1",
+                *group_ids,
+            )
+        else:
+            daily_rows = await db.fetch(
+                f"SELECT DATE(start_date) AS day, "
+                f"  COALESCE(SUM(price_locked_in),0) AS usd "
+                f"FROM subscriptions "
+                f"WHERE group_id IN ({placeholders}) "
+                f"AND start_date >= datetime('now','-30 days') "
+                f"AND status IN ('active','comped','expired','cancelled') "
+                f"GROUP BY 1 ORDER BY 1",
+                *group_ids,
+            )
+        daily_revenue_30d = [
+            {"day": str(r["day"]), "usd_cents": int(round(float(r["usd"] or 0) * 100))}
+            for r in daily_rows
+        ]
+
+        # ── Per-group breakdown ───────────────────────────────────────────────
+        group_rows = await db.fetch(
+            f"SELECT g.id, g.chat_title, "
+            f"  COUNT(CASE WHEN s.status='active' THEN 1 END) AS active_subs, "
+            f"  COUNT(CASE WHEN s.status IN ('expired','cancelled') THEN 1 END) AS expired_subs, "
+            f"  COALESCE(SUM(CASE WHEN s.status IN ('active','comped','expired','cancelled') "
+            f"    THEN s.price_locked_in ELSE 0 END),0) AS revenue_usd, "
+            f"  COALESCE(SUM(CASE WHEN s.status IN ('active','comped','expired','cancelled') "
+            f"    THEN s.required_nano_amount ELSE 0 END),0) AS revenue_nano "
+            f"FROM groups g "
+            f"LEFT JOIN subscriptions s ON s.group_id=g.id "
+            f"WHERE g.id IN ({placeholders}) "
+            f"GROUP BY g.id, g.chat_title "
+            f"ORDER BY revenue_usd DESC",
+            *group_ids,
+        )
+        by_group = [
+            {
+                "group_id":        r["id"],
+                "chat_title":      r["chat_title"] or "Unnamed",
+                "active_subs":     int(r["active_subs"] or 0),
+                "expired_subs":    int(r["expired_subs"] or 0),
+                "revenue_usd_cents": int(round(float(r["revenue_usd"] or 0) * 100)),
+                "revenue_nano":    int(r["revenue_nano"] or 0),
+            }
+            for r in group_rows
+        ]
+
+        # ── Recent transactions ───────────────────────────────────────────────
+        tx_rows = await db.fetch(
+            f"SELECT p.processed_at, s.price_locked_in, s.required_nano_amount AS amount_nano, "
+            f"  g.chat_title "
+            f"FROM processed_tx_hashes p "
+            f"JOIN subscriptions s ON s.id=p.sub_id "
+            f"JOIN groups g ON g.id=s.group_id "
+            f"WHERE s.group_id IN ({placeholders}) "
+            f"AND p.is_partial=0 "
+            f"ORDER BY p.processed_at DESC LIMIT 20",
+            *group_ids,
+        )
+        recent_txs = [
+            {
+                "processed_at":  str(r["processed_at"]),
+                "price_locked_in": float(r["price_locked_in"] or 0),
+                "amount_nano":   int(r["amount_nano"] or 0),
+                "chat_title":    r["chat_title"] or "Unnamed",
+            }
+            for r in tx_rows
+        ]
+
+    return {
+        "net_revenue_usd_cents":  net_usd_cents,
+        "net_revenue_nano":       net_nano,
+        "total_active_subs":      total_active_subs,
+        "total_groups":           len(group_ids),
+        "month_revenue_usd_cents": month_usd_cents,
+        "month_new_subs":         month_new_subs,
+        "churn_rate_pct":         round(churn_rate_pct, 1),
+        "churned_subs":           churned_subs,
+        "daily_revenue_30d":      daily_revenue_30d,
+        "by_group":               by_group,
+        "recent_txs":             recent_txs,
+    }
+
+
+async def _analytics_developer(telegram_user_id: int) -> dict:
+    from renewise.db.connection import _db as _conn
+    from renewise.config import USE_POSTGRES
+
+    async with _conn() as db:
+        platforms = await db.fetch(
+            "SELECT id, platform_name FROM platforms "
+            "WHERE owner_telegram_id=$1 AND status='active'",
+            telegram_user_id,
+        )
+        if not platforms:
+            return _empty_developer_analytics()
+
+        p_ids = [p["id"] for p in platforms]
+        placeholders = ",".join(f"${i+1}" for i in range(len(p_ids)))
+
+        # ── KPIs ──────────────────────────────────────────────────────────────
+        kpi_row = await db.fetchrow(
+            f"SELECT "
+            f"  COUNT(*) AS total, "
+            f"  COUNT(CASE WHEN status='completed' THEN 1 END) AS completed, "
+            f"  COUNT(CASE WHEN status IN ('failed','expired') THEN 1 END) AS failed, "
+            f"  COALESCE(SUM(CASE WHEN status='completed' THEN amount_usd_cents ELSE 0 END),0) AS revenue "
+            f"FROM platform_charges WHERE platform_id IN ({placeholders})",
+            *p_ids,
+        )
+        total_charges     = int(kpi_row["total"] or 0)
+        completed_charges = int(kpi_row["completed"] or 0)
+        failed_charges    = int(kpi_row["failed"] or 0)
+        total_rev_cents   = int(kpi_row["revenue"] or 0)
+        success_rate      = (completed_charges / total_charges * 100) if total_charges else 0.0
+
+        # nano revenue (best effort — from required_nano_amount on completed charges)
+        nano_row = await db.fetchrow(
+            f"SELECT COALESCE(SUM(required_nano_amount),0) AS nano "
+            f"FROM platform_charges "
+            f"WHERE platform_id IN ({placeholders}) AND status='completed' "
+            f"AND required_nano_amount IS NOT NULL",
+            *p_ids,
+        )
+        total_rev_nano = int(nano_row["nano"] or 0)
+
+        # This-month revenue
+        if USE_POSTGRES:
+            month_row = await db.fetchrow(
+                f"SELECT COALESCE(SUM(amount_usd_cents),0) AS rev "
+                f"FROM platform_charges WHERE platform_id IN ({placeholders}) "
+                f"AND status='completed' AND completed_at >= DATE_TRUNC('month', NOW())",
+                *p_ids,
+            )
+            month_nano_row = await db.fetchrow(
+                f"SELECT COALESCE(SUM(required_nano_amount),0) AS nano "
+                f"FROM platform_charges WHERE platform_id IN ({placeholders}) "
+                f"AND status='completed' AND completed_at >= DATE_TRUNC('month', NOW()) "
+                f"AND required_nano_amount IS NOT NULL",
+                *p_ids,
+            )
+        else:
+            month_row = await db.fetchrow(
+                f"SELECT COALESCE(SUM(amount_usd_cents),0) AS rev "
+                f"FROM platform_charges WHERE platform_id IN ({placeholders}) "
+                f"AND status='completed' AND completed_at >= DATE(strftime('%Y-%m-01','now'))",
+                *p_ids,
+            )
+            month_nano_row = await db.fetchrow(
+                f"SELECT COALESCE(SUM(required_nano_amount),0) AS nano "
+                f"FROM platform_charges WHERE platform_id IN ({placeholders}) "
+                f"AND status='completed' AND completed_at >= DATE(strftime('%Y-%m-01','now')) "
+                f"AND required_nano_amount IS NOT NULL",
+                *p_ids,
+            )
+        month_rev_cents = int(month_row["rev"] or 0)
+        month_rev_nano  = int(month_nano_row["nano"] or 0)
+
+        # ── Daily revenue last 30 days ────────────────────────────────────────
+        if USE_POSTGRES:
+            daily_rows = await db.fetch(
+                f"SELECT DATE(completed_at) AS day, "
+                f"  COALESCE(SUM(amount_usd_cents),0) AS usd_cents "
+                f"FROM platform_charges "
+                f"WHERE platform_id IN ({placeholders}) AND status='completed' "
+                f"AND completed_at >= NOW() - INTERVAL '30 days' "
+                f"GROUP BY 1 ORDER BY 1",
+                *p_ids,
+            )
+        else:
+            daily_rows = await db.fetch(
+                f"SELECT DATE(completed_at) AS day, "
+                f"  COALESCE(SUM(amount_usd_cents),0) AS usd_cents "
+                f"FROM platform_charges "
+                f"WHERE platform_id IN ({placeholders}) AND status='completed' "
+                f"AND completed_at >= datetime('now','-30 days') "
+                f"GROUP BY 1 ORDER BY 1",
+                *p_ids,
+            )
+        daily_revenue_30d = [
+            {"day": str(r["day"]), "usd_cents": int(r["usd_cents"] or 0)}
+            for r in daily_rows
+        ]
+
+        # ── Per-platform breakdown ────────────────────────────────────────────
+        platform_rows = await db.fetch(
+            f"SELECT p.id, p.platform_name, "
+            f"  COUNT(CASE WHEN c.status='completed' THEN 1 END) AS completed, "
+            f"  COUNT(CASE WHEN c.status IN ('failed','expired') THEN 1 END) AS failed, "
+            f"  COUNT(c.id) AS total, "
+            f"  COALESCE(SUM(CASE WHEN c.status='completed' THEN c.amount_usd_cents ELSE 0 END),0) AS revenue "
+            f"FROM platforms p "
+            f"LEFT JOIN platform_charges c ON c.platform_id=p.id "
+            f"WHERE p.id IN ({placeholders}) "
+            f"GROUP BY p.id, p.platform_name "
+            f"ORDER BY revenue DESC",
+            *p_ids,
+        )
+        by_platform = [
+            {
+                "platform_id":     r["id"],
+                "platform_name":   r["platform_name"],
+                "completed":       int(r["completed"] or 0),
+                "failed":          int(r["failed"] or 0),
+                "revenue_usd_cents": int(r["revenue"] or 0),
+                "success_rate":    (int(r["completed"] or 0) / int(r["total"] or 1) * 100),
+            }
+            for r in platform_rows
+        ]
+
+        # ── Recent charges ────────────────────────────────────────────────────
+        tx_rows = await db.fetch(
+            f"SELECT c.completed_at AS processed_at, c.amount_usd_cents, "
+            f"  c.required_nano_amount AS amount_nano, p.platform_name "
+            f"FROM platform_charges c "
+            f"JOIN platforms p ON p.id=c.platform_id "
+            f"WHERE c.platform_id IN ({placeholders}) AND c.status='completed' "
+            f"ORDER BY c.completed_at DESC LIMIT 20",
+            *p_ids,
+        )
+        recent_txs = [
+            {
+                "processed_at":  str(r["processed_at"]),
+                "price_locked_in": r["amount_usd_cents"] / 100.0,
+                "amount_nano":   int(r["amount_nano"] or 0),
+                "platform_name": r["platform_name"],
+            }
+            for r in tx_rows
+        ]
+
+    return {
+        "total_revenue_usd_cents":  total_rev_cents,
+        "total_revenue_nano":       total_rev_nano,
+        "total_charges":            total_charges,
+        "completed_charges":        completed_charges,
+        "failed_charges":           failed_charges,
+        "success_rate_pct":         round(success_rate, 1),
+        "month_revenue_usd_cents":  month_rev_cents,
+        "month_revenue_nano":       month_rev_nano,
+        "daily_revenue_30d":        daily_revenue_30d,
+        "by_platform":              by_platform,
+        "recent_txs":               recent_txs,
+    }
+
+
+def _empty_creator_analytics() -> dict:
+    return {
+        "net_revenue_usd_cents": 0, "net_revenue_nano": 0,
+        "total_active_subs": 0, "total_groups": 0,
+        "month_revenue_usd_cents": 0, "month_new_subs": 0,
+        "churn_rate_pct": 0.0, "churned_subs": 0,
+        "daily_revenue_30d": [], "by_group": [], "recent_txs": [],
+    }
+
+
+def _empty_developer_analytics() -> dict:
+    return {
+        "total_revenue_usd_cents": 0, "total_revenue_nano": 0,
+        "total_charges": 0, "completed_charges": 0, "failed_charges": 0,
+        "success_rate_pct": 0.0, "month_revenue_usd_cents": 0, "month_revenue_nano": 0,
+        "daily_revenue_30d": [], "by_platform": [], "recent_txs": [],
+    }

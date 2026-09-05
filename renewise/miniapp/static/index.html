@@ -2044,7 +2044,11 @@
           </div>
         </div>
       </div>
-
+      <button onclick="openAnalytics('creator')" style="width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:var(--r-sm);background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
 
     <div class="section-hdr" id="dashboard-hdr" style="display:none">
@@ -2092,6 +2096,14 @@
     <div id="dev-hero-card" style="display:none">
       <div id="dev-total-revenue" style="display:none"></div>
       <div id="dev-total-transactions" style="display:none"></div>
+    </div>
+    <!-- Analytics CTA — shown alongside stats bar when platforms exist -->
+    <div id="dev-analytics-cta" style="display:none;margin-bottom:16px">
+      <button onclick="openAnalytics('developer')" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:var(--r-sm);background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
 
     <div id="platforms-list">
@@ -3502,6 +3514,51 @@ http_response_code(200);</pre>
     <div id="comp-result" style="margin-top:14px"></div>
   </section>
 
+  <!-- ════════════════════════════════════════════════════
+     PAGE — Analytics
+════════════════════════════════════════════════════ -->
+  <section class="page" id="page-analytics">
+    <div class="back-row">
+      <button class="back-btn" id="analytics-back-btn">
+        <svg viewBox="0 0 24 24" fill="none"><polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5"/></svg>
+        <span id="analytics-back-label">Dashboard</span>
+      </button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h1 class="page-title">Analytics</h1>
+      <span id="analytics-period-badge" style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px"></span>
+    </div>
+
+    <!-- KPI strip -->
+    <div id="analytics-kpis" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <div class="skeleton-card" style="height:80px"></div>
+      <div class="skeleton-card" style="height:80px"></div>
+      <div class="skeleton-card" style="height:80px"></div>
+      <div class="skeleton-card" style="height:80px"></div>
+    </div>
+
+    <!-- Revenue chart -->
+    <div style="background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:18px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px">Revenue — Last 30 Days</div>
+      <div id="analytics-chart-wrap" style="position:relative;height:100px">
+        <canvas id="analytics-chart" style="width:100%;height:100%"></canvas>
+        <div id="analytics-chart-empty" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:13px">No data yet</div>
+      </div>
+    </div>
+
+    <!-- Breakdown table -->
+    <div style="background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:18px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px" id="analytics-breakdown-title">Breakdown</div>
+      <div id="analytics-breakdown-list"><div class="loading" style="padding:20px 0">Loading…</div></div>
+    </div>
+
+    <!-- Recent transactions -->
+    <div style="background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:18px">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px">Recent Payments</div>
+      <div id="analytics-tx-list"><div class="loading" style="padding:20px 0">Loading…</div></div>
+    </div>
+  </section>
+
   <nav class="bottom-nav" id="bottom-nav-creator">
     <button class="nav-item" id="nav-dashboard" onclick="App.nav('dashboard')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -3724,7 +3781,7 @@ http_response_code(200);</pre>
     // ════════════════════════════════════════════════════
     // Navigation
     // ════════════════════════════════════════════════════
-    const PAGES = ['dashboard', 'dev-dashboard', 'dev-app', 'dev-subs', 'dev-settings', 'dev-sandbox', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete'];
+    const PAGES = ['dashboard', 'dev-dashboard', 'dev-app', 'dev-subs', 'dev-settings', 'dev-sandbox', 'subs', 'settings', 'history', 'wizard', 'manage', 'members', 'price', 'wallet', 'comp', 'delete', 'analytics'];
     const NAV_PAGES = ['dashboard', 'subs', 'settings', 'dev-dashboard', 'dev-subs', 'dev-settings'];
 
     // Returns the current app mode ('creator' or 'developer')
@@ -3771,6 +3828,7 @@ http_response_code(200);</pre>
       // Maps each sub-page to where its back button should go
       _backTargets: {
         'history':    () => App.nav('manage'),
+        'analytics':  () => App.nav(_analyticsReturnPage || 'dashboard'),
         'wizard':     () => Wiz.back(),
         'manage':     () => App.nav('dashboard'),
         'members':    () => App.nav('manage'),
@@ -6442,6 +6500,7 @@ http_response_code(200);</pre>
 
         // Update compact stats bar
         const statsBar = document.getElementById('dev-stats-bar');
+        const analyticsCta = document.getElementById('dev-analytics-cta');
         if (platforms.length) {
           if (statsBar) {
             statsBar.style.display = 'block';
@@ -6449,6 +6508,7 @@ http_response_code(200);</pre>
             document.getElementById('dev-total-transactions-v2').textContent = total_transactions || 0;
             document.getElementById('dev-apps-count').textContent = platforms.length;
           }
+          if (analyticsCta) analyticsCta.style.display = 'block';
           // Keep legacy hidden elements in sync (sandbox reads from these)
           const legacyRev = document.getElementById('dev-total-revenue');
           const legacyTx  = document.getElementById('dev-total-transactions');
@@ -6458,6 +6518,7 @@ http_response_code(200);</pre>
 
         if (!platforms.length) {
           if (statsBar) statsBar.style.display = 'none';
+          if (analyticsCta) analyticsCta.style.display = 'none';
           el.innerHTML = `
             <div class="glass" style="padding:32px 20px;text-align:center">
               <div style="width:56px;height:56px;border-radius:16px;background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
@@ -7383,6 +7444,173 @@ http_response_code(200);</pre>
 
       loadSubs();
       Wiz.init();
+    }
+
+    // ════════════════════════════════════════════════════
+    // ANALYTICS
+    // ════════════════════════════════════════════════════
+    let _analyticsReturnPage = 'dashboard';
+
+    function openAnalytics(mode) {
+      _analyticsReturnPage = mode === 'developer' ? 'dev-dashboard' : 'dashboard';
+      const backLabel = document.getElementById('analytics-back-label');
+      if (backLabel) backLabel.textContent = mode === 'developer' ? 'My Apps' : 'Dashboard';
+      App.nav('analytics');
+      loadAnalytics(mode);
+    }
+
+    document.getElementById('analytics-back-btn').onclick = () => App.nav(_analyticsReturnPage || 'dashboard');
+
+    async function loadAnalytics(mode) {
+      // Reset to skeletons
+      document.getElementById('analytics-kpis').innerHTML = [1,2,3,4].map(() =>
+        `<div class="skeleton-card" style="height:80px;border-radius:var(--r-sm)"></div>`
+      ).join('');
+      document.getElementById('analytics-breakdown-list').innerHTML = `<div class="loading" style="padding:20px 0">Loading…</div>`;
+      document.getElementById('analytics-tx-list').innerHTML = `<div class="loading" style="padding:20px 0">Loading…</div>`;
+      document.getElementById('analytics-period-badge').textContent = '';
+
+      try {
+        const r = await apiFetch(`${API}/analytics?mode=${mode}`, { headers: H() });
+        if (!r.ok) throw new Error(await r.text());
+        const d = await r.json();
+        _renderAnalyticsKpis(d, mode);
+        _renderAnalyticsChart(d.daily_revenue_30d || []);
+        _renderAnalyticsBreakdown(d, mode);
+        _renderAnalyticsTxFeed(d.recent_txs || []);
+        document.getElementById('analytics-period-badge').textContent = 'Last 30 days';
+      } catch (e) {
+        document.getElementById('analytics-kpis').innerHTML =
+          `<div class="alert alert-error" style="grid-column:1/-1">${ico('alert',14)} Failed to load analytics</div>`;
+        console.error('analytics error', e);
+      }
+    }
+
+    function _renderAnalyticsKpis(d, mode) {
+      const tonUsd = TON_USD_PRICE || 0;
+      const kpis = mode === 'developer' ? [
+        { label: 'API Revenue',    value: fmtUsd(d.total_revenue_usd_cents || 0),                  sub: _nanoToUsdStr(d.total_revenue_nano || 0, tonUsd) },
+        { label: 'Charges',        value: (d.total_charges || 0).toString(),                        sub: `${d.completed_charges || 0} completed` },
+        { label: 'Success Rate',   value: `${(d.success_rate_pct || 0).toFixed(1)}%`,               sub: `${d.failed_charges || 0} failed` },
+        { label: 'This Month',     value: fmtUsd(d.month_revenue_usd_cents || 0),                   sub: _nanoToUsdStr(d.month_revenue_nano || 0, tonUsd) },
+      ] : [
+        { label: 'Net Revenue',    value: fmtUsd(d.net_revenue_usd_cents || 0),                     sub: _nanoToUsdStr(d.net_revenue_nano || 0, tonUsd) },
+        { label: 'Active Members', value: (d.total_active_subs || 0).toString(),                    sub: `across ${d.total_groups || 0} network(s)` },
+        { label: 'This Month',     value: fmtUsd(d.month_revenue_usd_cents || 0),                   sub: `${d.month_new_subs || 0} new subs` },
+        { label: 'Churn (30d)',    value: `${(d.churn_rate_pct || 0).toFixed(1)}%`,                 sub: `${d.churned_subs || 0} lost` },
+      ];
+
+      document.getElementById('analytics-kpis').innerHTML = kpis.map(k => `
+        <div style="background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-sm);padding:14px 16px">
+          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${k.label}</div>
+          <div style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px;margin-bottom:2px">${k.value}</div>
+          <div style="font-size:11.5px;color:rgba(255,255,255,.4)">${k.sub}</div>
+        </div>`).join('');
+    }
+
+    function _nanoToUsdStr(nano, tonUsd) {
+      if (!nano || !tonUsd) return '';
+      const gram = nano / 1e9;
+      return `≈ ${fmtUsd(Math.round(gram * tonUsd * 100))} USD`;
+    }
+
+    function _renderAnalyticsChart(daily) {
+      const canvas = document.getElementById('analytics-chart');
+      const emptyEl = document.getElementById('analytics-chart-empty');
+      if (!canvas) return;
+
+      const maxVal = Math.max(...daily.map(d => d.usd_cents || 0), 1);
+      const w = canvas.parentElement.clientWidth || 300;
+      const h = 100;
+      canvas.width  = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, w, h);
+
+      if (!daily.length || maxVal === 0) {
+        canvas.style.display = 'none';
+        emptyEl.style.display = 'flex';
+        return;
+      }
+      canvas.style.display = 'block';
+      emptyEl.style.display = 'none';
+
+      const barW = Math.max(2, (w / daily.length) - 2);
+      const accent = '#0098EA';
+
+      daily.forEach((d, i) => {
+        const barH = Math.max(2, ((d.usd_cents || 0) / maxVal) * (h - 10));
+        const x = i * (barW + 2);
+        const y = h - barH;
+        // gradient bar
+        const grad = ctx.createLinearGradient(0, y, 0, h);
+        grad.addColorStop(0, accent);
+        grad.addColorStop(1, 'rgba(0,152,234,.2)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.roundRect(x, y, barW, barH, 2);
+        ctx.fill();
+      });
+    }
+
+    function _renderAnalyticsBreakdown(d, mode) {
+      const el = document.getElementById('analytics-breakdown-list');
+      const titleEl = document.getElementById('analytics-breakdown-title');
+      const tonUsd = TON_USD_PRICE || 0;
+
+      if (mode === 'developer') {
+        titleEl.textContent = 'By App';
+        const items = d.by_platform || [];
+        if (!items.length) { el.innerHTML = `<div class="empty" style="padding:20px 0">No data yet</div>`; return; }
+        el.innerHTML = items.map(p => `
+          <div class="hist-item">
+            <div class="hist-left">
+              <div class="hist-name">${esc(p.platform_name)}</div>
+              <div class="hist-date">${p.completed} completed · ${p.failed} failed</div>
+            </div>
+            <div class="hist-right">
+              <div class="hist-price">${fmtUsd(p.revenue_usd_cents || 0)}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.4)">${(p.success_rate || 0).toFixed(0)}% success</div>
+            </div>
+          </div>`).join('');
+      } else {
+        titleEl.textContent = 'By Network';
+        const items = d.by_group || [];
+        if (!items.length) { el.innerHTML = `<div class="empty" style="padding:20px 0">No data yet</div>`; return; }
+        el.innerHTML = items.map(g => `
+          <div class="hist-item">
+            <div class="hist-left">
+              <div class="hist-name">${esc(g.chat_title || 'Unnamed')}</div>
+              <div class="hist-date">${g.active_subs} active · ${g.expired_subs} expired</div>
+            </div>
+            <div class="hist-right">
+              <div class="hist-price">${fmtUsd(g.revenue_usd_cents || 0)}</div>
+              ${tonUsd ? `<div style="font-size:11px;color:rgba(255,255,255,.4)">${_nanoToUsdStr(g.revenue_nano || 0, tonUsd)}</div>` : ''}
+            </div>
+          </div>`).join('');
+      }
+    }
+
+    function _renderAnalyticsTxFeed(txs) {
+      const el = document.getElementById('analytics-tx-list');
+      if (!txs.length) { el.innerHTML = `<div class="empty" style="padding:20px 0">No payments yet</div>`; return; }
+      const tonUsd = TON_USD_PRICE || 0;
+      el.innerHTML = txs.map(tx => {
+        const date = tx.processed_at ? new Date(tx.processed_at).toLocaleDateString() : '';
+        const usdStr = fmtUsd(Math.round((tx.price_locked_in || 0) * 100));
+        const nanoStr = tx.amount_nano ? `${(tx.amount_nano / 1e9).toFixed(3)} GRAM` : '';
+        return `
+          <div class="hist-item">
+            <div class="hist-left">
+              <div class="hist-name">${esc(tx.chat_title || tx.platform_name || 'Payment')}</div>
+              <div class="hist-date">${date}</div>
+            </div>
+            <div class="hist-right">
+              <div class="hist-price">${usdStr}</div>
+              ${nanoStr ? `<div style="font-size:11px;color:rgba(255,255,255,.4)">${nanoStr}</div>` : ''}
+            </div>
+          </div>`;
+      }).join('');
     }
 
     // ════════════════════════════════════════════════════
