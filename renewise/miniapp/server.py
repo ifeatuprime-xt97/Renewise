@@ -2414,7 +2414,7 @@ async def api_sandbox_create_charge(
         }
     except Exception as exc:
         log.error("sandbox charge creation failed for platform %d: %s", platform_id, exc, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=f"{type(exc).__name__}: {exc}")
 
 
 @app.get("/api/developer/platforms/{platform_id}/sandbox/charges/{charge_id}")

@@ -50,6 +50,44 @@ def _get_code_cell():
     return _code_cell
 
 
+def _require_platform_addresses() -> None:
+    """Raise a clear ValueError when any required TON address env var is missing
+    or contains a malformed address that pytoniq cannot parse.
+
+    Called at the top of every payment-request generator so operators get an
+    actionable message instead of a cryptic IndexError from pytoniq-core.
+    """
+    missing = [
+        name
+        for name, val in [
+            ("PLATFORM_WALLET", PLATFORM_WALLET),
+            ("LOG_ADDRESS", LOG_ADDRESS),
+            ("TRIGGER_WALLET", TRIGGER_WALLET),
+        ]
+        if not val or not val.strip()
+    ]
+    if missing:
+        raise ValueError(
+            f"Payment contract addresses not configured. "
+            f"Set the following environment variables: {', '.join(missing)}"
+        )
+
+    # Validate each address is parseable by pytoniq so we get a clear error
+    # message instead of 'list index out of range' deep inside pytoniq-core.
+    for name, val in [
+        ("PLATFORM_WALLET", PLATFORM_WALLET),
+        ("LOG_ADDRESS", LOG_ADDRESS),
+        ("TRIGGER_WALLET", TRIGGER_WALLET),
+    ]:
+        try:
+            Address(val.strip())
+        except Exception as exc:
+            raise ValueError(
+                f"{name}='{val}' is not a valid TON address: {exc}. "
+                f"Expected a UQ.../EQ... base64 address string."
+            ) from exc
+
+
 # ── Types (unchanged public interface from Phase 1) ───────────────────────────
 
 class PaymentStatus(str, Enum):
@@ -94,6 +132,8 @@ async def generate_payment_request(
     admin_wallet_str = group["payout_wallet_address"]
     if not admin_wallet_str:
         raise ValueError(f"Group {group_id} has no payout wallet configured")
+
+    _require_platform_addresses()
 
     # ── Convert USD cents → GRAM at the live exchange rate ───────────────────
     # price_usd_cents is the authoritative USD price (e.g. 999 = $9.99).
@@ -197,6 +237,8 @@ async def generate_platform_payment_request(
     admin_wallet_str = platform.get("wallet_address")
     if not admin_wallet_str:
         raise ValueError(f"Platform {platform['id']} has no payout wallet configured")
+
+    _require_platform_addresses()
 
     price_usd: float = price_usd_cents / 100.0
     ton_usd_rate: float = await get_ton_usd_price()
