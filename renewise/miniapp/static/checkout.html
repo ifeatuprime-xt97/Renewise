@@ -422,7 +422,7 @@
         </a>
 
         <!-- Telegram Wallet -->
-        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
+        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn" onclick="handleWalletClick(event, '${safeUrl}', 'telegram')">
           <img class="wallet-icon"
                src="https://wallet.tg/images/logo-288.png"
                alt="Telegram Wallet"
@@ -448,6 +448,30 @@
           <span>Tonhub</span>
         </a>
       `;
+    }
+
+    // ─── Wallet link handler ────────────────────────────────────────────────
+    function handleWalletClick(e, url, wallet) {
+      // Inside Telegram WebView, ton:// links are intercepted and routed to
+      // Telegram Wallet automatically — just let the default href work.
+      // In a regular browser, attempt to open the ton:// link; if nothing
+      // handles it after 1.5s show a helpful message.
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+        return; // inside Telegram — let href handle it natively
+      }
+      if (wallet === 'telegram') {
+        e.preventDefault();
+        window.location.href = url;
+        setTimeout(function () {
+          var note = document.getElementById('polling-note');
+          if (note) {
+            note.textContent = 'No wallet opened? Install Telegram and use the @wallet bot, or use another wallet below.';
+            setTimeout(function () {
+              if (note) note.textContent = 'Checking every 3 seconds automatically…';
+            }, 6000);
+          }
+        }, 1500);
+      }
     }
 
     // ─── Charge polling ──────────────────────────────────────────────────────
