@@ -84,11 +84,12 @@ async def create_charge(
         # Create pending charge to get an ID
         row = await db.fetchrow(
             """
-            INSERT INTO platform_charges (platform_id, external_reference, mode, amount_usd_cents, status, expires_at)
-            VALUES ($1, $2, $3, $4, 'pending', NOW() + INTERVAL '30 minutes')
+            INSERT INTO platform_charges (platform_id, external_reference, mode, amount_usd_cents, status, buyer_fee_bps, expires_at)
+            VALUES ($1, $2, $3, $4, 'pending', $5, NOW() + INTERVAL '30 minutes')
             RETURNING id
             """,
-            platform["id"], req.external_reference, auth_mode, req.amount_usd_cents
+            platform["id"], req.external_reference, auth_mode, req.amount_usd_cents,
+            platform.get("buyer_fee_bps")   # NULL → checkout falls back to global default
         )
         charge_id = row["id"]
         
