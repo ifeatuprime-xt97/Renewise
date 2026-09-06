@@ -2383,8 +2383,8 @@ async def api_sandbox_create_charge(
         async with _conn2() as db:
             row = await db.fetchrow(
                 "INSERT INTO platform_charges "
-                "(platform_id, external_reference, mode, amount_usd_cents, status, buyer_fee_bps) "
-                "VALUES ($1,$2,'test',$3,'pending',$4) "
+                "(platform_id, external_reference, mode, amount_usd_cents, status, buyer_fee_bps, expires_at) "
+                "VALUES ($1,$2,'test',$3,'pending',$4, NOW() + INTERVAL '30 minutes') "
                 "ON CONFLICT(platform_id, external_reference) DO UPDATE "
                 "SET amount_usd_cents=EXCLUDED.amount_usd_cents "
                 "RETURNING id",
