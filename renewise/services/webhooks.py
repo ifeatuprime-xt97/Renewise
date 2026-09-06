@@ -117,7 +117,7 @@ async def dispatch_webhook(charge_id: int) -> None:
 
         platform_id = charge["platform_id"]
         endpoints = await db.fetch(
-            "SELECT * FROM webhook_endpoints WHERE platform_id = $1 AND active = 1",
+            "SELECT * FROM webhook_endpoints WHERE platform_id = $1 AND active = TRUE",
             platform_id,
         )
 

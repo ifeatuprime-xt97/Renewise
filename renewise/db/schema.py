@@ -595,6 +595,31 @@ async def init_db() -> None:
                 ]
                 for mig in pg_migrations:
                     await db.execute(mig)
+
+                # ── One-time fix: regenerate test keys that were accidentally hashed ──
+                # A previous migration SHA-256 hashed the secret_key_test column.
+                # Hashed values are exactly 64 hex chars and start with nothing
+                # recognisable — raw keys always start with 'sk_test_'.
+                # We regenerate any hashed rows with fresh raw keys.
+                import os as _os, hashlib as _hl
+                hashed_rows = await db.fetch(
+                    "SELECT id, owner_telegram_id FROM platforms "
+                    "WHERE secret_key_test IS NOT NULL "
+                    "AND length(secret_key_test) = 64 "
+                    "AND secret_key_test NOT LIKE 'sk_test_%'"
+                )
+                for row in hashed_rows:
+                    new_key = f"sk_test_{_os.urandom(32).hex()}"
+                    await db.execute(
+                        "UPDATE platforms SET secret_key_test=$1 WHERE id=$2",
+                        new_key, row["id"],
+                    )
+                    import logging as _log
+                    _log.getLogger(__name__).warning(
+                        "init_db: regenerated hashed test key for platform id=%d "
+                        "(owner=%d) — developer must retrieve new key from dashboard",
+                        row["id"], row["owner_telegram_id"],
+                    )
             finally:
                 await db.execute("SELECT pg_advisory_unlock(18273645)")
 
