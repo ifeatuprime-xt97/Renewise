@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS platforms (
     publishable_key_live TEXT UNIQUE,
     secret_key_live_hash TEXT,
     publishable_key_test TEXT UNIQUE NOT NULL,
-    secret_key_test_hash TEXT NOT NULL,
+    secret_key_test TEXT NOT NULL,
     wallet_address TEXT,
     wallet_passcode_hash TEXT,
     buyer_fee_bps INTEGER,
@@ -444,7 +444,7 @@ async def init_db() -> None:
                 publishable_key_live TEXT UNIQUE,
                 secret_key_live_hash TEXT,
                 publishable_key_test TEXT UNIQUE NOT NULL,
-                secret_key_test_hash TEXT NOT NULL,
+                secret_key_test      TEXT NOT NULL,
                 wallet_address       TEXT,
                 wallet_passcode_hash TEXT,
                 buyer_fee_bps        INTEGER,
@@ -555,13 +555,11 @@ async def init_db() -> None:
                     ALTER TABLE platforms ALTER COLUMN secret_key_live_hash DROP NOT NULL;
                 EXCEPTION WHEN others THEN NULL; END; $$;
                 """,
-                # Rename secret_key_test → secret_key_test_hash and hash existing plaintext values.
-                # The RENAME is safe to re-run (exception handler swallows duplicate-rename errors).
-                # The plaintext-to-hash step is done in Python below (after DDL migrations) because
-                # the digest() SQL function requires pgcrypto which is not available on Neon.
+                # Rename secret_key_test_hash → secret_key_test (stores raw plaintext)
+                # Reverting the hashing change — test keys are plaintext again.
                 """
                 DO $$ BEGIN
-                    ALTER TABLE platforms RENAME COLUMN secret_key_test TO secret_key_test_hash;
+                    ALTER TABLE platforms RENAME COLUMN secret_key_test_hash TO secret_key_test;
                 EXCEPTION WHEN undefined_column THEN NULL;
                          WHEN others THEN NULL; END; $$;
                 """,
@@ -597,28 +595,6 @@ async def init_db() -> None:
                 ]
                 for mig in pg_migrations:
                     await db.execute(mig)
-
-                # ── Python-side: hash any remaining plaintext test keys ────────
-                # Rows where secret_key_test_hash is not a 64-char hex string are
-                # still in plaintext (sk_test_...). Hash them now using hashlib so
-                # we don't need the pgcrypto extension (not available on Neon free).
-                import hashlib as _hl
-                plaintext_rows = await db.fetch(
-                    "SELECT id, secret_key_test_hash FROM platforms "
-                    "WHERE secret_key_test_hash IS NOT NULL "
-                    "AND length(secret_key_test_hash) != 64"
-                )
-                for row in plaintext_rows:
-                    hashed = _hl.sha256(row["secret_key_test_hash"].encode()).hexdigest()
-                    await db.execute(
-                        "UPDATE platforms SET secret_key_test_hash=$1 WHERE id=$2",
-                        hashed, row["id"],
-                    )
-                if plaintext_rows:
-                    import logging as _log
-                    _log.getLogger(__name__).info(
-                        "init_db: hashed %d plaintext test key(s)", len(plaintext_rows)
-                    )
             finally:
                 await db.execute("SELECT pg_advisory_unlock(18273645)")
 
