@@ -44,7 +44,12 @@ AWAIT_GROUP_PASSKEY_CURRENT = 51
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 async def _require_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE, action: str) -> dict | None:
-    """Fetch admin's network. If multiple, show a picker and return None."""
+    """Fetch admin's network. If multiple, show a picker and return None.
+
+    For multi-group admins, the picker buttons embed the original *action* so
+    that after selecting a network the correct handler fires directly (e.g.
+    grpsel:5:menu:members takes the admin straight to the members list).
+    """
     user_id = update.effective_user.id
     groups = await queries.get_groups_for_admin(user_id)
 
@@ -69,12 +74,14 @@ async def _require_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE, action:
             if g["id"] == selected_id:
                 return dict(g)
 
-    # Not yet selected — show network picker
-    await _show_network_picker(update, ctx)
+    # Not yet selected — show network picker preserving the intended action
+    await _show_network_picker(update, ctx, action=action)
     return None
 
 
-async def _show_network_picker(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def _show_network_picker(
+    update: Update, ctx: ContextTypes.DEFAULT_TYPE, action: str = "menu:home"
+) -> None:
     """Send/edit the network selection screen."""
     user_id = update.effective_user.id
     groups = await queries.get_groups_for_admin(user_id)
@@ -96,7 +103,7 @@ async def _show_network_picker(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
             title = str(g["telegram_chat_id"])
         formatted.append({"id": g["id"], "title": title})
 
-    kb = network_select_kb(formatted, action="menu:home")
+    kb = network_select_kb(formatted, action=action)
     text = "🌐 <b>My Networks</b>\n\nSelect a network to manage:"
 
     if update.callback_query:
@@ -808,15 +815,29 @@ async def msg_comp_username(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
 async def cb_comp_select_existing(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     """User tapped 'Select from existing users' inside the Comp flow.
 
-    Exit the conversation cleanly, then hand off to the normal members list
-    so the admin can pick a member to comp from there.
+    Exit the conversation cleanly, then show the members list directly.
+    We cannot call cb_view_members() here because it would try to answer
+    the callback query a second time (already answered above) and raise an
+    error before _send_members_page fires.  Instead we grab the group from
+    comp_group (already stored) and call _send_members_page directly.
     """
     query = update.callback_query
     await query.answer()
-    # Clear comp conversation state
-    ctx.user_data.pop("comp_group", None)  # type: ignore[union-attr]
-    # Delegate to the standard members view — it uses the same callback_data
-    await cb_view_members(update, ctx)
+
+    group = ctx.user_data.pop("comp_group", None)  # type: ignore[union-attr]
+
+    if group:
+        await _send_members_page(update, ctx, group["id"], group["telegram_chat_id"], 0)
+    else:
+        # Fallback: re-derive from callback data
+        gid = int(query.data.split(":")[1])
+        from renewise.db.queries import get_group_by_id
+        g = await get_group_by_id(gid)
+        if g:
+            await _send_members_page(update, ctx, g["id"], g["telegram_chat_id"], 0)
+        else:
+            await query.edit_message_text("⚠️ Group not found.")
+
     return ConversationHandler.END
 
 
@@ -1001,9 +1022,10 @@ async def _send_members_page(
                 )
             ])
         text = "\n".join(lines)
-        kb = members_nav_kb(group_id, page, has_next)
-        # Prepend member buttons above nav
-        kb.inline_keyboard = buttons + kb.inline_keyboard
+        nav_kb = members_nav_kb(group_id, page, has_next)
+        # Prepend member buttons above nav (inline_keyboard is a tuple in PTB v21+,
+        # so build a new markup instead of mutating the old one)
+        kb = InlineKeyboardMarkup(buttons + list(nav_kb.inline_keyboard))
 
     if update.callback_query:
         await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
@@ -1212,9 +1234,10 @@ async def _send_payment_history_page(
                 )
             ])
         text = "\n".join(lines)
-        kb = payment_history_nav_kb(group_id, page, has_next)
-        # Prepend payment buttons above nav
-        kb.inline_keyboard = buttons + kb.inline_keyboard
+        nav_kb = payment_history_nav_kb(group_id, page, has_next)
+        # Prepend payment buttons above nav (inline_keyboard is a tuple in PTB v21+,
+        # so build a new markup instead of mutating the old one)
+        kb = InlineKeyboardMarkup(buttons + list(nav_kb.inline_keyboard))
 
     if update.callback_query:
         await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
@@ -1321,7 +1344,8 @@ async def cb_wallet_change_history(update: Update, ctx: ContextTypes.DEFAULT_TYP
             new_w = r["new_wallet_address"]
             old_short = f"{old_w[:6]}...{old_w[-4:]}" if len(old_w) > 12 else old_w
             new_short = f"{new_w[:6]}...{new_w[-4:]}" if len(new_w) > 12 else new_w
-            date = (r["requested_at"] or "")[:16]
+            _ra = r["requested_at"]
+            date = _ra.strftime("%Y-%m-%d %H:%M") if hasattr(_ra, "strftime") else (str(_ra or ""))[:16]
             lines.append(
                 f"{icon} <code>{old_short}</code> → <code>{new_short}</code>\n"
                 f"   {r['status'].title()} • {date}"

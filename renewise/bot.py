@@ -890,6 +890,24 @@ async def cb_start_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 # ── app assembly ──────────────────────────────────────────────────────────────
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Global PTB error handler: log the exception and notify the affected user."""
+    log.error(
+        "Unhandled exception while processing update (via %s)",
+        type(context.error).__name__,
+        exc_info=context.error,
+    )
+    try:
+        if isinstance(update, Update) and update.effective_chat:
+            await context.bot.send_message(
+                update.effective_chat.id,
+                "⚠️ Something went wrong while processing your request. "
+                "Please try again — the issue has been logged.",
+            )
+    except Exception:
+        log.exception("Failed to notify user about an error.")
+
+
 def main() -> None:
     app = (
         Application.builder()
@@ -931,6 +949,9 @@ def main() -> None:
         filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
         handle_refund_wallet_message,
     ))
+
+    # ── global error handler: log crashes and notify the user ─────────────────
+    app.add_error_handler(error_handler)
 
     log.info("renewise bot starting…")
     app.run_polling(allowed_updates=[

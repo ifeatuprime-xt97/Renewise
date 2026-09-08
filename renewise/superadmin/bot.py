@@ -542,7 +542,11 @@ async def show_user_detail(update: Update, context, telegram_user_id: int):
 
     name  = html.escape(user.get("first_name") or "Unknown")
     uname = f" (@{html.escape(user['username'])})" if user.get("username") else ""
-    joined = (user.get("created_at") or "")[:10] or "N/A"
+    _ca = user.get("created_at")
+    if hasattr(_ca, "strftime"):          # datetime object (Postgres)
+        joined = _ca.strftime("%Y-%m-%d")
+    else:                                 # string (SQLite) or None
+        joined = (str(_ca or ""))[:10] or "N/A"
 
     text = (
         f"👤 <b>{name}</b>{uname}\n"
@@ -1108,7 +1112,7 @@ async def show_refunds_page(update: Update, context, page: int):
                 f"{html.escape(r['chat_title'] or '?')} | "
                 f"User <code>{r['telegram_user_id']}</code>\n"
                 f"   {ton:.4f} GRAM ≈${r['refund_usd']:.2f} → <code>{w_s}</code>\n"
-                f"   {r['status']} | {(r['resolved_at'] or r['created_at'] or '')[:16]}\n"
+                f"   {r['status']} | {(_dt := (r['resolved_at'] or r['created_at'])) and (_dt.strftime('%Y-%m-%d %H:%M') if hasattr(_dt, 'strftime') else str(_dt)[:16]) or '?'}\n"
             )
         text = "\n".join(lines)
 
@@ -1163,7 +1167,8 @@ async def show_audit_page(update: Update, context, page: int):
         for r in rows:
             gid  = f"g{r['group_id']}" if r["group_id"] else "—"
             det  = (r["details"] or "")[:60]
-            ts   = (r["created_at"] or "")[:16]
+            _ca = r["created_at"]
+            ts   = _ca.strftime("%Y-%m-%d %H:%M") if hasattr(_ca, "strftime") else (str(_ca or ""))[:16]
             lines.append(
                 f"• <b>{html.escape(r['action'])}</b>\n"
                 f"  actor:<code>{r['actor_telegram_id']}</code> | {gid} | {ts}\n"
@@ -1218,7 +1223,7 @@ async def show_pending_wallet_changes(update: Update, context):
                 f"<i>{html.escape(r['chat_title'] or '?')}</i>\n"
                 f"  Admin: <code>{r['admin_telegram_id']}</code>\n"
                 f"  → <code>{nw_s}</code>\n"
-                f"  Activates: {(r['activates_at'] or '')[:16]}\n"
+                f"  Activates: {(_aa := r['activates_at']) and (_aa.strftime('%Y-%m-%d %H:%M') if hasattr(_aa, 'strftime') else str(_aa)[:16]) or '?'}\n"
             )
         text = "\n".join(lines)
 
@@ -1864,6 +1869,25 @@ async def sa_callback_handler(update: Update, context):
         await query.answer()
 
     # ── suspend / unsuspend ───────────────────────────────────────────────────
+    # NOTE: sa_suspend_admin_ and sa_unsuspend_admin_ MUST come before the
+    # generic sa_suspend_ / sa_unsuspend_ to avoid the shorter prefix
+    # swallowing them and crashing on int("admin").
+    elif data.startswith("sa_suspend_admin_"):
+        target = int(data.split("_")[3])
+        from renewise.db.queries import suspend_admin, audit
+        await suspend_admin(target)
+        await audit(None, "suspend_admin", user_id, {"target_telegram_id": target})
+        await query.answer("Admin suspended.", show_alert=True)
+        await show_admin_detail(update, context, target)
+
+    elif data.startswith("sa_unsuspend_admin_"):
+        target = int(data.split("_")[3])
+        from renewise.db.queries import unsuspend_admin, audit
+        await unsuspend_admin(target)
+        await audit(None, "unsuspend_admin", user_id, {"target_telegram_id": target})
+        await query.answer("Admin unsuspended.", show_alert=True)
+        await show_admin_detail(update, context, target)
+
     elif data.startswith("sa_suspend_"):
         gid = int(data.split("_")[2])
         if not await _guard_group_exists(update, gid):
@@ -1932,22 +1956,6 @@ async def sa_callback_handler(update: Update, context):
         admin_tg_id = int(data.split("_")[2])
         await show_admin_detail(update, context, admin_tg_id)
         await query.answer()
-
-    elif data.startswith("sa_suspend_admin_"):
-        target = int(data.split("_")[3])
-        from renewise.db.queries import suspend_admin, audit
-        await suspend_admin(target)
-        await audit(None, "suspend_admin", user_id, {"target_telegram_id": target})
-        await query.answer("Admin suspended.", show_alert=True)
-        await show_admin_detail(update, context, target)
-
-    elif data.startswith("sa_unsuspend_admin_"):
-        target = int(data.split("_")[3])
-        from renewise.db.queries import unsuspend_admin, audit
-        await unsuspend_admin(target)
-        await audit(None, "unsuspend_admin", user_id, {"target_telegram_id": target})
-        await query.answer("Admin unsuspended.", show_alert=True)
-        await show_admin_detail(update, context, target)
 
     # ── subscription force-actions ────────────────────────────────────────────
     elif data.startswith("sa_sub_"):
@@ -2047,6 +2055,23 @@ async def sa_callback_handler(update: Update, context):
         await show_audit_page(update, context, int(data.split("_")[2]))
         await query.answer()
 
+    # ── reply to support ticket (from support ticket button) ─────────────────
+    # NOTE: sa_reply_ MUST come before sa_r_ — "sa_reply_123" starts with
+    # "sa_r_" and would be misrouted to the TX-recheck branch otherwise.
+    elif data.startswith("sa_reply_"):
+        target_user_id = int(data.split("_")[2])
+        context.user_data["reply_target"] = target_user_id
+        await query.edit_message_text(
+            f"💬 <b>Reply to User <code>{target_user_id}</code></b>\n\n"
+            "Type your reply below. It will be delivered to the user via the main bot.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("❌ Cancel", callback_data="sa_cancelreply"),
+                InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main"),
+            ]]),
+        )
+        await query.answer()
+
     # ── manual TX recheck ─────────────────────────────────────────────────────
     elif data.startswith("sa_r_"):
         tx_hash = data.split("_", 2)[2]
@@ -2073,21 +2098,6 @@ async def sa_callback_handler(update: Update, context):
             await query.message.reply_text(f"❌ Recheck <code>{html.escape(tx_hash[:16])}…</code>: <b>failed</b> (insufficient amount?).", parse_mode="HTML")
         else:
             await query.message.reply_text(f"❌ Recheck <code>{html.escape(tx_hash[:16])}…</code>: <b>error</b> during processing.", parse_mode="HTML")
-
-    # ── reply to support ticket (from support ticket button) ─────────────────
-    elif data.startswith("sa_reply_"):
-        target_user_id = int(data.split("_")[2])
-        context.user_data["reply_target"] = target_user_id
-        await query.edit_message_text(
-            f"💬 <b>Reply to User <code>{target_user_id}</code></b>\n\n"
-            "Type your reply below. It will be delivered to the user via the main bot.",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("❌ Cancel", callback_data="sa_cancelreply"),
-                InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main"),
-            ]]),
-        )
-        await query.answer()
 
     # ── message admin ─────────────────────────────────────────────────────────
     elif data.startswith("sa_msgadmin_"):

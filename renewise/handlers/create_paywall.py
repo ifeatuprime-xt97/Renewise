@@ -868,6 +868,7 @@ def build_create_paywall_handler() -> ConversationHandler:
             STEP_PRICE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, msg_price),
                 CallbackQueryHandler(cb_fee_ok,                pattern=r"^pw:fee_ok$"),
+                CallbackQueryHandler(cb_interval,              pattern=r"^pw:interval:\d+$"),
             ],
             STEP_PRICE_CONFIRM: [
                 CallbackQueryHandler(cb_price_ok,              pattern=r"^pw:price_ok$"),
