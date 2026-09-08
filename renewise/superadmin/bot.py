@@ -800,9 +800,10 @@ async def show_tx_feed(update: Update, context, status_filter: str, page: int):
     # Break filter buttons into two rows of 3
     kb = [filter_row[:3], filter_row[3:]]
 
-    # Per-TX recheck buttons (only for rows that have a tx_hash)
+    # Per-TX recheck buttons (only for paywall rows — developer charge rechecks
+    # are not supported since they use a different processing path)
     for r in rows:
-        if r.get("tx_hash"):
+        if r.get("tx_hash") and r.get("sub_id") is not None:
             kb.append([InlineKeyboardButton(
                 f"🔄 Recheck {r['tx_hash'][:10]}…",
                 callback_data=f"sa_r_{r['tx_hash']}",
@@ -1782,17 +1783,32 @@ async def sa_callback_handler(update: Update, context):
         await show_platforms_page(update, context, int(data.split("_")[2]))
         await query.answer()
 
-    elif data.startswith("sa_platform_"):
-        pid = int(data.split("_")[2])
-        await show_platform_details(update, context, pid)
-        await query.answer()
-
     elif data.startswith("sa_revoke_"):
         pid = int(data.split("_")[2])
         from renewise.services.platform import revoke_platform
         await revoke_platform(pid, user_id)
         await show_platform_details(update, context, pid)
         await query.answer("Platform keys revoked.", show_alert=True)
+
+    # NOTE: sa_platform_delete_confirm_ and sa_platform_delete_ must be checked
+    # BEFORE the generic sa_platform_ branch to avoid the prefix swallowing them.
+    elif data.startswith("sa_platform_delete_confirm_"):
+        pid = int(data.split("_")[4])
+        deleted = await delete_platform(pid, user_id)
+        if deleted:
+            await query.answer("Platform deleted.", show_alert=True)
+            # Invalidate auth cache for this platform's keys
+            try:
+                from renewise.api.platform import auth_cache
+                stale = [k for k, v in list(auth_cache.items()) if isinstance(v, dict) and v.get("id") == pid]
+                for k in stale:
+                    auth_cache.pop(k, None)
+            except Exception:
+                pass
+            await show_platforms_page(update, context, 0)
+        else:
+            await query.answer("Platform not found — may have already been deleted.", show_alert=True)
+            await show_platforms_page(update, context, 0)
 
     elif data.startswith("sa_platform_delete_"):
         pid = int(data.split("_")[3])
@@ -1822,23 +1838,10 @@ async def sa_callback_handler(update: Update, context):
         )
         await query.answer()
 
-    elif data.startswith("sa_platform_delete_confirm_"):
-        pid = int(data.split("_")[4])
-        deleted = await delete_platform(pid, user_id)
-        if deleted:
-            await query.answer("Platform deleted.", show_alert=True)
-            # Invalidate auth cache for this platform's keys
-            try:
-                from renewise.api.platform import auth_cache
-                stale = [k for k, v in list(auth_cache.items()) if isinstance(v, dict) and v.get("id") == pid]
-                for k in stale:
-                    auth_cache.pop(k, None)
-            except Exception:
-                pass
-            await show_platforms_page(update, context, 0)
-        else:
-            await query.answer("Platform not found — may have already been deleted.", show_alert=True)
-            await show_platforms_page(update, context, 0)
+    elif data.startswith("sa_platform_"):
+        pid = int(data.split("_")[2])
+        await show_platform_details(update, context, pid)
+        await query.answer()
 
     # ── groups paging ─────────────────────────────────────────────────────────
     elif data.startswith("sa_page_"):

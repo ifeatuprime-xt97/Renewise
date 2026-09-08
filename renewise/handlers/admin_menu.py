@@ -805,15 +805,35 @@ async def msg_comp_username(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
     return ConversationHandler.END
 
 
+async def cb_comp_select_existing(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    """User tapped 'Select from existing users' inside the Comp flow.
+
+    Exit the conversation cleanly, then hand off to the normal members list
+    so the admin can pick a member to comp from there.
+    """
+    query = update.callback_query
+    await query.answer()
+    # Clear comp conversation state
+    ctx.user_data.pop("comp_group", None)  # type: ignore[union-attr]
+    # Delegate to the standard members view — it uses the same callback_data
+    await cb_view_members(update, ctx)
+    return ConversationHandler.END
+
+
 def build_comp_handler() -> ConversationHandler:
     return ConversationHandler(
         entry_points=[CallbackQueryHandler(cb_comp, pattern=r"^(menu:comp|grpsel:\d+:menu:comp)$")],
         states={
             AWAIT_COMP_USERNAME: [
+                # "Select from existing users" button — exit conversation and show member list
+                CallbackQueryHandler(
+                    cb_comp_select_existing,
+                    pattern=r"^grpsel:\d+:menu:members$",
+                ),
                 MessageHandler(
                     (filters.TEXT & ~filters.COMMAND) | filters.FORWARDED,
                     msg_comp_username,
-                )
+                ),
             ],
         },
         fallbacks=[

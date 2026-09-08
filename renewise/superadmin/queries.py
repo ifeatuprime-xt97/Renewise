@@ -384,72 +384,196 @@ async def get_platform_tx_feed(
 ) -> list[dict]:
     """
     Platform-wide transaction feed ordered by most recent first.
-    Joins processed_tx_hashes → subscriptions → users → groups.
-    Falls back to subscriptions with a tx_hash when not yet in processed_tx_hashes.
+
+    UNIONs two sources:
+      1. processed_tx_hashes → subscriptions → users → groups  (paywall payments)
+      2. platform_charges → platforms → users (LEFT JOIN)        (developer API payments)
+
+    Developer charge statuses are mapped to subscription equivalents so the
+    existing filter tabs work without changes:
+        completed → active   |  pending → pending
+        expired   → expired  |  failed  → cancelled
+
+    Columns returned (same shape for both legs):
+      tx_hash, processed_at, sub_id, sub_status, price_locked_in,
+      start_date, next_renewal_date, telegram_user_id, first_name,
+      username, group_id, chat_title, admin_telegram_id
     """
-    # SECURITY: status_filter is passed as a bound parameter — never interpolated.
-    # Valid values are enforced by the ALLOWED_STATUS_FILTERS set; anything else
-    # is silently treated as "all" so callers cannot inject arbitrary SQL.
+    from renewise.config import USE_POSTGRES
+
+    # SECURITY: status_filter is validated against an explicit allowlist — never
+    # interpolated into SQL.  Anything outside the set silently falls back to "all".
     _ALLOWED = {"all", "active", "expired", "cancelled", "pending", "comped"}
     if status_filter not in _ALLOWED:
         status_filter = "all"
 
+    # Map the subscription-side status filter to the equivalent platform_charges status.
+    # "comped" has no developer equivalent — exclude developer charges when that tab is active.
+    _DEV_STATUS_MAP = {
+        "active":    "completed",
+        "expired":   "expired",
+        "cancelled": "failed",
+        "pending":   "pending",
+    }
+
+    # ── subscription leg ──────────────────────────────────────────────────────
+    # Identical SELECT list in both legs so UNION works regardless of DB.
+    _sub_select = (
+        "SELECT "
+        "  p.tx_hash, p.processed_at, "
+        "  s.id       AS sub_id, "
+        "  s.status   AS sub_status, "
+        "  s.price_locked_in, "
+        "  s.start_date, "
+        "  s.next_renewal_date, "
+        "  u.telegram_user_id, "
+        "  u.first_name, "
+        "  u.username, "
+        "  g.id       AS group_id, "
+        "  g.chat_title, "
+        "  g.admin_telegram_id "
+        "FROM processed_tx_hashes p "
+        "JOIN subscriptions s ON s.id = p.sub_id "
+        "JOIN users u ON u.id = s.user_id "
+        "JOIN groups g ON g.id = s.group_id"
+    )
+
+    # ── developer charges leg ─────────────────────────────────────────────────
+    # Normalise platform_charges columns to match the subscription leg.
+    # • price_locked_in  = amount_usd_cents / 100
+    # • sub_status       = mapped charge status (completed→active etc.)
+    # • chat_title       = '🔌 ' + platform_name  (prefix distinguishes dev charges)
+    # • group_id         = platform_id  (reused for display; no real group)
+    # • sub_id / start_date / next_renewal_date / admin_telegram_id = NULL
+    # • first_name / username come from users table via LEFT JOIN (may be NULL)
+
+    # CASE expression is identical for both SQLite and Postgres.
+    _dev_status_expr = (
+        "CASE pc.status "
+        "  WHEN 'completed' THEN 'active' "
+        "  WHEN 'expired'   THEN 'expired' "
+        "  WHEN 'failed'    THEN 'cancelled' "
+        "  ELSE pc.status "
+        "END"
+    )
+
+    # SQLite uses REAL; Postgres uses DOUBLE PRECISION — both accept plain division.
+    _price_cast = "CAST(pc.amount_usd_cents AS REAL)" if not USE_POSTGRES else "CAST(pc.amount_usd_cents AS DOUBLE PRECISION)"
+
+    # Postgres requires subquery aliases; SQLite does too in UNION contexts.
+    # SQLite does NOT support NULLS LAST — omit it (completed_at is always set
+    # when tx_hash IS NOT NULL, so NULL ordering is not an issue in practice).
+    _order_by = "ORDER BY processed_at DESC NULLS LAST" if USE_POSTGRES else "ORDER BY processed_at DESC"
+
+    _dev_select = (
+        "SELECT "
+        "  pc.tx_hash, "
+        "  pc.completed_at AS processed_at, "
+        "  NULL            AS sub_id, "
+        f" ({_dev_status_expr}) AS sub_status, "
+        f" {_price_cast} / 100.0 AS price_locked_in, "
+        "  NULL AS start_date, "
+        "  NULL AS next_renewal_date, "
+        "  pl.owner_telegram_id AS telegram_user_id, "
+        "  u.first_name, "
+        "  u.username, "
+        "  pc.platform_id  AS group_id, "
+        "  ('🔌 ' || pl.platform_name) AS chat_title, "
+        "  NULL            AS admin_telegram_id "
+        "FROM platform_charges pc "
+        "JOIN platforms pl ON pl.id = pc.platform_id "
+        "LEFT JOIN users u ON u.telegram_user_id = pl.owner_telegram_id "
+        "WHERE pc.tx_hash IS NOT NULL"   # only charges that have reached on-chain
+    )
+
     async with _db() as db:
         if status_filter == "all":
             rows = await db.fetch(
-                "SELECT "
-                "  p.tx_hash, p.processed_at, "
-                "  s.id AS sub_id, s.status AS sub_status, s.price_locked_in, "
-                "  s.start_date, s.next_renewal_date, "
-                "  u.telegram_user_id, u.first_name, u.username, "
-                "  g.id AS group_id, g.chat_title, g.admin_telegram_id "
-                "FROM processed_tx_hashes p "
-                "JOIN subscriptions s ON s.id = p.sub_id "
-                "JOIN users u ON u.id = s.user_id "
-                "JOIN groups g ON g.id = s.group_id "
-                "ORDER BY p.processed_at DESC "
+                f"SELECT * FROM ({_sub_select} UNION ALL {_dev_select}) AS combined "
+                f"{_order_by} "
                 "LIMIT $1 OFFSET $2",
                 limit, offset,
             )
-        else:
+        elif status_filter == "comped":
+            # "comped" is subscription-only — no developer charge equivalent
             rows = await db.fetch(
-                "SELECT "
-                "  p.tx_hash, p.processed_at, "
-                "  s.id AS sub_id, s.status AS sub_status, s.price_locked_in, "
-                "  s.start_date, s.next_renewal_date, "
-                "  u.telegram_user_id, u.first_name, u.username, "
-                "  g.id AS group_id, g.chat_title, g.admin_telegram_id "
-                "FROM processed_tx_hashes p "
-                "JOIN subscriptions s ON s.id = p.sub_id "
-                "JOIN users u ON u.id = s.user_id "
-                "JOIN groups g ON g.id = s.group_id "
-                "WHERE s.status = $1 "
+                f"{_sub_select} WHERE s.status = $1 "
                 "ORDER BY p.processed_at DESC "
                 "LIMIT $2 OFFSET $3",
                 status_filter, limit, offset,
+            )
+        else:
+            dev_status = _DEV_STATUS_MAP[status_filter]
+            rows = await db.fetch(
+                f"SELECT * FROM ("
+                f"  {_sub_select} WHERE s.status = $1 "
+                f"  UNION ALL "
+                f"  {_dev_select} AND ({_dev_status_expr}) = $2"
+                f") AS combined "
+                f"{_order_by} "
+                "LIMIT $3 OFFSET $4",
+                status_filter, dev_status, limit, offset,
             )
         return [dict(r) for r in rows]
 
 
 async def get_platform_tx_count(status_filter: str = "all") -> int:
-    # SECURITY: same parameterisation as get_platform_tx_feed above.
+    """Count all transactions across both paywall subscriptions and developer charges."""
+    # SECURITY: same allowlist validation as get_platform_tx_feed above.
     _ALLOWED = {"all", "active", "expired", "cancelled", "pending", "comped"}
     if status_filter not in _ALLOWED:
         status_filter = "all"
 
+    _DEV_STATUS_MAP = {
+        "active":    "completed",
+        "expired":   "expired",
+        "cancelled": "failed",
+        "pending":   "pending",
+    }
+
+    _dev_status_expr = (
+        "CASE pc.status "
+        "  WHEN 'completed' THEN 'active' "
+        "  WHEN 'expired'   THEN 'expired' "
+        "  WHEN 'failed'    THEN 'cancelled' "
+        "  ELSE pc.status "
+        "END"
+    )
+
     async with _db() as db:
         if status_filter == "all":
-            return int(await db.fetchval(
+            sub_count = int(await db.fetchval(
                 "SELECT COUNT(*) FROM processed_tx_hashes p "
                 "JOIN subscriptions s ON s.id = p.sub_id"
             ) or 0)
-        else:
+            dev_count = int(await db.fetchval(
+                "SELECT COUNT(*) FROM platform_charges WHERE tx_hash IS NOT NULL"
+            ) or 0)
+            return sub_count + dev_count
+
+        elif status_filter == "comped":
+            # comped is subscription-only
             return int(await db.fetchval(
                 "SELECT COUNT(*) FROM processed_tx_hashes p "
                 "JOIN subscriptions s ON s.id = p.sub_id "
                 "WHERE s.status = $1",
                 status_filter,
             ) or 0)
+
+        else:
+            dev_status = _DEV_STATUS_MAP[status_filter]
+            sub_count = int(await db.fetchval(
+                "SELECT COUNT(*) FROM processed_tx_hashes p "
+                "JOIN subscriptions s ON s.id = p.sub_id "
+                "WHERE s.status = $1",
+                status_filter,
+            ) or 0)
+            dev_count = int(await db.fetchval(
+                f"SELECT COUNT(*) FROM platform_charges "
+                f"WHERE tx_hash IS NOT NULL AND ({_dev_status_expr}) = $1",
+                dev_status,
+            ) or 0)
+            return sub_count + dev_count
 
 
 async def get_platform_revenue_breakdown() -> dict:
