@@ -5752,7 +5752,8 @@ http_response_code(200);</pre>
         const data = await r.json();
 
         WebApp.HapticFeedback.notificationOccurred('success');
-        alert(`Your new ${mode} secret key is:\n\n${data.new_secret_key}\n\nCopy this now. It will not be shown again.`);
+        await showSecretKeyModal(`🔑 New ${mode} Secret Key`, data.new_secret_key,
+          'Copy this now — it will not be shown again.');
       } catch (e) {
         WebApp.showAlert('Error regenerating key: ' + (e.message || e));
       }
@@ -6135,7 +6136,7 @@ http_response_code(200);</pre>
           return;
         }
         sel.innerHTML = platforms.map(p =>
-          `<option value="${p.id}" data-sk-test="${esc(p.secret_key_test)}" data-has-live="${!!p.publishable_key_live}" data-has-wallet="${!!p.wallet_address}">${esc(p.platform_name)}${!p.wallet_address ? ' ⚠️ No Wallet' : ''}</option>`
+          `<option value="${p.id}" data-has-live="${!!p.publishable_key_live}" data-has-wallet="${!!p.wallet_address}">${esc(p.platform_name)}${!p.wallet_address ? ' ⚠️ No Wallet' : ''}</option>`
         ).join('');
       } catch (e) {
         sel.innerHTML = '<option value="">Failed to load apps</option>';
@@ -6161,23 +6162,6 @@ http_response_code(200);</pre>
       const amtUsd = parseFloat(amtInput.value);
       if (!amtUsd || amtUsd < 0.10) { WebApp.showAlert('Minimum charge is $0.10'); return; }
 
-      const hasLive = opt.dataset.hasLive === 'true';
-      if (_sandboxEnv === 'live' && !hasLive) {
-        WebApp.showAlert('This app has no Live (Mainnet) keys yet. Generate them first in Developer Apps.');
-        return;
-      }
-
-      const skTest = opt.dataset.skTest;
-      let secretKey = skTest;
-      if (_sandboxEnv === 'live') {
-        const enteredKey = await promptTextModal('Enter Live Secret Key', 'sk_live_…');
-        if (!enteredKey || !enteredKey.trim().startsWith('sk_live_')) {
-          WebApp.showAlert('Invalid live key format. Must start with sk_live_');
-          return;
-        }
-        secretKey = enteredKey.trim();
-      }
-
       // Stop any existing poll
       if (_sandboxPollTimer) { clearInterval(_sandboxPollTimer); _sandboxPollTimer = null; }
 
@@ -6188,11 +6172,11 @@ http_response_code(200);</pre>
 
       try {
         const ref = `sandbox_${Date.now()}`;
-        let r;
 
-        r = await fetch(`${API}/platform/charges`, {
+        // Use the proxy endpoint — authenticated via Telegram initData, no raw secret key needed
+        const r = await apiFetch(`${API}/developer/platforms/${platformId}/sandbox/charge`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
+          headers: H(),
           body: JSON.stringify({ amount_usd_cents: Math.round(amtUsd * 100), external_reference: ref })
         });
         if (!r.ok) {
@@ -6218,8 +6202,8 @@ http_response_code(200);</pre>
         }
         const charge = await r.json();
 
-        _renderSandboxPending(charge, amtUsd, secretKey);
-        _sandboxPollCharge(charge.id, secretKey);
+        _renderSandboxPending(charge, amtUsd);
+        _sandboxPollCharge(charge.id, platformId);
       } catch (e) {
         _renderSandboxError(e.message || String(e));
       } finally {
@@ -6228,7 +6212,7 @@ http_response_code(200);</pre>
       }
     }
 
-    function _renderSandboxPending(charge, amtUsd, sk) {
+    function _renderSandboxPending(charge, amtUsd) {
       const resEl = document.getElementById('sandbox-result');
       const payUrl  = charge.payment_url || '';
       // Properly escape URL for HTML attribute (only escape quotes, leave & as-is for URL params)
@@ -6439,7 +6423,7 @@ http_response_code(200);</pre>
         </div>`;
     }
 
-    function _sandboxPollCharge(chargeId, sk) {
+    function _sandboxPollCharge(chargeId, platformId) {
       let attempts = 0;
       const MAX = 120; // 6 min @ 3s
       _sandboxPollTimer = setInterval(async () => {
@@ -6450,14 +6434,14 @@ http_response_code(200);</pre>
           return;
         }
         try {
-          const r = await fetch(`${API}/platform/charges/${chargeId}`, {
-            headers: { 'Authorization': `Bearer ${sk}` }
+          const r = await apiFetch(`${API}/developer/platforms/${platformId}/sandbox/charges/${chargeId}`, {
+            headers: H()
           });
-          if (r.status === 401) {
-            // Key rotated or revoked — stop polling, show error
+          if (r.status === 401 || r.status === 403) {
+            // Session expired — stop polling, show error
             clearInterval(_sandboxPollTimer);
             _sandboxPollTimer = null;
-            _renderSandboxError('Polling stopped: secret key was revoked or rotated. Regenerate and try again.');
+            _renderSandboxError('Polling stopped: session expired. Reload the app and try again.');
             return;
           }
           if (!r.ok) return; // transient error, keep polling
@@ -6472,7 +6456,7 @@ http_response_code(200);</pre>
           } else if (charge.status === 'failed' || charge.status === 'expired') {
             clearInterval(_sandboxPollTimer);
             _sandboxPollTimer = null;
-            const reason = charge.status === 'expired' 
+            const reason = charge.status === 'expired'
               ? 'This payment link expired after 30 minutes. Create a new test charge to try again.'
               : `Charge ${charge.status}. Create a new test charge to try again.`;
             _renderSandboxError(reason);
@@ -6922,11 +6906,66 @@ http_response_code(200);</pre>
 
         WebApp.HapticFeedback.notificationOccurred('success');
         // Show the live secret key ONCE — this is the only time it's ever visible
-        alert(`✅ Live keys generated!\n\nSave your Live Secret Key NOW it will never be shown again:\n\n${data.raw_secret_key_live}\n\nPublishable key is saved to your dashboard.`);
+        await showSecretKeyModal('🔑 Live Secret Key — Save This Now', data.raw_secret_key_live,
+          'This is the only time your live secret key will be shown. Copy it before closing.');
         loadPlatforms();
       } catch (e) {
         WebApp.showAlert('Error generating live keys: ' + (e.message || e));
       }
+    }
+
+    // ── Secret key reveal modal — shows a key with a copy button ─────────────
+    // showSecretKeyModal(title, key, subtitle) → Promise<void>
+    // Resolves when the user clicks "Done". The key is never auto-dismissed.
+    function showSecretKeyModal(title, key, subtitle) {
+      return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+
+        overlay.innerHTML = `
+          <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;box-sizing:border-box">
+            <div style="font-size:16px;font-weight:700;margin-bottom:6px">${title}</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:16px;line-height:1.5">${subtitle || ''}</div>
+            <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;margin-bottom:16px;position:relative">
+              <code id="skm-key" style="font-size:12px;color:var(--accent);word-break:break-all;display:block;line-height:1.6;padding-right:4px">${key}</code>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button id="skm-copy" style="flex:2;padding:13px;background:var(--accent);border:none;border-radius:12px;color:#000;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer">
+                Copy Key
+              </button>
+              <button id="skm-done" style="flex:1;padding:13px;background:var(--surface2);border:none;border-radius:12px;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">
+                Done
+              </button>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        overlay.querySelector('#skm-copy').addEventListener('click', () => {
+          navigator.clipboard.writeText(key).then(() => {
+            const btn = overlay.querySelector('#skm-copy');
+            btn.textContent = '✓ Copied!';
+            btn.style.background = '#4ade80';
+            setTimeout(() => {
+              btn.textContent = 'Copy Key';
+              btn.style.background = 'var(--accent)';
+            }, 2000);
+          }).catch(() => {
+            // Fallback: select the text so user can copy manually
+            const range = document.createRange();
+            range.selectNodeContents(overlay.querySelector('#skm-key'));
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+          });
+        });
+
+        overlay.querySelector('#skm-done').addEventListener('click', () => {
+          overlay.remove();
+          resolve();
+        });
+      });
     }
 
     // ── PIN-pad modal (replaces all prompt() calls for passkeys) ─────────────
