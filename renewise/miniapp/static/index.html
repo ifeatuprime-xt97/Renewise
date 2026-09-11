@@ -6334,7 +6334,7 @@ http_response_code(200);</pre>
           </div>
 
           <p style="font-size:11px;color:rgba(255,255,255,.25)">
-            Polling for confirmation every 3 seconds…
+            Polling for confirmation every 3 seconds (up to 10 minutes)…
           </p>
         </div>
       `;
@@ -6441,12 +6441,17 @@ http_response_code(200);</pre>
 
     function _sandboxPollCharge(chargeId, sk) {
       let attempts = 0;
-      const MAX = 120; // 6 min @ 3s
+      const MAX = 200; // 10 min @ 3s
       _sandboxPollTimer = setInterval(async () => {
         attempts++;
         if (attempts > MAX) {
           clearInterval(_sandboxPollTimer);
           _sandboxPollTimer = null;
+          _renderSandboxError(
+            'Polling timed out after 10 minutes. If you completed the payment, ' +
+            'check your charges list — it may still confirm. ' +
+            'On testnet, confirmation can take a few minutes if the server is cold.'
+          );
           return;
         }
         try {

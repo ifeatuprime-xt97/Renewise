@@ -830,16 +830,26 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                     try:
                         txs = await fetch_transactions(canonical, limit=20, network=network)
                         _last_polled[canonical] = now
+                        if not txs:
+                            log.debug(
+                                "inprocess: no txs returned for vault %s (network=%s) — "
+                                "vault may be undeployed, or API key invalid for this network",
+                                canonical, network,
+                            )
                     except Exception as exc:
                         err_str = str(exc)
                         if "429" in err_str:
-                            # Key manager already handled cooldown internally;
-                            # set a modest outer backoff to give keys breathing room.
                             poll_backoff = max(poll_backoff, 5)
                             log.warning(
                                 "inprocess: 429 on vault %s after key manager exhausted — "
                                 "outer backoff %ds",
                                 canonical, poll_backoff,
+                            )
+                        elif "401" in err_str or "Unauthorized" in err_str or "Invalid api-key" in err_str:
+                            log.error(
+                                "inprocess: API key rejected for vault %s (network=%s) — "
+                                "check TONCENTER_API_KEYS_TESTNET is set for testnet vaults",
+                                canonical, network,
                             )
                         else:
                             log.warning("inprocess: fetch error for %s: %s", canonical, exc)
