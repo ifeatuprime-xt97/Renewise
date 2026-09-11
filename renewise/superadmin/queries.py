@@ -337,7 +337,7 @@ async def get_total_platforms_count() -> int:
         return int(await db.fetchval("SELECT COUNT(*) FROM platforms") or 0)
 
 async def get_user_detail(telegram_user_id: int) -> dict | None:
-    """Full profile for a single user: base info + subscription summary."""
+    """Full profile for a single user: base info + subscriptions + admin groups + dev platforms."""
     async with _db() as db:
         user = await db.fetchrow(
             "SELECT * FROM users WHERE telegram_user_id=$1", telegram_user_id
@@ -357,14 +357,60 @@ async def get_user_detail(telegram_user_id: int) -> dict | None:
             "ORDER BY s.created_at DESC",
             user["id"],
         )
-        user["subscriptions"] = [dict(s) for s in subs]
-        user["active_sub_count"]  = sum(1 for s in user["subscriptions"] if s["status"] == "active")
-        user["total_sub_count"]   = len(user["subscriptions"])
-        user["total_spent_usd"]   = sum(
+        user["subscriptions"]    = [dict(s) for s in subs]
+        user["active_sub_count"] = sum(1 for s in user["subscriptions"] if s["status"] == "active")
+        user["total_sub_count"]  = len(user["subscriptions"])
+        user["total_spent_usd"]  = sum(
             float(s["price_locked_in"] or 0)
             for s in user["subscriptions"]
             if s["status"] in ("active", "comped", "expired", "cancelled")
         )
+
+        # Groups this user admins
+        admin_groups = await db.fetch(
+            "SELECT g.id, g.chat_title, g.telegram_chat_id, g.status, "
+            "g.price_usd_cents, g.billing_interval_days, "
+            "(SELECT COUNT(*) FROM subscriptions s "
+            " WHERE s.group_id=g.id AND s.status='active') AS active_subs, "
+            "(SELECT COALESCE(SUM(s.price_locked_in), 0) "
+            " FROM subscriptions s "
+            " WHERE s.group_id=g.id AND s.status NOT IN ('pending','cancelled')) AS revenue_usd "
+            "FROM groups g "
+            "WHERE g.admin_telegram_id=$1 "
+            "ORDER BY g.created_at DESC",
+            telegram_user_id,
+        )
+        user["admin_groups"] = [dict(g) for g in admin_groups]
+
+        # Developer platforms this user owns
+        dev_platforms = await db.fetch(
+            "SELECT p.id, p.platform_name, p.status, "
+            "p.publishable_key_live, p.publishable_key_test, "
+            "p.wallet_address, p.created_at, "
+            "(SELECT COUNT(*) FROM platform_charges c "
+            " WHERE c.platform_id=p.id) AS total_charges, "
+            "(SELECT COUNT(*) FROM platform_charges c "
+            " WHERE c.platform_id=p.id AND c.status='completed') AS completed_charges, "
+            "(SELECT COALESCE(SUM(c.amount_usd_cents), 0) FROM platform_charges c "
+            " WHERE c.platform_id=p.id AND c.status='completed') AS revenue_cents "
+            "FROM platforms p "
+            "WHERE p.owner_telegram_id=$1 "
+            "ORDER BY p.created_at DESC",
+            telegram_user_id,
+        )
+        user["dev_platforms"] = [dict(p) for p in dev_platforms]
+
+        # Ban / suspension state
+        user["is_banned"] = bool(await db.fetchval(
+            "SELECT 1 FROM banned_admins WHERE telegram_id=$1", telegram_user_id
+        ))
+        user["ban_reason"] = await db.fetchval(
+            "SELECT reason FROM banned_admins WHERE telegram_id=$1", telegram_user_id
+        )
+        user["is_suspended"] = bool(await db.fetchval(
+            "SELECT 1 FROM admin_suspensions WHERE admin_telegram_id=$1", telegram_user_id
+        ))
+
         return user
 
 
@@ -747,6 +793,28 @@ async def get_platform_details(platform_id: int) -> dict | None:
             "WHERE platform_id = $1 AND status = 'completed'", platform_id
         ) or 0) / 100.0
         return platform
+
+
+async def get_platform_charges_page(
+    platform_id: int,
+    limit: int,
+    offset: int,
+) -> tuple[list[dict], int]:
+    """Return a page of charges for a specific platform plus total count."""
+    async with _db() as db:
+        rows = await db.fetch(
+            "SELECT id, external_reference, mode, amount_usd_cents, status, "
+            "tx_hash, vault_address, created_at, completed_at "
+            "FROM platform_charges "
+            "WHERE platform_id = $1 "
+            "ORDER BY created_at DESC "
+            "LIMIT $2 OFFSET $3",
+            platform_id, limit, offset,
+        )
+        total = int(await db.fetchval(
+            "SELECT COUNT(*) FROM platform_charges WHERE platform_id = $1", platform_id
+        ) or 0)
+    return [dict(r) for r in rows], total
 
 
 async def delete_platform(platform_id: int, actor_tg_id: int) -> bool:

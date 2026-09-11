@@ -47,6 +47,7 @@ from renewise.superadmin.queries import (
     get_admin_groups_detail,
     force_cancel_subscription, force_expire_subscription,
     delete_platform,
+    get_platform_charges_page,
 )
 from renewise.watcher.toncenter import fetch_single_transaction, extract_in_msg_value
 from renewise.watcher.db import is_tx_processed
@@ -342,6 +343,7 @@ async def show_platform_details(update: Update, context, platform_id: int):
         keyboard.append([InlineKeyboardButton("🚫 Revoke Keys", callback_data=f"sa_revoke_{p['id']}")])
 
     keyboard.append([InlineKeyboardButton("⚙️ Override Fees", callback_data=f"sa_pfees_{p['id']}")])
+    keyboard.append([InlineKeyboardButton("📋 View Transactions", callback_data=f"sa_ptx_{p['id']}_0")])
     keyboard.append([
         InlineKeyboardButton("🗑 Delete Platform", callback_data=f"sa_platform_delete_{p['id']}"),
     ])
@@ -350,6 +352,67 @@ async def show_platform_details(update: Update, context, platform_id: int):
 
     await update.callback_query.edit_message_text(
         text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+# ── Platform transaction history (SA view) ────────────────────────────────────
+
+async def show_platform_charges(update: Update, context, platform_id: int, page: int):
+    """Paginated charge history for a single developer platform."""
+    from renewise.config import TONCENTER_TESTNET
+    LIMIT  = 6
+    offset = page * LIMIT
+    rows, total = await get_platform_charges_page(platform_id, LIMIT, offset)
+    total_pages = max(1, -(-total // LIMIT))
+
+    explorer_base = (
+        "https://testnet.tonscan.org/tx/"
+        if TONCENTER_TESTNET
+        else "https://tonscan.org/tx/"
+    )
+
+    status_icon = {
+        "completed": "✅", "pending": "⏳",
+        "expired": "⏰", "failed": "❌",
+    }
+
+    if not rows:
+        text = f"📋 <b>Platform #{platform_id} — Transactions</b>\n\nNo charges yet."
+    else:
+        lines = [f"📋 <b>Platform #{platform_id} — Transactions</b>  ({page + 1}/{total_pages})\n"]
+        for r in rows:
+            icon    = status_icon.get(r["status"], "•")
+            amt     = f"${r['amount_usd_cents'] / 100:.2f}"
+            ref     = html.escape(r["external_reference"][:28])
+            tx      = r.get("tx_hash")
+            tx_line = (
+                f'<a href="{explorer_base}{tx}">{tx[:12]}…</a>'
+                if tx else "—"
+            )
+            _ca = r["created_at"]
+            ts  = _ca.strftime("%Y-%m-%d %H:%M") if hasattr(_ca, "strftime") else str(_ca or "")[:16]
+            lines.append(
+                f"{icon} <b>{amt}</b> · {r['mode'].upper()} · {r['status']}\n"
+                f"   Ref: <code>{ref}</code>\n"
+                f"   TX: {tx_line} · {ts}\n"
+            )
+        text = "\n".join(lines)
+
+    nav = []
+    if page > 0:
+        nav.append(InlineKeyboardButton("⬅️ Prev", callback_data=f"sa_ptx_{platform_id}_{page - 1}"))
+    if offset + LIMIT < total:
+        nav.append(InlineKeyboardButton("Next ➡️", callback_data=f"sa_ptx_{platform_id}_{page + 1}"))
+
+    kb = []
+    if nav:
+        kb.append(nav)
+    kb.append([InlineKeyboardButton("🔙 Back to Platform", callback_data=f"sa_platform_{platform_id}")])
+    kb.append([InlineKeyboardButton("◀️ Main Menu",         callback_data="sa_home_main")])
+
+    await update.callback_query.edit_message_text(
+        text, parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(kb),
+        disable_web_page_preview=True,
     )
 
 # ── Groups directory ──────────────────────────────────────────────────────────
@@ -543,40 +606,117 @@ async def show_user_detail(update: Update, context, telegram_user_id: int):
     name  = html.escape(user.get("first_name") or "Unknown")
     uname = f" (@{html.escape(user['username'])})" if user.get("username") else ""
     _ca = user.get("created_at")
-    if hasattr(_ca, "strftime"):          # datetime object (Postgres)
+    if hasattr(_ca, "strftime"):
         joined = _ca.strftime("%Y-%m-%d")
-    else:                                 # string (SQLite) or None
+    else:
         joined = (str(_ca or ""))[:10] or "N/A"
 
+    # ── Roles ──────────────────────────────────────────────────────────────────
+    roles = []
+    if user["admin_groups"]:
+        roles.append("👑 Admin")
+    if user["dev_platforms"]:
+        roles.append("🔌 Developer")
+    if not roles:
+        roles.append("👤 Subscriber")
+    role_str = " · ".join(roles)
+
+    ban_line = ""
+    if user.get("is_banned"):
+        ban_line = f"\n⛔ <b>BANNED</b> — {html.escape(user.get('ban_reason') or 'N/A')}"
+    elif user.get("is_suspended"):
+        ban_line = "\n⏸ <b>SUSPENDED</b>"
+
     text = (
-        f"👤 <b>{name}</b>{uname}\n"
+        f"👤 <b>{name}</b>{uname}{ban_line}\n"
         f"<b>Telegram ID:</b> <code>{user['telegram_user_id']}</code>\n"
-        f"<b>Joined:</b>      {joined}\n\n"
+        f"<b>Joined:</b>      {joined}\n"
+        f"<b>Role:</b>        {role_str}\n\n"
+    )
+
+    # ── Subscription summary ───────────────────────────────────────────────────
+    text += (
         f"📊 <b>Subscription Summary</b>\n"
         f"  Active:  <b>{user['active_sub_count']}</b>\n"
         f"  Total:   <b>{user['total_sub_count']}</b>\n"
         f"  Spent:   <b>${user['total_spent_usd']:.2f} USD</b>\n"
     )
-
     if user["subscriptions"]:
-        text += "\n📋 <b>Subscriptions:</b>\n"
         icon_map = {"active": "✅", "comped": "🎁", "expired": "⏰", "cancelled": "❌", "pending": "⏳"}
-        for s in user["subscriptions"][:8]:  # cap at 8 to stay within message limits
-            raw = s.get("price_locked_in") or 0
-            price_str = f"${float(raw):.2f}" if float(raw) < 1000 else f"{float(raw) / 1e9:.4f} GRAM"
+        for s in user["subscriptions"][:5]:
+            raw = float(s.get("price_locked_in") or 0)
+            price_str = f"${raw:.2f}"
             title = html.escape(s.get("chat_title") or str(s["telegram_chat_id"]))
             text += (
-                f"{icon_map.get(s['status'], '•')} <i>{title}</i> | {price_str}\n"
-                f"   Renews: {s.get('next_renewal_date') or 'N/A'}\n"
+                f"  {icon_map.get(s['status'], '•')} <i>{title}</i> | {price_str}\n"
+                f"     Renews: {s.get('next_renewal_date') or 'N/A'}\n"
             )
-        if len(user["subscriptions"]) > 8:
-            text += f"<i>…and {len(user['subscriptions']) - 8} more</i>\n"
+        if len(user["subscriptions"]) > 5:
+            text += f"  <i>…and {len(user['subscriptions']) - 5} more</i>\n"
+
+    # ── Admin groups ───────────────────────────────────────────────────────────
+    if user["admin_groups"]:
+        total_admin_rev = sum(float(g.get("revenue_usd") or 0) for g in user["admin_groups"])
+        total_admin_subs = sum(int(g.get("active_subs") or 0) for g in user["admin_groups"])
+        text += (
+            f"\n👑 <b>Admin — {len(user['admin_groups'])} group(s)</b>\n"
+            f"  Active members: <b>{total_admin_subs}</b>  |  "
+            f"Revenue: <b>${total_admin_rev:.2f} USD</b>\n"
+        )
+        for g in user["admin_groups"][:5]:
+            dot   = "🟢" if g["status"] == "active" else "🔴"
+            price = (g.get("price_usd_cents") or 0) / 100
+            title = html.escape(g.get("chat_title") or str(g["telegram_chat_id"]))
+            text += (
+                f"  {dot} <i>{title}</i> | ${price:.2f}/cycle | "
+                f"{g['active_subs']} subs | ${float(g.get('revenue_usd') or 0):.2f} rev\n"
+            )
+        if len(user["admin_groups"]) > 5:
+            text += f"  <i>…and {len(user['admin_groups']) - 5} more</i>\n"
+
+    # ── Developer platforms ────────────────────────────────────────────────────
+    if user["dev_platforms"]:
+        total_dev_rev = sum((p.get("revenue_cents") or 0) for p in user["dev_platforms"]) / 100
+        total_dev_charges = sum(int(p.get("completed_charges") or 0) for p in user["dev_platforms"])
+        text += (
+            f"\n🔌 <b>Developer — {len(user['dev_platforms'])} platform(s)</b>\n"
+            f"  Completed charges: <b>{total_dev_charges}</b>  |  "
+            f"Revenue: <b>${total_dev_rev:.2f} USD</b>\n"
+        )
+        for p in user["dev_platforms"]:
+            dot      = "🟢" if p["status"] == "active" else "🔴"
+            has_live = "🌐 Live" if p.get("publishable_key_live") else "🧪 Testnet"
+            p_name   = html.escape(p["platform_name"])
+            rev      = (p.get("revenue_cents") or 0) / 100
+            text += (
+                f"  {dot} <i>{p_name}</i> #{p['id']} · {has_live}\n"
+                f"     {p.get('completed_charges', 0)}/{p.get('total_charges', 0)} charges · "
+                f"${rev:.2f} rev\n"
+            )
 
     kb = [
         [InlineKeyboardButton("✉️ Message User", callback_data=f"sa_msguser_{user['telegram_user_id']}")],
-        [InlineKeyboardButton("🔙 Back to Users", callback_data="sa_upage_0")],
-        [InlineKeyboardButton("◀️ Main Menu",     callback_data="sa_home_main")],
     ]
+
+    # Admin action buttons
+    if user["admin_groups"]:
+        if not user.get("is_banned"):
+            kb.append([InlineKeyboardButton("🚫 Ban Admin", callback_data=f"sa_ban_select_{telegram_user_id}")])
+        else:
+            kb.append([InlineKeyboardButton("✅ Unban Admin", callback_data=f"sa_unban_select_{telegram_user_id}")])
+        for g in user["admin_groups"][:3]:
+            title = html.escape(g.get("chat_title") or str(g["telegram_chat_id"]))[:18]
+            kb.append([InlineKeyboardButton(f"📂 Group: {title}", callback_data=f"sa_group_{g['id']}")])
+
+    # Developer platform buttons
+    if user["dev_platforms"]:
+        for p in user["dev_platforms"][:3]:
+            p_name = html.escape(p["platform_name"])[:18]
+            kb.append([InlineKeyboardButton(f"📡 Platform: {p_name}", callback_data=f"sa_platform_{p['id']}")])
+
+    kb.append([InlineKeyboardButton("🔙 Back to Users", callback_data="sa_upage_0")])
+    kb.append([InlineKeyboardButton("◀️ Main Menu",     callback_data="sa_home_main")])
+
     if update.callback_query:
         await update.callback_query.edit_message_text(
             text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(kb)
@@ -1797,6 +1937,14 @@ async def sa_callback_handler(update: Update, context):
 
     # NOTE: sa_platform_delete_confirm_ and sa_platform_delete_ must be checked
     # BEFORE the generic sa_platform_ branch to avoid the prefix swallowing them.
+    elif data.startswith("sa_ptx_"):
+        # sa_ptx_{platform_id}_{page}
+        parts = data.split("_")
+        pid   = int(parts[2])
+        pg    = int(parts[3]) if len(parts) > 3 else 0
+        await show_platform_charges(update, context, pid, pg)
+        await query.answer()
+
     elif data.startswith("sa_platform_delete_confirm_"):
         pid = int(data.split("_")[4])
         deleted = await delete_platform(pid, user_id)
