@@ -339,6 +339,20 @@ async def _process_payment_inprocess(
     new_total_paid = current_paid + amount_nano
 
     if required is not None and new_total_paid < required:
+        # If the subscription is already active, this is a residual internal
+        # contract message (gas change / split output) arriving after the real
+        # payment was processed. Silently mark it processed and skip — no
+        # "partial payment" DM should ever fire for an already-active member.
+        current_sub = await get_subscription(user_id, group_id)
+        if current_sub and current_sub["status"] == "active":
+            log.info(
+                "inprocess: tiny residual tx after confirmed payment, marking processed silently "
+                "| vault=%s tx=%s amount=%d",
+                vault_address, tx_hash, amount_nano,
+            )
+            await mark_tx_processed(tx_hash, sub_id)
+            return
+
         log.warning(
             "inprocess: partial payment accumulated %d < %d | vault=%s tx=%s",
             new_total_paid, required, vault_address, tx_hash,
@@ -349,6 +363,21 @@ async def _process_payment_inprocess(
         # is sufficient to deduplicate notifications within a single run.
         from renewise.db.queries import update_amount_paid_so_far
         await update_amount_paid_so_far(sub["id"], new_total_paid)
+
+        # Wait a few seconds before notifying — the full payment tx often
+        # arrives just behind the first small internal message. If the sub
+        # becomes active in that window we skip the DM entirely.
+        await asyncio.sleep(8)
+        refreshed_sub = await get_subscription(user_id, group_id)
+        if refreshed_sub and refreshed_sub["status"] == "active":
+            log.info(
+                "inprocess: sub became active during grace window, suppressing partial DM "
+                "| vault=%s tx=%s",
+                vault_address, tx_hash,
+            )
+            await mark_tx_processed(tx_hash, sub_id)
+            return
+
         if insufficient_seen is not None and tx_hash not in insufficient_seen:
             insufficient_seen.add(tx_hash)
             await _notify_insufficient_payment(app, user_id, group_id, new_total_paid, required)

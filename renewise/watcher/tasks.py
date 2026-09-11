@@ -157,10 +157,21 @@ def process_payment(vault_address: str, tx_hash: str, amount_nano: int) -> None:
                     "process_payment: insufficient amount %d < %d | vault=%s tx=%s",
                     amount_nano, required, vault_address, tx_hash,
                 )
-                log.warning(
-                    "process_payment: insufficient amount %d < %d | vault=%s tx=%s",
-                    amount_nano, required, vault_address, tx_hash,
-                )
+
+                # If the subscription is already active, this is a residual
+                # internal contract message after the real payment. Mark it
+                # processed silently — no partial-payment DM for active members.
+                from renewise.db.queries import get_subscription as _get_sub
+                current_sub = await _get_sub(user_id, group_id)
+                if current_sub and current_sub["status"] == "active":
+                    log.info(
+                        "process_payment: residual tx after confirmed payment, marking silently "
+                        "| vault=%s tx=%s amount=%d",
+                        vault_address, tx_hash, amount_nano,
+                    )
+                    await mark_tx_processed(tx_hash, sub_id)
+                    return False
+
                 # Do NOT mark as processed — leave the tx retryable.
                 # Notify the user so they know what happened.
                 _publish_bot_action("insufficient_payment", {
