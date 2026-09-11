@@ -6136,7 +6136,7 @@ http_response_code(200);</pre>
           return;
         }
         sel.innerHTML = platforms.map(p =>
-          `<option value="${p.id}" data-has-live="${!!p.publishable_key_live}" data-has-wallet="${!!p.wallet_address}">${esc(p.platform_name)}${!p.wallet_address ? ' ⚠️ No Wallet' : ''}</option>`
+          `<option value="${p.id}" data-sk-test="${esc(p.secret_key_test)}" data-has-live="${!!p.publishable_key_live}" data-has-wallet="${!!p.wallet_address}">${esc(p.platform_name)}${!p.wallet_address ? ' ⚠️ No Wallet' : ''}</option>`
         ).join('');
       } catch (e) {
         sel.innerHTML = '<option value="">Failed to load apps</option>';
@@ -6162,6 +6162,23 @@ http_response_code(200);</pre>
       const amtUsd = parseFloat(amtInput.value);
       if (!amtUsd || amtUsd < 0.10) { WebApp.showAlert('Minimum charge is $0.10'); return; }
 
+      const hasLive = opt.dataset.hasLive === 'true';
+      const skTest = opt.dataset.skTest;
+      let secretKey = skTest;
+
+      if (_sandboxEnv === 'live') {
+        if (!hasLive) {
+          WebApp.showAlert('This app has no Live (Mainnet) keys yet. Generate them first in Developer Apps.');
+          return;
+        }
+        const enteredKey = await promptTextModal('Enter Live Secret Key', 'sk_live_…');
+        if (!enteredKey || !enteredKey.trim().startsWith('sk_live_')) {
+          WebApp.showAlert('Invalid live key format. Must start with sk_live_');
+          return;
+        }
+        secretKey = enteredKey.trim();
+      }
+
       // Stop any existing poll
       if (_sandboxPollTimer) { clearInterval(_sandboxPollTimer); _sandboxPollTimer = null; }
 
@@ -6173,10 +6190,9 @@ http_response_code(200);</pre>
       try {
         const ref = `sandbox_${Date.now()}`;
 
-        // Use the proxy endpoint — authenticated via Telegram initData, no raw secret key needed
-        const r = await apiFetch(`${API}/developer/platforms/${platformId}/sandbox/charge`, {
+        const r = await fetch(`${API}/platform/charges`, {
           method: 'POST',
-          headers: H(),
+          headers: { 'Authorization': `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount_usd_cents: Math.round(amtUsd * 100), external_reference: ref })
         });
         if (!r.ok) {
@@ -6202,8 +6218,8 @@ http_response_code(200);</pre>
         }
         const charge = await r.json();
 
-        _renderSandboxPending(charge, amtUsd);
-        _sandboxPollCharge(charge.id, platformId);
+        _renderSandboxPending(charge, amtUsd, secretKey);
+        _sandboxPollCharge(charge.id, secretKey);
       } catch (e) {
         _renderSandboxError(e.message || String(e));
       } finally {
@@ -6212,7 +6228,7 @@ http_response_code(200);</pre>
       }
     }
 
-    function _renderSandboxPending(charge, amtUsd) {
+    function _renderSandboxPending(charge, amtUsd, sk) {
       const resEl = document.getElementById('sandbox-result');
       const payUrl  = charge.payment_url || '';
       // Properly escape URL for HTML attribute (only escape quotes, leave & as-is for URL params)
@@ -6423,7 +6439,7 @@ http_response_code(200);</pre>
         </div>`;
     }
 
-    function _sandboxPollCharge(chargeId, platformId) {
+    function _sandboxPollCharge(chargeId, sk) {
       let attempts = 0;
       const MAX = 120; // 6 min @ 3s
       _sandboxPollTimer = setInterval(async () => {
@@ -6434,14 +6450,14 @@ http_response_code(200);</pre>
           return;
         }
         try {
-          const r = await apiFetch(`${API}/developer/platforms/${platformId}/sandbox/charges/${chargeId}`, {
-            headers: H()
+          const r = await fetch(`${API}/platform/charges/${chargeId}`, {
+            headers: { 'Authorization': `Bearer ${sk}` }
           });
-          if (r.status === 401 || r.status === 403) {
-            // Session expired — stop polling, show error
+          if (r.status === 401) {
+            // Key rotated or revoked — stop polling, show error
             clearInterval(_sandboxPollTimer);
             _sandboxPollTimer = null;
-            _renderSandboxError('Polling stopped: session expired. Reload the app and try again.');
+            _renderSandboxError('Polling stopped: secret key was revoked or rotated. Regenerate and try again.');
             return;
           }
           if (!r.ok) return; // transient error, keep polling
