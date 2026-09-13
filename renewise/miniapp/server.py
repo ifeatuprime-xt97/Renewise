@@ -159,7 +159,15 @@ async def _stale_pending_cleanup_loop() -> None:
             log.warning("miniapp: stale pending cleanup error: %s", type(exc).__name__)
 
 
-app = FastAPI(title="Renewise Mini App API", lifespan=_lifespan)
+# NOTE: FastAPI's default Swagger UI lives at /docs — relocated to /api/docs
+# so the public Renewise documentation site can own the /docs path.
+app = FastAPI(
+    title="Renewise Mini App API",
+    lifespan=_lifespan,
+    docs_url="/api/docs",
+    redoc_url=None,
+    openapi_url="/api/openapi.json",
+)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -191,6 +199,30 @@ app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 @app.get("/")
 async def root() -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
+
+
+# ---------------------------------------------------------------------------
+# Public website routes — intentionally unauthenticated.
+#
+# /home  → public Renewise landing page (browsers, crawlers, reviewers).
+# /docs  → public documentation area.
+#
+# The Mini App shell at / redirects browsers (no Telegram initData) to /home
+# client-side; inside Telegram the app boots normally. These pages never
+# touch authenticated endpoints or Telegram session data.
+# ---------------------------------------------------------------------------
+
+@app.get("/home")
+async def public_home() -> FileResponse:
+    """Public landing website — shown when the app is opened outside Telegram."""
+    return FileResponse(_STATIC_DIR / "landing.html")
+
+
+@app.get("/docs")
+@app.get("/docs/{rest:path}")
+async def public_docs(rest: str = "") -> FileResponse:
+    """Public documentation area — accessible without Telegram authentication."""
+    return FileResponse(_STATIC_DIR / "docs" / "index.html")
 
 
 @app.get("/checkout/{charge_id}")

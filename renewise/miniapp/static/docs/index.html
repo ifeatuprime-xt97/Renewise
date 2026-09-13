@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Renewise Documentation — Admin Guide, Developer Guide & API Reference</title>
+
+  <!-- SEO / social metadata -->
+  <meta name="description"
+    content="Official Renewise documentation: how Renewise works, the admin guide for paid Telegram communities, the developer guide and Payments API reference, API keys, payment flow, memberships & renewals, wallets & settlement, notifications, security, and FAQ.">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Renewise">
+  <meta property="og:title" content="Renewise Documentation">
+  <meta property="og:description"
+    content="Admin guide, developer guide, Payments API reference, payment flow, wallets & settlement, security, and FAQ for Renewise — non-custodial membership payments for Telegram communities on TON.">
+  <meta property="og:image" content="/logo">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#081120">
+
+  <link rel="icon" type="image/jpeg" href="/logo">
+  <link rel="shortcut icon" type="image/jpeg" href="/logo">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* ── Design tokens — ton.org-inspired dark navy identity, TON blue accent ── */
+    :root {
+      --bg: #081120;
+      --bg-soft: #0c1830;
+      --surface: #0f1e38;
+      --text: #eaf2fc;
+      --sub: #a3b5cf;
+      --faint: #7386a3;
+      --accent: #0098EA;
+      --accent-dark: #2faef0;
+      --accent-soft: rgba(0, 152, 234, .14);
+      --border: rgba(255, 255, 255, .08);
+      --border-strong: rgba(255, 255, 255, .15);
+      --success: #2fd08a;
+      --warn: #f0b429;
+      --danger: #ff7378;
+      --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+      --r-lg: 24px;
+      --r-md: 16px;
+      --r-sm: 12px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 84px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15.5px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ══════════════════════════════════════════════════
+       TOP NAV
+    ══════════════════════════════════════════════════ */
+    .topnav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(8, 17, 32, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topnav-inner {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      height: 64px;
+      padding: 0 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .brand-wordmark {
+      font-family: var(--font-display);
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -.2px;
+      color: var(--text);
+    }
+
+    .brand-wordmark .wise {
+      color: var(--accent);
+    }
+
+    .topnav-links {
+      display: flex;
+      gap: 20px;
+      margin-left: 8px;
+    }
+
+    .topnav-links a {
+      color: var(--sub);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .topnav-links a:hover {
+      color: var(--text);
+    }
+
+    .topnav-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14.5px;
+      cursor: pointer;
+      border: none;
+      transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 20px;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      box-shadow: 0 8px 20px -6px rgba(0, 152, 234, .45);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, .05);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+      padding: 9px 18px;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .sidebar-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    /* ══════════════════════════════════════════════════
+       LAYOUT — sidebar + content
+    ══════════════════════════════════════════════════ */
+    .layout {
+      display: grid;
+      grid-template-columns: 264px 1fr;
+      max-width: 1200px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 84px;
+      max-height: calc(100vh - 84px);
+      overflow-y: auto;
+      padding: 28px 18px 40px 24px;
+      border-right: 1px solid var(--border);
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+      border-radius: 4px;
+    }
+
+    .sidebar-group {
+      margin-bottom: 22px;
+    }
+
+    .sidebar-group-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 8px;
+      padding-left: 12px;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 7px 12px;
+      border-radius: 10px;
+      color: var(--sub);
+      font-size: 14px;
+      font-weight: 600;
+      transition: background .12s, color .12s;
+    }
+
+    .sidebar a:hover {
+      color: var(--text);
+      background: var(--bg-soft);
+    }
+
+    .sidebar a.active {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .content {
+      padding: 40px 40px 96px;
+      min-width: 0;
+    }
+
+    /* ══════════════════════════════════════════════════
+       TYPOGRAPHY / CONTENT
+    ══════════════════════════════════════════════════ */
+    .doc-section {
+      margin-bottom: 64px;
+      padding-top: 8px;
+    }
+
+    .doc-section h2 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -.6px;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .doc-section h3 {
+      font-family: var(--font-display);
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -.3px;
+      margin: 30px 0 10px;
+    }
+
+    .doc-section h4 {
+      font-size: 16px;
+      font-weight: 800;
+      margin: 22px 0 8px;
+    }
+
+    .doc-section p {
+      color: var(--sub);
+      margin-bottom: 14px;
+    }
+
+    .doc-section ul,
+    .doc-section ol {
+      margin: 0 0 16px 22px;
+      color: var(--sub);
+    }
+
+    .doc-section li {
+      margin-bottom: 7px;
+    }
+
+    .doc-section li::marker {
+      color: var(--accent);
+    }
+
+    .doc-section strong {
+      color: var(--text);
+    }
+
+    .doc-section code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+
+    .doc-section pre {
+      background: #060d1a;
+      border: 1px solid rgba(255, 255, 255, .06);
+      border-radius: var(--r-md);
+      padding: 18px 20px;
+      overflow-x: auto;
+      margin: 0 0 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 26px -12px rgba(0, 0, 0, .55);
+    }
+
+    .doc-section pre code {
+      background: none;
+      color: #d7e4f4;
+      padding: 0;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .callout {
+      border-radius: var(--r-md);
+      padding: 16px 18px;
+      margin: 0 0 16px;
+      font-size: 14.5px;
+      border: 1px solid;
+    }
+
+    .callout p {
+      margin-bottom: 0;
+    }
+
+    .callout p+p {
+      margin-top: 8px;
+    }
+
+    .callout-info {
+      background: var(--accent-soft);
+      border-color: rgba(0, 152, 234, .25);
+      color: var(--sub);
+    }
+
+    .callout-warn {
+      background: rgba(240, 180, 41, .08);
+      border-color: rgba(240, 180, 41, .32);
+      color: var(--sub);
+    }
+
+    .callout-danger {
+      background: rgba(255, 115, 120, .08);
+      border-color: rgba(255, 115, 120, .32);
+      color: var(--sub);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 18px;
+      font-size: 14px;
+      display: block;
+      overflow-x: auto;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--sub);
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-bottom: 1px solid var(--border-strong);
+    }
+
+    td code {
+      white-space: nowrap;
+    }
+
+    .endpoint {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      margin-bottom: 6px;
+    }
+
+    .method {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .method-get {
+      background: rgba(47, 208, 138, .14);
+      color: var(--success);
+    }
+
+    .method-post {
+      background: rgba(0, 152, 234, .16);
+      color: var(--accent);
+    }
+
+    .method-put {
+      background: rgba(240, 180, 41, .14);
+      color: var(--warn);
+    }
+
+    .method-delete {
+      background: rgba(255, 115, 120, .14);
+      color: var(--danger);
+    }
+
+    .doc-footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .doc-footer p {
+      color: var(--faint);
+      font-size: 13.5px;
+      margin: 0;
+    }
+
+    /* ══════════════════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════════════════ */
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: none;
+        background: var(--bg);
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        z-index: 40;
+        padding: 20px 24px 40px;
+      }
+
+      .sidebar.open {
+        display: block;
+      }
+
+      .sidebar-toggle {
+        display: block;
+        margin-left: auto;
+      }
+
+      .topnav-actions {
+        display: none;
+      }
+
+      .content {
+        padding: 28px 22px 80px;
+      }
+
+      .doc-section h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═════════════════════════ TOP NAV ═════════════════════════ -->
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a class="brand" href="/home" aria-label="Renewise home">
+        <img src="/logo" alt="Renewise logo">
+        <span class="brand-wordmark">rene<span class="wise">wise</span> <span
+          style="color:var(--faint);font-weight:600">/ docs</span></span>
+      </a>
+
+      <nav class="topnav-links" aria-label="Documentation navigation">
+        <a href="/docs#introduction">Introduction</a>
+        <a href="/docs#admin-guide">Admin Guide</a>
+        <a href="/docs#developer-guide">Developer Guide</a>
+        <a href="/docs#faq">FAQ</a>
+      </nav>
+
+      <div class="topnav-actions">
+        <a class="btn btn-secondary" href="https://t.me/renewise" target="_blank" rel="noopener">Join Telegram</a>
+        <a class="btn btn-primary" href="https://t.me/Renewisebot" target="_blank" rel="noopener">Open in Telegram</a>
+      </div>
+
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle documentation menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round">
+          <line x1="4" y1="7" x2="20" y2="7" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="17" x2="20" y2="17" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- ═════════════════════════ SIDEBAR ═════════════════════════ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Getting Started</div>
+        <a href="/docs#introduction">Introduction</a>
+        <a href="/docs#getting-started">Getting Started</a>
+        <a href="/docs#how-it-works">How Renewise Works</a>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Admin Guide</div>
+        <a href="/docs#admin-guide">Admin Guide</a>
+        <a href="/docs#memberships-renewals">Memberships & Renewals</a>
+        <a href="/docs#wallets-settlement">Wallets & Settlement</a>
+        <a href="/docs#notifications">Notifications</a>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Developer Guide</div>
+        <a href="/docs#developer-guide">Developer Guide</a>
+        <a href="/docs#api-keys">API Keys</a>
+        <a href="/docs#payment-flow">Payment Flow</a>
+        <a href="/docs#webhooks">Webhooks</a>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Reference</div>
+        <a href="/docs#security">Security</a>
+        <a href="/docs#faq">FAQ</a>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Links</div>
+        <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">Open Renewise in Telegram ↗</a>
+        <a href="https://t.me/renewise" target="_blank" rel="noopener">Renewise Updates Channel ↗</a>
+        <a href="/home">← Back to website</a>
+      </div>
+    </aside>
+
+    <!-- ═════════════════════════ CONTENT ═════════════════════════ -->
+    <main class="content">
+
+      <!-- ── INTRODUCTION ─────────────────────────────────────── -->
+      <section class="doc-section" id="introduction">
+        <h2>Introduction</h2>
+
+        <p>Renewise is a non-custodial subscription paywall platform for Telegram. It lets group and channel
+          admins charge for membership in TON (GRAM), with payments settled directly on-chain — no middleman
+          holds funds at any point.</p>
+
+        <p>It is built for two audiences:</p>
+        <ul>
+          <li><strong>Community admins</strong> who want to monetise a Telegram group or channel without a
+            payment processor or custodian — knowledge communities, investment groups, content channels,
+            professional networks.</li>
+          <li><strong>Developers</strong> who want to accept TON payments in their own Telegram bot or Mini
+            App via the Renewise Payments API — no smart-contract knowledge required.</li>
+        </ul>
+
+        <h3>Key properties</h3>
+        <ul>
+          <li><strong>Non-custodial</strong> — funds go directly on-chain. Renewise cannot freeze, reverse, or
+            redirect a completed payment.</li>
+          <li><strong>USD pricing, TON settlement</strong> — admins set prices in USD; the TON equivalent is
+            computed at payment time using a live CoinGecko rate and locked in on-chain.</li>
+          <li><strong>Automatic lifecycle</strong> — renewal reminders, grace periods, and subscriber removal
+            run without admin intervention.</li>
+          <li><strong>Trustless overpayment refunds</strong> — excess TON is held in the vault and released
+            directly to the subscriber's wallet.</li>
+          <li><strong>Mini App dashboard</strong> — admins and developers manage everything from a Telegram
+            Mini App.</li>
+        </ul>
+
+        <div class="callout callout-info">
+          <p><strong>Open Renewise in Telegram:</strong> the full application — admin dashboard, developer
+            dashboard, subscriptions, and settings — lives inside the Telegram Mini App at
+            <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">t.me/Renewisebot</a>.
+            Product updates are posted to <a href="https://t.me/renewise" target="_blank"
+              rel="noopener">t.me/renewise</a>.</p>
+        </div>
+      </section>
+
+      <!-- ── GETTING STARTED ──────────────────────────────────── -->
+      <section class="doc-section" id="getting-started">
+        <h2>Getting Started</h2>
+
+        <h3>For community admins</h3>
+        <ol>
+          <li>Open <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">@Renewisebot</a> in
+            Telegram and press <strong>Start</strong>.</li>
+          <li>Add the bot to your group or channel as an <strong>admin</strong> with these permissions:
+            <em>Invite Users / Process Join Requests</em>, <em>Ban Users</em> (and <em>Manage Messages</em>
+            for channels).</li>
+          <li>Run <code>/createpaywall</code> in a private chat with the bot, or use the setup wizard in the
+            Mini App.</li>
+          <li>Set your USD price, billing interval (weekly or monthly), and your TON payout wallet address.</li>
+          <li>Renewise activates the paywall and generates a private invite link for your community.</li>
+        </ol>
+
+        <h3>For developers</h3>
+        <ol>
+          <li>Open <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">@Renewisebot</a> in
+            Telegram and open the Mini App.</li>
+          <li>Switch to <strong>Developer</strong> mode and create a platform — you receive a test key pair
+            immediately.</li>
+          <li>Set your payout wallet, then create charges via the Payments API (see the
+            <a href="/docs#developer-guide">Developer Guide</a>).</li>
+          <li>When ready for real funds, generate live keys from the dashboard.</li>
+        </ol>
+
+        <div class="callout callout-info">
+          <p><strong>Test mode is free:</strong> test charges run on TON testnet. Get free test TON from the
+            @testgiver_ton_bot and view transactions on testnet.tonscan.org.</p>
+        </div>
+      </section>
+
+      <!-- ── HOW IT WORKS ─────────────────────────────────────── -->
+      <section class="doc-section" id="how-it-works">
+        <h2>How Renewise Works</h2>
+
+        <p>The full lifecycle of a paid membership, end to end:</p>
+
+        <ol>
+          <li><strong>Create / connect your community.</strong> The admin adds the bot to their group or
+            channel as admin and runs <code>/createpaywall</code> (or uses the Mini App wizard).</li>
+          <li><strong>Set membership pricing.</strong> USD price + billing interval (7 or 30 days) + payout
+            wallet address.</li>
+          <li><strong>Renewise generates a private invite link</strong> for the group.</li>
+          <li><strong>A member requests to join</strong> → the bot DMs them a payment link (QR code +
+            <code>ton://</code> deep-link).</li>
+          <li><strong>The member pays in TON</strong> → a per-subscription smart contract (PaymentVault)
+            splits the payment atomically:
+            <ul>
+              <li>the admin's share goes directly to their payout wallet,</li>
+              <li>the platform receives its fee,</li>
+              <li>any overpayment above the required amount is held in the vault for a trustless refund.</li>
+            </ul>
+          </li>
+          <li><strong>The bot detects the on-chain payment</strong>, approves the join request, and sends a
+            welcome DM.</li>
+          <li><strong>Before expiry</strong>, the bot sends a renewal reminder. If not renewed, the member is
+            removed automatically after the grace period.</li>
+        </ol>
+
+        <h3>The PaymentVault smart contract</h3>
+        <p>One vault contract is deployed per subscription (user × group pair), on first payment, using
+          TON's deploy-on-first-message pattern. The contract address is computed deterministically from the
+          subscription parameters. On renewals, the same contract address is reused.</p>
+
+        <p>The fee model, encoded at deploy time:</p>
+        <pre><code>Buyer sends:     price + buyer_fee + gas_reserve  (0.05 TON)
+Admin receives:  price - admin_fee                (direct to payout wallet)
+Platform gets:   admin_fee + buyer_fee            (to PLATFORM_WALLET)
+Vault holds:     any overpayment above required   (for trustless refund)</code></pre>
+
+        <p>Default fees: buyer fee 2.00% (added on top of the price), admin fee 3.30% (deducted from the
+          payout) — a combined platform take of ~5.30%. Per-group overrides are available via the Superadmin
+          panel.</p>
+
+        <h3>Overpayment refunds</h3>
+        <p>When a member sends more than the required amount:</p>
+        <ol>
+          <li>The vault holds the excess in <code>overage_held</code> (on-chain state).</li>
+          <li>The watcher detects it and DMs the member asking for their wallet address.</li>
+          <li>The member replies with their TON address (validated by the bot).</li>
+          <li>The trigger wallet sends <code>Refund{recipient}</code> to the vault.</li>
+          <li>The vault verifies <code>sender == trigger_wallet</code> and releases the overage to the
+            member — directly from the vault, with no platform private key involved.</li>
+        </ol>
+
+        <h3>Underpayments</h3>
+        <p>If a member sends less than required, the contract rejects the message with exit code 400 and
+          TON's bounce mechanism returns most of the funds automatically. The bot DMs the member explaining
+          the shortfall.</p>
+      </section>
+
+      <!-- ── ADMIN GUIDE ──────────────────────────────────────── -->
+      <section class="doc-section" id="admin-guide">
+        <h2>Admin Guide</h2>
+
+        <p>Everything in this section is available both from the bot chat and from the Mini App dashboard at
+          <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">t.me/Renewisebot</a>.</p>
+
+        <h3>Bot commands</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/start</code></td>
+              <td>Welcome screen; handles <code>renew_</code>, <code>reminders</code>, and
+                <code>support</code> deep-links</td>
+            </tr>
+            <tr>
+              <td><code>/createpaywall</code></td>
+              <td>Launch the paywall setup wizard (private chat only)</td>
+            </tr>
+            <tr>
+              <td><code>/menu</code></td>
+              <td>Open the admin management menu (private chat only)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Required bot permissions</h3>
+        <ul>
+          <li><strong>Groups:</strong> Add Users / Process Join Requests, Ban Users</li>
+          <li><strong>Channels:</strong> Add Users / Process Join Requests, Ban Users, Manage Messages</li>
+        </ul>
+
+        <h3>Managing your community</h3>
+        <p>From the Mini App dashboard you can:</p>
+        <ul>
+          <li>View all your groups with revenue summaries, active member counts, and status</li>
+          <li>Update the subscription price — existing subscribers keep their locked-in price until their
+            next renewal</li>
+          <li>Change your payout wallet (scheduled with a 24-hour delay and a cancellation window)</li>
+          <li>Pause or resume the paywall</li>
+          <li>Comp a member (grant free access by Telegram user ID)</li>
+          <li>Browse paginated member lists and payment history with fee breakdowns</li>
+          <li>Search payments by on-chain transaction hash</li>
+          <li>Delete a group and all its subscriber records (subscribers are notified first)</li>
+        </ul>
+
+        <h3>Mini App admin endpoints</h3>
+        <p>All endpoints require a valid Telegram <code>initData</code> authorization header
+          (<code>tma <initData></code>) and are scoped strictly to data belonging to the authenticated
+          user:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Endpoint</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>GET /api/my-groups</code></td>
+              <td>Admin's groups with revenue summary</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/my-subscriptions</code></td>
+              <td>Subscriber's active subscriptions</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/my-payment-history</code></td>
+              <td>Subscriber's full payment history</td>
+            </tr>
+            <tr>
+              <td><code>POST /api/groups/detect</code></td>
+              <td>Detect recently admin-granted chats (wizard step)</td>
+            </tr>
+            <tr>
+              <td><code>POST /api/groups/create</code></td>
+              <td>Activate a new paywall</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/groups/{id}/detail</code></td>
+              <td>Group detail — price, wallet, members, revenue</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/groups/{id}/payment-history</code></td>
+              <td>Paginated payment history</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/groups/{id}/payments/{sub_id}</code></td>
+              <td>Full payment detail with fee breakdown</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/groups/{id}/members</code></td>
+              <td>Paginated member list</td>
+            </tr>
+            <tr>
+              <td><code>PUT /api/groups/{id}/price</code></td>
+              <td>Update subscription price</td>
+            </tr>
+            <tr>
+              <td><code>PUT /api/groups/{id}/wallet</code></td>
+              <td>Schedule a payout wallet change (24h delay)</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/groups/{id}/wallet-change-pending</code></td>
+              <td>Active pending wallet change (if any)</td>
+            </tr>
+            <tr>
+              <td><code>POST /api/groups/{id}/wallet-change/{change_id}/cancel</code></td>
+              <td>Cancel a pending wallet change</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/groups/{id}/wallet-change-history</code></td>
+              <td>Full wallet change history</td>
+            </tr>
+            <tr>
+              <td><code>POST /api/groups/{id}/pause</code></td>
+              <td>Pause the paywall</td>
+            </tr>
+            <tr>
+              <td><code>POST /api/groups/{id}/resume</code></td>
+              <td>Resume the paywall</td>
+            </tr>
+            <tr>
+              <td><code>POST /api/groups/{id}/comp</code></td>
+              <td>Comp a member (grant free access)</td>
+            </tr>
+            <tr>
+              <td><code>DELETE /api/groups/{id}</code></td>
+              <td>Delete a group and all subscriber records</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/search/tx?hash=</code></td>
+              <td>Search subscriptions by TX hash (scoped to this admin)</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ── DEVELOPER GUIDE ──────────────────────────────────── -->
+      <section class="doc-section" id="developer-guide">
+        <h2>Developer Guide</h2>
+
+        <p>Renewise lets you accept TON payments from your own app or service by issuing a charge request
+          against the Renewise vault infrastructure. Your users pay in TON; you receive value in
+          USD-equivalent terms tracked per charge.</p>
+
+        <h3>Quick start</h3>
+        <ol>
+          <li>Open the Renewise Mini App → <strong>Developer</strong> mode → create a platform. You receive
+            test keys immediately.</li>
+          <li>Set your payout wallet in the dashboard.</li>
+          <li>Create a charge with your secret key:</li>
+        </ol>
+
+        <pre><code>POST /api/platform/charges
+Authorization: Bearer sk_test_…
+Content-Type: application/json
+
+{
+  "amount_usd": 9.99,
+  "external_reference": "order_1234",
+  "expires_in": 900
+}</code></pre>
+
+        <p>The response contains a <code>vault_address</code>, the exact
+          <code>required_nano_amount</code> (1 TON = 1,000,000,000 nanoTON), and a <code>payment_url</code>
+          — a <code>ton://</code> deep-link your user pays from any TON wallet.</p>
+
+        <h3>Directing your user to pay</h3>
+        <ul>
+          <li><strong>Telegram Mini Apps (mobile):</strong> embed the <code>payment_url</code> behind a "Pay
+            with TON" button.</li>
+          <li><strong>Desktop / web:</strong> render the <code>payment_url</code> as a QR code for the user
+            to scan with Tonkeeper or TonHub.</li>
+          <li><strong>Hosted checkout:</strong> every charge also gets a hosted checkout page at
+            <code>/checkout/{charge_id}</code> that you can link to directly.</li>
+        </ul>
+
+        <div class="callout callout-danger">
+          <p><strong>Do not display the raw vault address for manual copy/paste.</strong> Renewise uses a
+            deploy-on-first-message architecture to atomically split funds on-chain. The deep-link contains
+            a StateInit payload required to deploy the smart contract. If a user manually copies the raw
+            address and sends TON from an exchange, the contract will not deploy and the payment will get
+            stuck. Renewise has a background trigger-wallet to retroactively deploy and recover these funds,
+            but it delays confirmation.</p>
+        </div>
+
+        <h3>Checking charge status</h3>
+        <div class="endpoint"><span class="method method-get">GET</span> /api/platform/charges/{charge_id}</div>
+        <p>Poll this endpoint or — better — rely on <a href="/docs#webhooks">webhooks</a>.</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>pending</code></td>
+              <td>Awaiting on-chain payment</td>
+            </tr>
+            <tr>
+              <td><code>completed</code></td>
+              <td>Payment confirmed on-chain</td>
+            </tr>
+            <tr>
+              <td><code>expired</code></td>
+              <td>Payment window elapsed without payment</td>
+            </tr>
+            <tr>
+              <td><code>failed</code></td>
+              <td>Payment received but invalid (wrong amount, wrong chain)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Charge request fields</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>amount_usd</code></td>
+              <td>float</td>
+              <td>Yes</td>
+              <td>Charge amount in USD (min <code>0.10</code>)</td>
+            </tr>
+            <tr>
+              <td><code>external_reference</code></td>
+              <td>string</td>
+              <td>Yes</td>
+              <td>Your internal order/user ID. Max 255 chars. Unique per platform.</td>
+            </tr>
+            <tr>
+              <td><code>expires_in</code></td>
+              <td>integer</td>
+              <td>No</td>
+              <td>Seconds until expiry. Default <code>900</code> (15 min). Range 60–3600.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Python example</h3>
+        <pre><code>import requests
+
+BASE = "https://your-renewise-host.example.com"
+SECRET = "sk_live_…"  # from env var, never hardcoded
+
+def create_charge(amount_usd: float, order_id: str) -> dict:
+    resp = requests.post(
+        f"{BASE}/api/platform/charges",
+        headers={"Authorization": f"Bearer {SECRET}"},
+        json={
+            "amount_usd": amount_usd,
+            "external_reference": order_id,
+            "expires_in": 900,
+        },
+        timeout=10,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+charge = create_charge(9.99, "order_1234")
+print(f"Direct link: {charge['payment_url']}")
+print("(Render this URL as a QR code or embed it in a 'Pay' button)")</code></pre>
+
+        <h3>Error reference</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>HTTP Status</th>
+              <th>Error</th>
+              <th>Cause</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>400</code></td>
+              <td>Bad Request</td>
+              <td>Missing/invalid field in request body</td>
+            </tr>
+            <tr>
+              <td><code>401</code></td>
+              <td>Unauthorized</td>
+              <td>Missing or malformed Authorization header</td>
+            </tr>
+            <tr>
+              <td><code>403</code></td>
+              <td>Forbidden</td>
+              <td>Invalid secret key, wrong environment, or revoked platform</td>
+            </tr>
+            <tr>
+              <td><code>404</code></td>
+              <td>Not Found</td>
+              <td>Charge ID does not exist or belongs to another platform</td>
+            </tr>
+            <tr>
+              <td><code>422</code></td>
+              <td>Unprocessable Entity</td>
+              <td>Invalid TON address or passcode format</td>
+            </tr>
+            <tr>
+              <td><code>429</code></td>
+              <td>Too Many Requests</td>
+              <td>Rate limit exceeded (5–60 req/min depending on endpoint)</td>
+            </tr>
+            <tr>
+              <td><code>500</code></td>
+              <td>Internal Server Error</td>
+              <td>Server-side error — retry with exponential backoff</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Rate limits</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Endpoint</th>
+              <th>Limit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>POST /charges</code></td>
+              <td>60 / minute</td>
+            </tr>
+            <tr>
+              <td><code>GET /charges/{id}</code></td>
+              <td>60 / minute</td>
+            </tr>
+            <tr>
+              <td><code>POST /keys/regenerate</code></td>
+              <td>5 / minute</td>
+            </tr>
+            <tr>
+              <td><code>POST /passcode</code></td>
+              <td>5 / minute</td>
+            </tr>
+            <tr>
+              <td><code>PUT /wallet</code></td>
+              <td>5 / minute</td>
+            </tr>
+            <tr>
+              <td><code>POST /webhook</code></td>
+              <td>10 / minute</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Limits are applied per platform (keyed on IP). Exceeding them returns
+          <code>429 Too Many Requests</code>.</p>
+      </section>
+
+      <!-- ── API KEYS ─────────────────────────────────────────── -->
+      <section class="doc-section" id="api-keys">
+        <h2>API Keys</h2>
+
+        <p>Open the Renewise Telegram Mini App, navigate to <strong>Developer</strong> → select your
+          platform → Dashboard. You have two independent key pairs:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Prefix</th>
+              <th>Environment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Publishable key (live)</td>
+              <td><code>pk_live_…</code></td>
+              <td>Mainnet (real TON)</td>
+            </tr>
+            <tr>
+              <td>Secret key (live)</td>
+              <td><code>sk_live_…</code></td>
+              <td>Mainnet</td>
+            </tr>
+            <tr>
+              <td>Publishable key (test)</td>
+              <td><code>pk_test_…</code></td>
+              <td>Testnet (free test TON)</td>
+            </tr>
+            <tr>
+              <td>Secret key (test)</td>
+              <td><code>sk_test_…</code></td>
+              <td>Testnet</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-danger">
+          <p><strong>Keep secret keys private.</strong> Never expose them in client-side code, mobile apps,
+            or public repositories. Rotate immediately if compromised via Dashboard → Regenerate.</p>
+        </div>
+
+        <h3>Authentication</h3>
+        <p>All API calls must include your secret key in the Authorization header:</p>
+        <pre><code>Authorization: Bearer sk_live_<your_secret_key></code></pre>
+        <p>The environment (live vs. test) is inferred automatically from the key prefix. A
+          <code>sk_live_</code> key always routes to mainnet; a <code>sk_test_</code> key always routes to
+          testnet. Mixing them returns <code>403 Forbidden</code>.</p>
+
+        <h3>Rotating keys</h3>
+        <ol>
+          <li>Dashboard → API Keys → click <strong>Regenerate</strong> for the relevant key.</li>
+          <li>The old key is <strong>immediately invalidated</strong>.</li>
+          <li>Copy the new secret key from the one-time alert — it will not be shown again.</li>
+          <li>Update your server's environment variable.</li>
+        </ol>
+
+        <h3>Environment isolation</h3>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Test</th>
+              <th>Live</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Keys</td>
+              <td><code>pk_test_</code> / <code>sk_test_</code></td>
+              <td><code>pk_live_</code> / <code>sk_live_</code></td>
+            </tr>
+            <tr>
+              <td>TON Network</td>
+              <td>TON Testnet</td>
+              <td>TON Mainnet</td>
+            </tr>
+            <tr>
+              <td>Vault contract</td>
+              <td>Testnet deployment</td>
+              <td>Mainnet deployment</td>
+            </tr>
+            <tr>
+              <td>TonScan explorer</td>
+              <td>testnet.tonscan.org</td>
+              <td>tonscan.org</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>A test-mode charge never touches mainnet. A live-mode charge never touches testnet. This is
+          enforced at both the API authentication layer (key prefix check) and the database level.</p>
+      </section>
+
+      <!-- ── PAYMENT FLOW ─────────────────────────────────────── -->
+      <section class="doc-section" id="payment-flow">
+        <h2>Payment Flow</h2>
+
+        <h3>Subscription payments (communities)</h3>
+        <ol>
+          <li>A member requests to join the paid group or channel.</li>
+          <li>The bot DMs them a payment link — a QR code and a <code>ton://</code> deep-link containing the
+            StateInit payload for the member's per-subscription vault.</li>
+          <li>The member pays from any TON wallet. The vault contract deploys on first message and splits
+            the funds atomically: admin share → payout wallet, platform fee → platform wallet, overpayment →
+            held in the vault.</li>
+          <li>The watcher detects the on-chain transaction, verifies the amount, and marks the payment
+            processed (idempotently — a transaction hash can never be processed twice).</li>
+          <li>The bot approves the join request and sends a welcome DM.</li>
+        </ol>
+
+        <h3>Developer charges (Payments API)</h3>
+        <ol>
+          <li>Your backend creates a charge via <code>POST /api/platform/charges</code>.</li>
+          <li>You direct the user to the <code>payment_url</code> (button, QR code, or the hosted checkout
+            page at <code>/checkout/{charge_id}</code>).</li>
+          <li>The user pays; the vault splits the funds on-chain.</li>
+          <li>The watcher confirms the payment and the charge becomes <code>completed</code>.</li>
+          <li>You're notified via webhook (or you poll the charge status endpoint).</li>
+        </ol>
+
+        <div class="callout callout-warn">
+          <p><strong>Always use the payment_url.</strong> The deep-link carries the StateInit required to
+            deploy the vault contract. Manual transfers to the raw address from exchanges can get stuck (see
+            the warning in the Developer Guide).</p>
+        </div>
+      </section>
+
+      <!-- ── MEMBERSHIPS & RENEWALS ───────────────────────────── -->
+      <section class="doc-section" id="memberships-renewals">
+        <h2>Memberships & Renewals</h2>
+
+        <p>Each subscription is one row per (user, group) pair, with its own vault address, renewal dates,
+          and the price locked in at payment time.</p>
+
+        <h3>Lifecycle</h3>
+        <ol>
+          <li><strong>Active</strong> — payment confirmed, member has access.</li>
+          <li><strong>Renewal reminder</strong> — sent 3 days before expiry (configurable via
+            <code>REMINDER_WINDOW_DAYS</code>).</li>
+          <li><strong>Grace period</strong> — 3 days after expiry (configurable via
+            <code>GRACE_PERIOD_DAYS</code>) during which the member can still renew.</li>
+          <li><strong>Removal</strong> — if payment isn't received, the member is removed from the group
+            automatically.</li>
+        </ol>
+
+        <h3>Renewals</h3>
+        <ul>
+          <li>Renewing reuses the same vault contract address — the member pays to the same address and
+            their access is extended.</li>
+          <li>Price changes only affect <em>new</em> payments: existing subscribers keep their
+            <code>price_locked_in</code> until their next renewal.</li>
+          <li>Billing intervals are weekly (7 days) or monthly (30 days).</li>
+        </ul>
+
+        <h3>Comped access</h3>
+        <p>Admins can comp a member by Telegram user ID — granting free access without payment, from the
+          Mini App or the bot's admin menu.</p>
+      </section>
+
+      <!-- ── WALLETS & SETTLEMENT ─────────────────────────────── -->
+      <section class="doc-section" id="wallets-settlement">
+        <h2>Wallets & Settlement</h2>
+
+        <h3>Non-custodial settlement</h3>
+        <p>Renewise never holds user funds. Every payment is split on-chain by the PaymentVault smart
+          contract in the same transaction it is received:</p>
+        <ul>
+          <li><strong>Admin payout</strong> — the admin's share (price minus admin fee) goes directly to
+            their registered payout wallet.</li>
+          <li><strong>Platform fee</strong> — buyer fee + admin fee goes to the platform wallet.</li>
+          <li><strong>Overpayment</strong> — held in the vault's <code>overage_held</code> until released to
+            the member via the trustless refund flow.</li>
+        </ul>
+        <p>The split is encoded in the contract at deploy time and cannot be changed retroactively. A
+          completed on-chain split is final.</p>
+
+        <h3>Changing your payout wallet</h3>
+        <ul>
+          <li><strong>First setup:</strong> simply enter your TON wallet address — no passkey required.</li>
+          <li><strong>Changing an existing wallet:</strong> requires your 4-digit passkey and is scheduled
+            with a <strong>24-hour delay</strong>. Any pending change can be cancelled within that window,
+            and a new request supersedes the old one.</li>
+          <li>On mainnet, testnet wallet addresses are rejected outright — payouts would never arrive.</li>
+        </ul>
+
+        <div class="callout callout-warn">
+          <p><strong>Lost passkey?</strong> Passkeys are bcrypt-hashed and never stored in plaintext. There
+            is no self-service reset — contact support.</p>
+        </div>
+
+        <h3>USD pricing, TON settlement</h3>
+        <p>Admins set prices in USD. The TON equivalent is computed at payment time using a live CoinGecko
+          rate (with fallback) and locked in on-chain for the life of the subscription.</p>
+      </section>
+
+      <!-- ── NOTIFICATIONS ────────────────────────────────────── -->
+      <section class="doc-section" id="notifications">
+        <h2>Notifications</h2>
+
+        <h3>For members (bot DMs)</h3>
+        <ul>
+          <li>Payment link when they request to join a paid community</li>
+          <li>Welcome message when their payment is confirmed and access is granted</li>
+          <li>Renewal reminder before expiry</li>
+          <li>Overpayment refund request (asking for their wallet address)</li>
+          <li>Underpayment explanation (when a payment bounces)</li>
+          <li>Notice when access ends because a paywall was closed</li>
+        </ul>
+
+        <h3>For admins (bot DMs + Mini App)</h3>
+        <ul>
+          <li>Paywall activation confirmation</li>
+          <li>Wallet change scheduling and activation notices</li>
+          <li>Revenue and member activity in the Mini App dashboard and analytics</li>
+        </ul>
+
+        <h3 id="webhooks">For developers (webhooks)</h3>
+        <p>Instead of polling, configure a webhook to receive real-time charge events. In the Dashboard →
+          <strong>Webhook</strong> → Edit, enter your HTTPS endpoint URL. You receive a
+          <code>whsec_…</code> signature secret — save it immediately, it is only shown once.</p>
+
+        <p>Renewise sends an HTTP POST to your endpoint:</p>
+        <pre><code>POST /your-webhook-handler
+Content-Type: application/json
+Renewise-Signature: <hex_signature>
+
+{
+  "id": 42,
+  "external_reference": "order_1234",
+  "status": "completed",
+  "amount_usd_cents": 999,
+  "tx_hash": "abc…def"
+}</code></pre>
+
+        <h4>Verifying the signature</h4>
+        <pre><code>import hmac, hashlib
+
+def verify_renewise_signature(payload: bytes, header: str, secret: str) -> bool:
+    expected = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, header)</code></pre>
+
+        <pre><code>const crypto = require("crypto");
+
+function verifySignature(rawBody, header, secret) {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
+  return crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(header)
+  );
+}</code></pre>
+
+        <div class="callout callout-info">
+          <p><strong>Always use a constant-time comparison</strong> (<code>hmac.compare_digest</code> /
+            <code>timingSafeEqual</code>) to prevent timing attacks.</p>
+        </div>
+
+        <p>Return <code>HTTP 200</code> within 5 seconds to acknowledge receipt. Any non-2xx response or
+          timeout is recorded as a failed delivery and visible in your Dashboard → Webhook → Recent
+          Deliveries. The webhook signing secret can be rotated without changing the URL.</p>
+      </section>
+
+      <!-- ── SECURITY ─────────────────────────────────────────── -->
+      <section class="doc-section" id="security">
+        <h2>Security</h2>
+
+        <h3>Authentication</h3>
+        <ul>
+          <li>Mini App requests are authenticated via Telegram's <code>initData</code> HMAC-SHA256
+            mechanism, verified server-side against the bot token. <code>initDataUnsafe</code> is never
+            trusted for authentication decisions.</li>
+          <li>Every Mini App endpoint that touches group-scoped data performs an ownership check — the
+            requesting Telegram user must be the registered admin of that group.</li>
+          <li>Developer API calls authenticate with the platform secret key (Bearer token). Live secret
+            keys are SHA-256 hashed before storage.</li>
+        </ul>
+
+        <h3>Non-custodial architecture</h3>
+        <ul>
+          <li>Renewise cannot freeze, reverse, or redirect a completed on-chain payment.</li>
+          <li>The trigger wallet — the only hot wallet in the system — holds roughly 2 TON for gas. If
+            compromised, an attacker can only trigger refunds the contract has already validated; they
+            cannot redirect funds or drain any other balance.</li>
+        </ul>
+
+        <h3>Operational safeguards</h3>
+        <ul>
+          <li>All admin actions are logged to an append-only audit log.</li>
+          <li>Wallet changes are delayed by 24 hours by default and can be cancelled within that window.</li>
+          <li>Wallet passkeys are bcrypt-hashed, never stored in plaintext.</li>
+          <li>Rate limiting is applied to all API endpoints (5–60 req/min depending on the endpoint).</li>
+          <li>Transaction processing is idempotent — a transaction hash can never be processed twice.</li>
+          <li>Test and live environments are isolated at the key, network, and database level.</li>
+        </ul>
+      </section>
+
+      <!-- ── FAQ ──────────────────────────────────────────────── -->
+      <section class="doc-section" id="faq">
+        <h2>FAQ</h2>
+
+        <h3>Does Renewise hold my money?</h3>
+        <p>No. Renewise is non-custodial. Payments are split on-chain by per-subscription smart contracts —
+          the admin's share goes directly to their wallet, the platform fee to the platform wallet. Renewise
+          cannot freeze, reverse, or redirect a completed payment.</p>
+
+        <h3>What do members need to pay?</h3>
+        <p>Any TON wallet — Tonkeeper, TonHub, @wallet, or an exchange wallet that supports deep-links.
+          Members pay in TON (GRAM); the price is set in USD and converted at payment time.</p>
+
+        <h3>What happens if a member overpays?</h3>
+        <p>The excess is held in the vault contract. The bot DMs the member asking for a wallet address,
+          then a dedicated trigger wallet releases the overage directly to them — trustlessly, with no
+          platform private key involved.</p>
+
+        <h3>What happens if a member underpays?</h3>
+        <p>The contract rejects the payment with exit code 400 and TON's bounce mechanism returns most of
+          the funds automatically. The bot DMs the member explaining the shortfall so they can retry.</p>
+
+        <h3>Can I change my price?</h3>
+        <p>Yes — from the Mini App or the bot's admin menu. Existing subscribers keep their locked-in price
+          until their next renewal; only new payments use the new price.</p>
+
+        <h3>Can I change my payout wallet?</h3>
+        <p>Yes, protected by a 4-digit passkey and a 24-hour delay with a cancellation window. On mainnet,
+          testnet addresses are rejected outright.</p>
+
+        <h3>What happens when a membership expires?</h3>
+        <p>A renewal reminder is sent 3 days before expiry. After expiry there's a 3-day grace period. If
+          the member still hasn't renewed, they're removed from the group automatically.</p>
+
+        <h3>Can I give someone free access?</h3>
+        <p>Yes — admins can comp a member by their Telegram user ID from the Mini App or the bot's admin
+          menu.</p>
+
+        <h3>Can I use Renewise in my own bot or Mini App?</h3>
+        <p>Yes. The Renewise Payments API lets you create charges, get a payment URL and hosted checkout
+          page, poll status, and receive signed webhooks. See the
+          <a href="/docs#developer-guide">Developer Guide</a>.</p>
+
+        <h3>How do I test without real money?</h3>
+        <p>Use test keys (<code>sk_test_…</code>) — charges run on TON testnet with free test TON from
+          @testgiver_ton_bot. Live keys settle real funds on mainnet.</p>
+
+        <h3>Where do I get product updates?</h3>
+        <p>Follow the official Renewise channel: <a href="https://t.me/renewise" target="_blank"
+          rel="noopener">t.me/renewise</a>.</p>
+
+        <h3>How do I start?</h3>
+        <p>Open <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">t.me/Renewisebot</a> in
+          Telegram and press Start.</p>
+      </section>
+
+      <!-- ── FOOTER ───────────────────────────────────────────── -->
+      <footer class="doc-footer">
+        <p>Your community. Your wallet. Automated.</p>
+        <p>
+          <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">Open Renewise in Telegram</a>
+          &nbsp;·&nbsp;
+          <a href="https://t.me/renewise" target="_blank" rel="noopener">Join our Telegram channel</a>
+          &nbsp;·&nbsp;
+          <a href="/home">Back to website</a>
+        </p>
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    // ── Mobile sidebar toggle ──────────────────────────────────
+    (function () {
+      var toggle = document.getElementById('sidebar-toggle');
+      var sidebar = document.getElementById('sidebar');
+      if (!toggle || !sidebar) return;
+      toggle.addEventListener('click', function () {
+        sidebar.classList.toggle('open');
+      });
+      sidebar.addEventListener('click', function (e) {
+        if (e.target.tagName === 'A') sidebar.classList.remove('open');
+      });
+    })();
+
+    // ── Active sidebar link highlighting on scroll ─────────────
+    (function () {
+      var links = Array.prototype.slice.call(
+        document.querySelectorAll('.sidebar a[href^="/docs#"]')
+      );
+      if (!links.length) return;
+      var sections = links
+        .map(function (a) { return document.getElementById(a.getAttribute('href').slice(6)); })
+        .filter(Boolean);
+
+      function update() {
+        var pos = window.scrollY + 120;
+        var current = sections[0];
+        for (var i = 0; i < sections.length; i++) {
+          if (sections[i].offsetTop <= pos) current = sections[i];
+        }
+        links.forEach(function (a) {
+          a.classList.toggle('active',
+            current && a.getAttribute('href') === '/docs#' + current.id);
+        });
+      }
+      window.addEventListener('scroll', update, { passive: true });
+      update();
+    })();
+  </script>
+</body>
+
+</html>

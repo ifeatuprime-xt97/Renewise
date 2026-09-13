@@ -14,6 +14,33 @@
     rel="stylesheet">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    // ── Environment detection ──────────────────────────────────────────────
+    // This page is the Telegram Mini App. When opened in a normal browser
+    // there is no signed initData, so every authenticated API call would 401
+    // and surface as "Session expired" — which is wrong for a public visitor.
+    //
+    // Rules:
+    //   • Telegram with initData  → boot the Mini App normally (no redirect)
+    //   • Browser without initData → public Renewise website at /home
+    //
+    // initData is the signed payload from Telegram; we never trust
+    // initDataUnsafe for this decision. Actual authentication still happens
+    // server-side (HMAC-SHA256 verification of initData) on every request.
+    (function () {
+      try {
+        var tg = window.Telegram && window.Telegram.WebApp;
+        var hasInitData = !!(tg && typeof tg.initData === 'string' && tg.initData.length > 0);
+        if (!hasInitData) {
+          window.location.replace('/home');
+          throw new Error('redirecting to public site');
+        }
+      } catch (e) {
+        // Only swallow the sentinel used to halt parsing after redirect.
+        if (e && e.message === 'redirecting to public site') { /* noop */ }
+      }
+    })();
+  </script>
   <style>
     /* ── Design tokens — MyTonWallet-inspired palette ── */
     :root {
