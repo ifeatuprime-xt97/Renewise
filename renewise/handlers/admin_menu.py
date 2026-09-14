@@ -440,7 +440,19 @@ async def msg_wallet_pin(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     # Verify PIN against the stored hash
-    ok = await queries.check_group_wallet_passcode(group["id"], pin)
+    try:
+        ok = await queries.check_group_wallet_passcode(group["id"], pin, update.effective_user.id)
+    except queries.PasscodeLockedError as e:
+        mins = max(1, e.retry_after_seconds // 60)
+        await update.message.reply_text(
+            f"🔒 <b>Too many incorrect attempts.</b>\n\n"
+            f"Wallet changes are locked for this network for <b>{mins} minute"
+            f"{'s' if mins != 1 else ''}</b> for security.\n"
+            "Please try again later.",
+            parse_mode="HTML",
+            reply_markup=network_detail_kb(group["id"]),
+        )
+        return ConversationHandler.END
     if not ok:
         await update.message.reply_text(
             "❌ Incorrect passkey. Please try again:",
@@ -636,7 +648,19 @@ async def msg_passkey_current(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
     if not group:
         return ConversationHandler.END
 
-    ok = await queries.check_group_wallet_passcode(group["id"], pin)
+    try:
+        ok = await queries.check_group_wallet_passcode(group["id"], pin, update.effective_user.id)
+    except queries.PasscodeLockedError as e:
+        mins = max(1, e.retry_after_seconds // 60)
+        await update.message.reply_text(
+            f"🔒 <b>Too many incorrect attempts.</b>\n\n"
+            f"Passkey changes are locked for this network for <b>{mins} minute"
+            f"{'s' if mins != 1 else ''}</b> for security.\n"
+            "Please try again later.",
+            parse_mode="HTML",
+            reply_markup=network_detail_kb(group["id"]),
+        )
+        return ConversationHandler.END
     if not ok:
         await update.message.reply_text(
             "❌ Incorrect passkey. Please try again:",
@@ -668,6 +692,17 @@ async def msg_passkey_new(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int
         success = await queries.set_group_passcode(
             group["id"], pin, update.effective_user.id, current
         )
+    except queries.PasscodeLockedError as e:
+        mins = max(1, e.retry_after_seconds // 60)
+        await update.message.reply_text(
+            f"🔒 <b>Too many incorrect attempts.</b>\n\n"
+            f"Passkey changes are locked for this network for <b>{mins} minute"
+            f"{'s' if mins != 1 else ''}</b> for security.\n"
+            "Please try again later.",
+            parse_mode="HTML",
+            reply_markup=network_detail_kb(group["id"]),
+        )
+        return ConversationHandler.END
     except ValueError as e:
         await update.message.reply_text(
             f"❌ {e}  Please send exactly 4 digits:",

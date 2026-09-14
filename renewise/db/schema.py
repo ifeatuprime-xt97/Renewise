@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS groups (
     billing_interval_days INTEGER NOT NULL DEFAULT 30,
     payout_wallet_address TEXT,
     wallet_passcode_hash  TEXT,
+    passcode_failed_attempts INTEGER NOT NULL DEFAULT 0,
+    passcode_locked_until DATETIME,
     buyer_fee_bps         INTEGER,
     admin_fee_bps         INTEGER,
     invite_link           TEXT,
@@ -198,6 +200,8 @@ CREATE TABLE IF NOT EXISTS platforms (
     secret_key_test TEXT NOT NULL,
     wallet_address TEXT,
     wallet_passcode_hash TEXT,
+    passcode_failed_attempts INTEGER NOT NULL DEFAULT 0,
+    passcode_locked_until DATETIME,
     buyer_fee_bps INTEGER,
     admin_fee_bps INTEGER,
     status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','revoked')),
@@ -292,6 +296,8 @@ async def init_db() -> None:
                 billing_interval_days INTEGER NOT NULL DEFAULT 30,
                 payout_wallet_address TEXT,
                 wallet_passcode_hash  TEXT,
+                passcode_failed_attempts INTEGER NOT NULL DEFAULT 0,
+                passcode_locked_until TIMESTAMPTZ,
                 buyer_fee_bps         INTEGER,
                 admin_fee_bps         INTEGER,
                 invite_link           TEXT,
@@ -447,6 +453,8 @@ async def init_db() -> None:
                 secret_key_test      TEXT NOT NULL,
                 wallet_address       TEXT,
                 wallet_passcode_hash TEXT,
+                passcode_failed_attempts INTEGER NOT NULL DEFAULT 0,
+                passcode_locked_until TIMESTAMPTZ,
                 buyer_fee_bps        INTEGER,
                 admin_fee_bps        INTEGER,
                 status               TEXT NOT NULL DEFAULT 'active'
@@ -574,9 +582,15 @@ async def init_db() -> None:
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN invite_link TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN chat_type TEXT NOT NULL DEFAULT 'group'; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN wallet_passcode_hash TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # groups — passcode hard lockout (consecutive failure counting)
+                "DO $$ BEGIN ALTER TABLE groups ADD COLUMN passcode_failed_attempts INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE groups ADD COLUMN passcode_locked_until TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 # platforms — wallet passkey, fee overrides
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN wallet_address TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN wallet_passcode_hash TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # platforms — passcode hard lockout (consecutive failure counting)
+                "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN passcode_failed_attempts INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN passcode_locked_until TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN buyer_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN admin_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 # platform_config — global fee defaults
@@ -675,6 +689,11 @@ async def init_db() -> None:
             "ALTER TABLE platforms ADD COLUMN secret_key_live_hash TEXT",
             # ── Group wallet passkey (protect payout wallet changes) ───────────
             "ALTER TABLE groups ADD COLUMN wallet_passcode_hash TEXT",
+            # ── Passcode hard lockout (consecutive failure counting) ──────────
+            "ALTER TABLE groups ADD COLUMN passcode_failed_attempts INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE groups ADD COLUMN passcode_locked_until DATETIME",
+            "ALTER TABLE platforms ADD COLUMN passcode_failed_attempts INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE platforms ADD COLUMN passcode_locked_until DATETIME",
             # ── Per-platform fee overrides ─────────────────────────────────────
             "ALTER TABLE platforms ADD COLUMN buyer_fee_bps INTEGER",
             "ALTER TABLE platforms ADD COLUMN admin_fee_bps INTEGER",

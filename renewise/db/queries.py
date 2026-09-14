@@ -1,16 +1,61 @@
 from __future__ import annotations
 from typing import Any
+from datetime import datetime, timedelta, timezone
 import bcrypt
 from renewise.db.connection import _db, Row
 
 
 # ── passkey helpers (shared by group and platform wallet protection) ──────────
 
+# Hard lockout policy: after this many consecutive wrong passcode attempts the
+# wallet-change/passcode action is locked for a cooldown period, independent of
+# the per-minute API rate limit. This closes the brute-force gap a rolling
+# rate limit leaves open (10k combos ÷ 5/min ≈ 33 hours without a hard lock).
+PASSCODE_MAX_ATTEMPTS = 5
+PASSCODE_LOCKOUT_MINUTES = 15
+
+
+class PasscodeLockedError(Exception):
+    """Raised when a passcode-protected action is hard-locked after repeated failures.
+
+    Attributes:
+        retry_after_seconds: whole seconds remaining until the lock expires.
+    """
+
+    def __init__(self, retry_after_seconds: int):
+        self.retry_after_seconds = retry_after_seconds
+        super().__init__(
+            f"Passcode verification locked. Try again in {retry_after_seconds} seconds."
+        )
+
+
 def _hash_passcode(passcode: str) -> str:
     return bcrypt.hashpw(passcode.encode(), bcrypt.gensalt()).decode()
 
 def _verify_passcode(passcode: str, hashed: str) -> bool:
     return bcrypt.checkpw(passcode.encode(), hashed.encode())
+
+
+def _parse_utc(value: Any) -> datetime | None:
+    """Normalise a locked_until value (datetime from PG, str from SQLite) to aware UTC."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    try:
+        dt = datetime.fromisoformat(str(value).strip().replace("Z", "+00:00"))
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def _remaining_lockout_seconds(locked_until: Any) -> int | None:
+    """Seconds left on a hard lockout, or None if not locked / already expired."""
+    ts = _parse_utc(locked_until)
+    if ts is None:
+        return None
+    remaining = (ts - datetime.now(timezone.utc)).total_seconds()
+    return max(1, int(remaining)) if remaining > 0 else None
 
 
 # ── groups ────────────────────────────────────────────────────────────────────
@@ -114,49 +159,124 @@ async def set_group_passcode(
     - Changing: current_passcode must match the stored bcrypt hash.
     Returns True on success, False if current_passcode is wrong.
     Raises ValueError if new_passcode is not exactly 4 digits.
+    Raises PasscodeLockedError if the action is hard-locked after repeated
+    wrong attempts (PASSCODE_MAX_ATTEMPTS consecutive failures → cooldown of
+    PASSCODE_LOCKOUT_MINUTES, independent of the per-minute API rate limit).
     """
     if not (new_passcode.isdigit() and len(new_passcode) == 4):
         raise ValueError("Passkey must be exactly 4 digits")
 
     async with _db() as db:
         row = await db.fetchrow(
-            "SELECT wallet_passcode_hash FROM groups WHERE id=$1", group_id
+            "SELECT wallet_passcode_hash, passcode_failed_attempts, passcode_locked_until "
+            "FROM groups WHERE id=$1",
+            group_id,
         )
         if not row:
             return False
 
+        remaining = _remaining_lockout_seconds(row["passcode_locked_until"])
+        if remaining is not None:
+            raise PasscodeLockedError(remaining)
+
         existing_hash = row["wallet_passcode_hash"]
         if existing_hash:
             if not current_passcode or not _verify_passcode(current_passcode, existing_hash):
+                # Count the failure; hard-lock at the threshold.
+                attempts = int(row["passcode_failed_attempts"] or 0) + 1
+                if attempts >= PASSCODE_MAX_ATTEMPTS:
+                    locked_until = datetime.now(timezone.utc) + timedelta(
+                        minutes=PASSCODE_LOCKOUT_MINUTES
+                    )
+                    await db.execute(
+                        "UPDATE groups SET passcode_failed_attempts=$1, "
+                        "passcode_locked_until=$2 WHERE id=$3",
+                        attempts, locked_until, group_id,
+                    )
+                    await audit(
+                        group_id, "group_passcode_lockout", actor_id,
+                        {"failed_attempts": attempts,
+                         "locked_minutes": PASSCODE_LOCKOUT_MINUTES},
+                    )
+                else:
+                    await db.execute(
+                        "UPDATE groups SET passcode_failed_attempts=$1 WHERE id=$2",
+                        attempts, group_id,
+                    )
                 await audit(group_id, "group_passcode_change_failed", actor_id)
                 return False
 
         new_hash = _hash_passcode(new_passcode)
         await db.execute(
-            "UPDATE groups SET wallet_passcode_hash=$1 WHERE id=$2", new_hash, group_id
+            "UPDATE groups SET wallet_passcode_hash=$1, passcode_failed_attempts=0, "
+            "passcode_locked_until=NULL WHERE id=$2",
+            new_hash, group_id,
         )
         action = "group_passcode_changed" if existing_hash else "group_passcode_set"
         await audit(group_id, action, actor_id)
         return True
 
 
-async def check_group_wallet_passcode(group_id: int, passcode: str | None) -> bool:
+async def check_group_wallet_passcode(
+    group_id: int, passcode: str | None, actor_id: int = 0,
+) -> bool:
     """
     Return True if:
       - No passkey is set on the group (first-time wallet setup), OR
       - A passkey is set and passcode matches.
-    Returns False if a passkey is set but passcode is wrong/missing.
+    Returns False if a passkey is set but passcode is wrong/missing (and
+    counts the failure toward the hard lockout).
+    Raises PasscodeLockedError if the action is hard-locked after repeated
+    wrong attempts.
     """
     async with _db() as db:
         row = await db.fetchrow(
-            "SELECT wallet_passcode_hash FROM groups WHERE id=$1", group_id
+            "SELECT wallet_passcode_hash, passcode_failed_attempts, passcode_locked_until "
+            "FROM groups WHERE id=$1",
+            group_id,
         )
         if not row:
             return False
         existing_hash = row["wallet_passcode_hash"]
         if not existing_hash:
             return True   # no passkey set — first wallet change is always allowed
-        return bool(passcode and _verify_passcode(passcode, existing_hash))
+
+        remaining = _remaining_lockout_seconds(row["passcode_locked_until"])
+        if remaining is not None:
+            raise PasscodeLockedError(remaining)
+
+        if passcode and _verify_passcode(passcode, existing_hash):
+            # Correct passcode clears any accumulated failures.
+            if int(row["passcode_failed_attempts"] or 0) or row["passcode_locked_until"]:
+                await db.execute(
+                    "UPDATE groups SET passcode_failed_attempts=0, "
+                    "passcode_locked_until=NULL WHERE id=$1",
+                    group_id,
+                )
+            return True
+
+        # Wrong or missing passcode — count it and hard-lock at the threshold.
+        attempts = int(row["passcode_failed_attempts"] or 0) + 1
+        if attempts >= PASSCODE_MAX_ATTEMPTS:
+            locked_until = datetime.now(timezone.utc) + timedelta(
+                minutes=PASSCODE_LOCKOUT_MINUTES
+            )
+            await db.execute(
+                "UPDATE groups SET passcode_failed_attempts=$1, "
+                "passcode_locked_until=$2 WHERE id=$3",
+                attempts, locked_until, group_id,
+            )
+            await audit(
+                group_id, "group_passcode_lockout", actor_id,
+                {"failed_attempts": attempts,
+                 "locked_minutes": PASSCODE_LOCKOUT_MINUTES},
+            )
+        else:
+            await db.execute(
+                "UPDATE groups SET passcode_failed_attempts=$1 WHERE id=$2",
+                attempts, group_id,
+            )
+        return False
 
 
 async def update_group_invite_link(group_id: int, invite_link: str) -> None:

@@ -2,7 +2,14 @@ import os
 import hashlib
 import bcrypt
 import aiohttp
+from datetime import datetime, timedelta, timezone
 from renewise.db.connection import _db
+from renewise.db.queries import (
+    PasscodeLockedError,
+    PASSCODE_MAX_ATTEMPTS,
+    PASSCODE_LOCKOUT_MINUTES,
+    _remaining_lockout_seconds,
+)
 from renewise.config import BOT_TOKEN
 
 async def _notify_live_keys(actor_telegram_id: int, platform_name: str):
@@ -205,18 +212,49 @@ async def set_platform_passcode(platform_id: int, new_passcode: str, actor_teleg
     Sets or changes the 4-digit passcode for a platform.
     If a passcode already exists, current_passcode must match.
     Returns True on success, False if the current_passcode is wrong.
+    Raises PasscodeLockedError if hard-locked after PASSCODE_MAX_ATTEMPTS
+    consecutive wrong attempts (cooldown PASSCODE_LOCKOUT_MINUTES).
     """
     if not (new_passcode.isdigit() and len(new_passcode) == 4):
         raise ValueError("Passcode must be a 4-digit number")
 
     async with _db() as db:
-        row = await db.fetchrow("SELECT wallet_passcode_hash FROM platforms WHERE id = $1", platform_id)
+        row = await db.fetchrow(
+            "SELECT wallet_passcode_hash, passcode_failed_attempts, passcode_locked_until "
+            "FROM platforms WHERE id = $1",
+            platform_id,
+        )
         if not row:
             return False
+
+        remaining = _remaining_lockout_seconds(row["passcode_locked_until"])
+        if remaining is not None:
+            raise PasscodeLockedError(remaining)
 
         existing_hash = row["wallet_passcode_hash"]
         if existing_hash:
             if not current_passcode or not _verify_passcode(current_passcode, existing_hash):
+                # Count the failure; hard-lock at the threshold.
+                attempts = int(row["passcode_failed_attempts"] or 0) + 1
+                if attempts >= PASSCODE_MAX_ATTEMPTS:
+                    locked_until = datetime.now(timezone.utc) + timedelta(
+                        minutes=PASSCODE_LOCKOUT_MINUTES
+                    )
+                    await db.execute(
+                        "UPDATE platforms SET passcode_failed_attempts = $1, "
+                        "passcode_locked_until = $2 WHERE id = $3",
+                        attempts, locked_until, platform_id,
+                    )
+                    await db.execute(
+                        "INSERT INTO platform_audit_log (platform_id, action, actor_telegram_id, details) VALUES ($1, $2, $3, $4)",
+                        platform_id, "passcode_lockout", actor_telegram_id,
+                        f'{{"failed_attempts": {attempts}, "locked_minutes": {PASSCODE_LOCKOUT_MINUTES}}}',
+                    )
+                else:
+                    await db.execute(
+                        "UPDATE platforms SET passcode_failed_attempts = $1 WHERE id = $2",
+                        attempts, platform_id,
+                    )
                 # Failed attempt audit log
                 await db.execute(
                     "INSERT INTO platform_audit_log (platform_id, action, actor_telegram_id, details) VALUES ($1, $2, $3, $4)",
@@ -225,7 +263,11 @@ async def set_platform_passcode(platform_id: int, new_passcode: str, actor_teleg
                 return False
 
         new_hash = _hash_passcode(new_passcode)
-        await db.execute("UPDATE platforms SET wallet_passcode_hash = $1 WHERE id = $2", new_hash, platform_id)
+        await db.execute(
+            "UPDATE platforms SET wallet_passcode_hash = $1, passcode_failed_attempts = 0, "
+            "passcode_locked_until = NULL WHERE id = $2",
+            new_hash, platform_id,
+        )
         
         # Audit log
         action = "passcode_changed" if existing_hash else "passcode_set"
@@ -240,9 +282,15 @@ async def update_platform_wallet(platform_id: int, wallet_address: str, actor_te
     Updates the wallet address for a platform.
     If a wallet address is ALREADY set, requires a valid passcode.
     Returns True on success, False if the passcode is required but incorrect/missing.
+    Raises PasscodeLockedError if hard-locked after PASSCODE_MAX_ATTEMPTS
+    consecutive wrong attempts (cooldown PASSCODE_LOCKOUT_MINUTES).
     """
     async with _db() as db:
-        row = await db.fetchrow("SELECT wallet_address, wallet_passcode_hash FROM platforms WHERE id = $1", platform_id)
+        row = await db.fetchrow(
+            "SELECT wallet_address, wallet_passcode_hash, passcode_failed_attempts, passcode_locked_until "
+            "FROM platforms WHERE id = $1",
+            platform_id,
+        )
         if not row:
             return False
             
@@ -251,12 +299,47 @@ async def update_platform_wallet(platform_id: int, wallet_address: str, actor_te
         
         # Friction only applies to CHANGING an existing wallet
         if current_wallet:
+            # Hard lockout check comes first — even a correct passcode is
+            # rejected while locked (prevents continued online guessing).
+            remaining = _remaining_lockout_seconds(row["passcode_locked_until"])
+            if remaining is not None:
+                raise PasscodeLockedError(remaining)
+
             if not passcode or not existing_hash or not _verify_passcode(passcode, existing_hash):
+                # Count the failure; hard-lock at the threshold.
+                attempts = int(row["passcode_failed_attempts"] or 0) + 1
+                if attempts >= PASSCODE_MAX_ATTEMPTS:
+                    locked_until = datetime.now(timezone.utc) + timedelta(
+                        minutes=PASSCODE_LOCKOUT_MINUTES
+                    )
+                    await db.execute(
+                        "UPDATE platforms SET passcode_failed_attempts = $1, "
+                        "passcode_locked_until = $2 WHERE id = $3",
+                        attempts, locked_until, platform_id,
+                    )
+                    await db.execute(
+                        "INSERT INTO platform_audit_log (platform_id, action, actor_telegram_id, details) VALUES ($1, $2, $3, $4)",
+                        platform_id, "passcode_lockout", actor_telegram_id,
+                        f'{{"failed_attempts": {attempts}, "locked_minutes": {PASSCODE_LOCKOUT_MINUTES}}}',
+                    )
+                else:
+                    await db.execute(
+                        "UPDATE platforms SET passcode_failed_attempts = $1 WHERE id = $2",
+                        attempts, platform_id,
+                    )
                 await db.execute(
                     "INSERT INTO platform_audit_log (platform_id, action, actor_telegram_id, details) VALUES ($1, $2, $3, $4)",
                     platform_id, "update_wallet_failed", actor_telegram_id, "Incorrect or missing passcode"
                 )
                 return False
+
+            # Correct passcode clears any accumulated failures.
+            if int(row["passcode_failed_attempts"] or 0) or row["passcode_locked_until"]:
+                await db.execute(
+                    "UPDATE platforms SET passcode_failed_attempts = 0, "
+                    "passcode_locked_until = NULL WHERE id = $1",
+                    platform_id,
+                )
 
         await db.execute("UPDATE platforms SET wallet_address = $1 WHERE id = $2", wallet_address, platform_id)
         await db.execute(

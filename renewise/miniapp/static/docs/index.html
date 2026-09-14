@@ -1525,7 +1525,7 @@ function verifySignature(rawBody, header, secret) {
         <h3>Non-custodial architecture</h3>
         <ul>
           <li>Renewise cannot freeze, reverse, or redirect a completed on-chain payment.</li>
-          <li>The trigger wallet the only hot wallet in the system holds roughly 2 TON for gas. If
+          <li>The trigger wallet — the only hot wallet in the system — holds a small gas reserve, topped up as needed. If
             compromised, an attacker can only trigger refunds the contract has already validated; they
             cannot redirect funds or drain any other balance.</li>
         </ul>

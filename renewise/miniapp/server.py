@@ -1431,9 +1431,16 @@ async def api_developer_update_wallet(
             ),
         )
     
-    success = await platform_svc.update_platform_wallet(platform_id, wallet_address, telegram_user_id, passcode)
-    if not success:
-        raise HTTPException(status_code=403, detail="Incorrect or missing passcode")
+    try:
+        success = await platform_svc.update_platform_wallet(platform_id, wallet_address, telegram_user_id, passcode)
+        if not success:
+            raise HTTPException(status_code=403, detail="Incorrect or missing passcode")
+    except queries.PasscodeLockedError as e:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many incorrect passcode attempts. Try again in {e.retry_after_seconds // 60} minutes.",
+            headers={"Retry-After": str(e.retry_after_seconds)},
+        )
 
     addr_network = _addr_net or "unknown"
     # For test-only platforms, remind the dev to use testnet GRAM when paying
@@ -1474,6 +1481,12 @@ async def api_developer_set_passcode(
             raise HTTPException(status_code=403, detail="Incorrect current passcode")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except queries.PasscodeLockedError as e:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many incorrect passcode attempts. Try again in {e.retry_after_seconds // 60} minutes.",
+            headers={"Retry-After": str(e.retry_after_seconds)},
+        )
         
     return {"ok": True}
 
@@ -1850,7 +1863,16 @@ async def api_group_update_wallet(
 
     # Passkey check — required when a passkey is already set on this group.
     # First-time wallet setup has no passkey, so it passes through freely.
-    if not await queries.check_group_wallet_passcode(group_id, body.passcode):
+    # Raises PasscodeLockedError (→429) after 5 consecutive wrong attempts.
+    try:
+        passcode_ok = await queries.check_group_wallet_passcode(group_id, body.passcode, telegram_user_id)
+    except queries.PasscodeLockedError as e:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many incorrect passkey attempts. Try again in {e.retry_after_seconds // 60} minutes.",
+            headers={"Retry-After": str(e.retry_after_seconds)},
+        )
+    if not passcode_ok:
         raise HTTPException(status_code=403, detail="Incorrect or missing passkey")
 
     old_wallet = group.get("payout_wallet_address")
@@ -1939,6 +1961,12 @@ async def api_group_set_passcode(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except queries.PasscodeLockedError as e:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many incorrect passkey attempts. Try again in {e.retry_after_seconds // 60} minutes.",
+            headers={"Retry-After": str(e.retry_after_seconds)},
+        )
 
     if not success:
         raise HTTPException(status_code=403, detail="Incorrect current passkey")

@@ -5188,10 +5188,13 @@ http_response_code(200);</pre>
         });
         if (!r.ok) {
           const msg = await _errDetail(r);
-          // Make wrong-passkey errors obvious
-          const friendly = (msg.toLowerCase().includes('passkey') || msg.includes('403'))
-            ? 'Incorrect passkey. Please try again.'
-            : msg;
+          // Make wrong-passkey errors obvious, but keep hard-lockout (429) messages intact
+          const isLocked = r.status === 429 || msg.toLowerCase().includes('too many incorrect');
+          const friendly = isLocked
+            ? msg
+            : (msg.toLowerCase().includes('passkey') || msg.includes('403'))
+              ? 'Incorrect passkey. Please try again.'
+              : msg;
           document.getElementById('wallet-err').textContent = friendly;
           btn.disabled = false;
           btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
@@ -5274,9 +5277,13 @@ http_response_code(200);</pre>
         if (_manageGroupData) _manageGroupData.has_wallet_passcode = true;
       } catch (e) {
         const msg = String(e.message || e);
-        const friendly = msg.toLowerCase().includes('passkey') || msg.includes('403')
-          ? 'Incorrect current passkey.'
-          : msg;
+        // Keep hard-lockout (429) messages intact, only map plain wrong-passkey errors
+        const isLocked = msg.toLowerCase().includes('too many incorrect');
+        const friendly = isLocked
+          ? msg
+          : (msg.toLowerCase().includes('passkey') || msg.includes('403'))
+            ? 'Incorrect current passkey.'
+            : msg;
         WebApp.showAlert('Error: ' + friendly);
       }
     }
