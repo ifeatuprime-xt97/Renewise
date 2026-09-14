@@ -225,6 +225,12 @@ async def public_docs(rest: str = "") -> FileResponse:
     return FileResponse(_STATIC_DIR / "docs" / "index.html")
 
 
+@app.get("/terms")
+async def public_terms() -> FileResponse:
+    """Public Terms of Service & Privacy Policy page."""
+    return FileResponse(_STATIC_DIR / "terms.html")
+
+
 @app.get("/checkout/{charge_id}")
 async def checkout_ui(charge_id: int) -> FileResponse:
     return FileResponse(_STATIC_DIR / "checkout.html")

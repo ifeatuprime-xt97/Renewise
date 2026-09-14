@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Renewise Documentation — Admin Guide, Developer Guide & API Reference</title>
+  <title>Renewise Documentation Admin Guide, Developer Guide & API Reference</title>
 
   <!-- SEO / social metadata -->
   <meta name="description"
@@ -14,7 +14,7 @@
   <meta property="og:site_name" content="Renewise">
   <meta property="og:title" content="Renewise Documentation">
   <meta property="og:description"
-    content="Admin guide, developer guide, Payments API reference, payment flow, wallets & settlement, security, and FAQ for Renewise — non-custodial membership payments for Telegram communities on TON.">
+    content="Admin guide, developer guide, Payments API reference, payment flow, wallets & settlement, security, and FAQ for Renewise non-custodial membership payments for Telegram communities on TON.">
   <meta property="og:image" content="/logo">
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#070B14">
@@ -731,6 +731,7 @@
         <div class="sidebar-group-title">Links</div>
         <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">Open Renewise in Telegram ↗</a>
         <a href="https://t.me/renewise" target="_blank" rel="noopener">Renewise Updates Channel ↗</a>
+        <a href="/terms">Terms of Service</a>
         <a href="/home">← Back to website</a>
       </div>
     </aside>
@@ -743,35 +744,35 @@
         <h2>Introduction</h2>
 
         <p>Renewise is a non-custodial subscription paywall platform for Telegram. It lets group and channel
-          admins charge for membership in TON (GRAM), with payments settled directly on-chain — no middleman
+          admins charge for membership in TON (GRAM), with payments settled directly on-chain no middleman
           holds funds at any point.</p>
 
         <p>It is built for two audiences:</p>
         <ul>
           <li><strong>Community admins</strong> who want to monetise a Telegram group or channel without a
-            payment processor or custodian — knowledge communities, investment groups, content channels,
+            payment processor or custodian knowledge communities, investment groups, content channels,
             professional networks.</li>
           <li><strong>Developers</strong> who want to accept TON payments in their own Telegram bot or Mini
-            App via the Renewise Payments API — no smart-contract knowledge required.</li>
+            App via the Renewise Payments API no smart-contract knowledge required.</li>
         </ul>
 
         <h3>Key properties</h3>
         <ul>
-          <li><strong>Non-custodial</strong> — funds go directly on-chain. Renewise cannot freeze, reverse, or
+          <li><strong>Non-custodial</strong> funds go directly on-chain. Renewise cannot freeze, reverse, or
             redirect a completed payment.</li>
-          <li><strong>USD pricing, TON settlement</strong> — admins set prices in USD; the TON equivalent is
+          <li><strong>USD pricing, TON settlement</strong> admins set prices in USD; the TON equivalent is
             computed at payment time using a live CoinGecko rate and locked in on-chain.</li>
-          <li><strong>Automatic lifecycle</strong> — renewal reminders, grace periods, and subscriber removal
+          <li><strong>Automatic lifecycle</strong> renewal reminders, grace periods, and subscriber removal
             run without admin intervention.</li>
-          <li><strong>Trustless overpayment refunds</strong> — excess TON is held in the vault and released
+          <li><strong>Trustless overpayment refunds</strong> excess TON is held in the vault and released
             directly to the subscriber's wallet.</li>
-          <li><strong>Mini App dashboard</strong> — admins and developers manage everything from a Telegram
+          <li><strong>Mini App dashboard</strong> admins and developers manage everything from a Telegram
             Mini App.</li>
         </ul>
 
         <div class="callout callout-info">
-          <p><strong>Open Renewise in Telegram:</strong> the full application — admin dashboard, developer
-            dashboard, subscriptions, and settings — lives inside the Telegram Mini App at
+          <p><strong>Open Renewise in Telegram:</strong> the full application admin dashboard, developer
+            dashboard, subscriptions, and settings lives inside the Telegram Mini App at
             <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">t.me/Renewisebot</a>.
             Product updates are posted to <a href="https://t.me/renewise" target="_blank"
               rel="noopener">t.me/renewise</a>.</p>
@@ -799,7 +800,7 @@
         <ol>
           <li>Open <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">@Renewisebot</a> in
             Telegram and open the Mini App.</li>
-          <li>Switch to <strong>Developer</strong> mode and create a platform — you receive a test key pair
+          <li>Switch to <strong>Developer</strong> mode and create a platform you receive a test key pair
             immediately.</li>
           <li>Set your payout wallet, then create charges via the Payments API (see the
             <a href="/docs#developer-guide">Developer Guide</a>).</li>
@@ -852,7 +853,7 @@ Platform gets:   admin_fee + buyer_fee            (to PLATFORM_WALLET)
 Vault holds:     any overpayment above required   (for trustless refund)</code></pre>
 
         <p>Default fees: buyer fee 2.00% (added on top of the price), admin fee 3.30% (deducted from the
-          payout) — a combined platform take of ~5.30%. Per-group overrides are available via the Superadmin
+          payout) a combined platform take of ~5.30%. Per-group overrides are available via the Superadmin
           panel.</p>
 
         <h3>Overpayment refunds</h3>
@@ -863,7 +864,7 @@ Vault holds:     any overpayment above required   (for trustless refund)</code><
           <li>The member replies with their TON address (validated by the bot).</li>
           <li>The trigger wallet sends <code>Refund{recipient}</code> to the vault.</li>
           <li>The vault verifies <code>sender == trigger_wallet</code> and releases the overage to the
-            member — directly from the vault, with no platform private key involved.</li>
+            member directly from the vault, with no platform private key involved.</li>
         </ol>
 
         <h3>Underpayments</h3>
@@ -914,7 +915,7 @@ Vault holds:     any overpayment above required   (for trustless refund)</code><
         <p>From the Mini App dashboard you can:</p>
         <ul>
           <li>View all your groups with revenue summaries, active member counts, and status</li>
-          <li>Update the subscription price — existing subscribers keep their locked-in price until their
+          <li>Update the subscription price existing subscribers keep their locked-in price until their
             next renewal</li>
           <li>Change your payout wallet (scheduled with a 24-hour delay and a cancellation window)</li>
           <li>Pause or resume the paywall</li>
@@ -959,7 +960,7 @@ Vault holds:     any overpayment above required   (for trustless refund)</code><
             </tr>
             <tr>
               <td><code>GET /api/groups/{id}/detail</code></td>
-              <td>Group detail — price, wallet, members, revenue</td>
+              <td>Group detail price, wallet, members, revenue</td>
             </tr>
             <tr>
               <td><code>GET /api/groups/{id}/payment-history</code></td>
@@ -1045,7 +1046,7 @@ Content-Type: application/json
 
         <p>The response contains a <code>vault_address</code>, the exact
           <code>required_nano_amount</code> (1 TON = 1,000,000,000 nanoTON), and a <code>payment_url</code>
-          — a <code>ton://</code> deep-link your user pays from any TON wallet.</p>
+          a <code>ton://</code> deep-link your user pays from any TON wallet.</p>
 
         <h3>Directing your user to pay</h3>
         <ul>
@@ -1068,7 +1069,7 @@ Content-Type: application/json
 
         <h3>Checking charge status</h3>
         <div class="endpoint"><span class="method method-get">GET</span> /api/platform/charges/{charge_id}</div>
-        <p>Poll this endpoint or — better — rely on <a href="/docs#webhooks">webhooks</a>.</p>
+        <p>Poll this endpoint or better rely on <a href="/docs#webhooks">webhooks</a>.</p>
 
         <table>
           <thead>
@@ -1196,7 +1197,7 @@ print("(Render this URL as a QR code or embed it in a 'Pay' button)")</code></pr
             <tr>
               <td><code>500</code></td>
               <td>Internal Server Error</td>
-              <td>Server-side error — retry with exponential backoff</td>
+              <td>Server-side error retry with exponential backoff</td>
             </tr>
           </tbody>
         </table>
@@ -1295,7 +1296,7 @@ print("(Render this URL as a QR code or embed it in a 'Pay' button)")</code></pr
         <ol>
           <li>Dashboard → API Keys → click <strong>Regenerate</strong> for the relevant key.</li>
           <li>The old key is <strong>immediately invalidated</strong>.</li>
-          <li>Copy the new secret key from the one-time alert — it will not be shown again.</li>
+          <li>Copy the new secret key from the one-time alert it will not be shown again.</li>
           <li>Update your server's environment variable.</li>
         </ol>
 
@@ -1342,13 +1343,13 @@ print("(Render this URL as a QR code or embed it in a 'Pay' button)")</code></pr
         <h3>Subscription payments (communities)</h3>
         <ol>
           <li>A member requests to join the paid group or channel.</li>
-          <li>The bot DMs them a payment link — a QR code and a <code>ton://</code> deep-link containing the
+          <li>The bot DMs them a payment link a QR code and a <code>ton://</code> deep-link containing the
             StateInit payload for the member's per-subscription vault.</li>
           <li>The member pays from any TON wallet. The vault contract deploys on first message and splits
             the funds atomically: admin share → payout wallet, platform fee → platform wallet, overpayment →
             held in the vault.</li>
           <li>The watcher detects the on-chain transaction, verifies the amount, and marks the payment
-            processed (idempotently — a transaction hash can never be processed twice).</li>
+            processed (idempotently a transaction hash can never be processed twice).</li>
           <li>The bot approves the join request and sends a welcome DM.</li>
         </ol>
 
@@ -1378,18 +1379,18 @@ print("(Render this URL as a QR code or embed it in a 'Pay' button)")</code></pr
 
         <h3>Lifecycle</h3>
         <ol>
-          <li><strong>Active</strong> — payment confirmed, member has access.</li>
-          <li><strong>Renewal reminder</strong> — sent 3 days before expiry (configurable via
+          <li><strong>Active</strong> payment confirmed, member has access.</li>
+          <li><strong>Renewal reminder</strong> sent 3 days before expiry (configurable via
             <code>REMINDER_WINDOW_DAYS</code>).</li>
-          <li><strong>Grace period</strong> — 3 days after expiry (configurable via
+          <li><strong>Grace period</strong> 3 days after expiry (configurable via
             <code>GRACE_PERIOD_DAYS</code>) during which the member can still renew.</li>
-          <li><strong>Removal</strong> — if payment isn't received, the member is removed from the group
+          <li><strong>Removal</strong> if payment isn't received, the member is removed from the group
             automatically.</li>
         </ol>
 
         <h3>Renewals</h3>
         <ul>
-          <li>Renewing reuses the same vault contract address — the member pays to the same address and
+          <li>Renewing reuses the same vault contract address the member pays to the same address and
             their access is extended.</li>
           <li>Price changes only affect <em>new</em> payments: existing subscribers keep their
             <code>price_locked_in</code> until their next renewal.</li>
@@ -1397,7 +1398,7 @@ print("(Render this URL as a QR code or embed it in a 'Pay' button)")</code></pr
         </ul>
 
         <h3>Comped access</h3>
-        <p>Admins can comp a member by Telegram user ID — granting free access without payment, from the
+        <p>Admins can comp a member by Telegram user ID granting free access without payment, from the
           Mini App or the bot's admin menu.</p>
       </section>
 
@@ -1409,10 +1410,10 @@ print("(Render this URL as a QR code or embed it in a 'Pay' button)")</code></pr
         <p>Renewise never holds user funds. Every payment is split on-chain by the PaymentVault smart
           contract in the same transaction it is received:</p>
         <ul>
-          <li><strong>Admin payout</strong> — the admin's share (price minus admin fee) goes directly to
+          <li><strong>Admin payout</strong> the admin's share (price minus admin fee) goes directly to
             their registered payout wallet.</li>
-          <li><strong>Platform fee</strong> — buyer fee + admin fee goes to the platform wallet.</li>
-          <li><strong>Overpayment</strong> — held in the vault's <code>overage_held</code> until released to
+          <li><strong>Platform fee</strong> buyer fee + admin fee goes to the platform wallet.</li>
+          <li><strong>Overpayment</strong> held in the vault's <code>overage_held</code> until released to
             the member via the trustless refund flow.</li>
         </ul>
         <p>The split is encoded in the contract at deploy time and cannot be changed retroactively. A
@@ -1420,16 +1421,16 @@ print("(Render this URL as a QR code or embed it in a 'Pay' button)")</code></pr
 
         <h3>Changing your payout wallet</h3>
         <ul>
-          <li><strong>First setup:</strong> simply enter your TON wallet address — no passkey required.</li>
+          <li><strong>First setup:</strong> simply enter your TON wallet address no passkey required.</li>
           <li><strong>Changing an existing wallet:</strong> requires your 4-digit passkey and is scheduled
             with a <strong>24-hour delay</strong>. Any pending change can be cancelled within that window,
             and a new request supersedes the old one.</li>
-          <li>On mainnet, testnet wallet addresses are rejected outright — payouts would never arrive.</li>
+          <li>On mainnet, testnet wallet addresses are rejected outright payouts would never arrive.</li>
         </ul>
 
         <div class="callout callout-warn">
           <p><strong>Lost passkey?</strong> Passkeys are bcrypt-hashed and never stored in plaintext. There
-            is no self-service reset — contact support.</p>
+            is no self-service reset contact support.</p>
         </div>
 
         <h3>USD pricing, TON settlement</h3>
@@ -1461,7 +1462,7 @@ print("(Render this URL as a QR code or embed it in a 'Pay' button)")</code></pr
         <h3 id="webhooks">For developers (webhooks)</h3>
         <p>Instead of polling, configure a webhook to receive real-time charge events. In the Dashboard →
           <strong>Webhook</strong> → Edit, enter your HTTPS endpoint URL. You receive a
-          <code>whsec_…</code> signature secret — save it immediately, it is only shown once.</p>
+          <code>whsec_…</code> signature secret save it immediately, it is only shown once.</p>
 
         <p>Renewise sends an HTTP POST to your endpoint:</p>
         <pre><code>POST /your-webhook-handler
@@ -1515,7 +1516,7 @@ function verifySignature(rawBody, header, secret) {
           <li>Mini App requests are authenticated via Telegram's <code>initData</code> HMAC-SHA256
             mechanism, verified server-side against the bot token. <code>initDataUnsafe</code> is never
             trusted for authentication decisions.</li>
-          <li>Every Mini App endpoint that touches group-scoped data performs an ownership check — the
+          <li>Every Mini App endpoint that touches group-scoped data performs an ownership check the
             requesting Telegram user must be the registered admin of that group.</li>
           <li>Developer API calls authenticate with the platform secret key (Bearer token). Live secret
             keys are SHA-256 hashed before storage.</li>
@@ -1524,7 +1525,7 @@ function verifySignature(rawBody, header, secret) {
         <h3>Non-custodial architecture</h3>
         <ul>
           <li>Renewise cannot freeze, reverse, or redirect a completed on-chain payment.</li>
-          <li>The trigger wallet — the only hot wallet in the system — holds roughly 2 TON for gas. If
+          <li>The trigger wallet the only hot wallet in the system holds roughly 2 TON for gas. If
             compromised, an attacker can only trigger refunds the contract has already validated; they
             cannot redirect funds or drain any other balance.</li>
         </ul>
@@ -1535,7 +1536,7 @@ function verifySignature(rawBody, header, secret) {
           <li>Wallet changes are delayed by 24 hours by default and can be cancelled within that window.</li>
           <li>Wallet passkeys are bcrypt-hashed, never stored in plaintext.</li>
           <li>Rate limiting is applied to all API endpoints (5–60 req/min depending on the endpoint).</li>
-          <li>Transaction processing is idempotent — a transaction hash can never be processed twice.</li>
+          <li>Transaction processing is idempotent a transaction hash can never be processed twice.</li>
           <li>Test and live environments are isolated at the key, network, and database level.</li>
         </ul>
       </section>
@@ -1550,12 +1551,12 @@ function verifySignature(rawBody, header, secret) {
           cannot freeze, reverse, or redirect a completed payment.</p>
 
         <h3>What do members need to pay?</h3>
-        <p>Any TON wallet — Tonkeeper, TonHub, @wallet, or an exchange wallet that supports deep-links.
+        <p>Any TON wallet Tonkeeper, TonHub, @wallet, or an exchange wallet that supports deep-links.
           Members pay in TON (GRAM); the price is set in USD and converted at payment time.</p>
 
         <h3>What happens if a member overpays?</h3>
         <p>The excess is held in the vault contract. The bot DMs the member asking for a wallet address,
-          then a dedicated trigger wallet releases the overage directly to them — trustlessly, with no
+          then a dedicated trigger wallet releases the overage directly to them trustlessly, with no
           platform private key involved.</p>
 
         <h3>What happens if a member underpays?</h3>
@@ -1563,7 +1564,7 @@ function verifySignature(rawBody, header, secret) {
           the funds automatically. The bot DMs the member explaining the shortfall so they can retry.</p>
 
         <h3>Can I change my price?</h3>
-        <p>Yes — from the Mini App or the bot's admin menu. Existing subscribers keep their locked-in price
+        <p>Yes from the Mini App or the bot's admin menu. Existing subscribers keep their locked-in price
           until their next renewal; only new payments use the new price.</p>
 
         <h3>Can I change my payout wallet?</h3>
@@ -1575,7 +1576,7 @@ function verifySignature(rawBody, header, secret) {
           the member still hasn't renewed, they're removed from the group automatically.</p>
 
         <h3>Can I give someone free access?</h3>
-        <p>Yes — admins can comp a member by their Telegram user ID from the Mini App or the bot's admin
+        <p>Yes admins can comp a member by their Telegram user ID from the Mini App or the bot's admin
           menu.</p>
 
         <h3>Can I use Renewise in my own bot or Mini App?</h3>
@@ -1584,7 +1585,7 @@ function verifySignature(rawBody, header, secret) {
           <a href="/docs#developer-guide">Developer Guide</a>.</p>
 
         <h3>How do I test without real money?</h3>
-        <p>Use test keys (<code>sk_test_…</code>) — charges run on TON testnet with free test TON from
+        <p>Use test keys (<code>sk_test_…</code>) charges run on TON testnet with free test TON from
           @testgiver_ton_bot. Live keys settle real funds on mainnet.</p>
 
         <h3>Where do I get product updates?</h3>
@@ -1603,6 +1604,8 @@ function verifySignature(rawBody, header, secret) {
           <a href="https://t.me/Renewisebot" target="_blank" rel="noopener">Open Renewise in Telegram</a>
           &nbsp;·&nbsp;
           <a href="https://t.me/renewise" target="_blank" rel="noopener">Join our Telegram channel</a>
+          &nbsp;·&nbsp;
+          <a href="/terms">Terms of Service</a>
           &nbsp;·&nbsp;
           <a href="/home">Back to website</a>
         </p>
