@@ -49,7 +49,7 @@ async def handle_join_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
         return
 
     if group["status"] == "suspended":
-        # Group suspended by admin — explicitly decline join request
+        # Group suspended by admin explicitly decline join request
         try:
             await ctx.bot.decline_chat_join_request(chat_id=chat.id, user_id=user.id)
         except Exception as e:
@@ -57,10 +57,10 @@ async def handle_join_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
         return
 
     if group["status"] != "active":
-        # Not a paywalled group or paused/frozen — ignore
+        # Not a paywalled group or paused/frozen ignore
         return
 
-    # Check global payments kill-switch BEFORE doing anything else — avoid
+    # Check global payments kill-switch BEFORE doing anything else avoid
     # sending a welcome DM then immediately a "payments paused" DM.
     if await queries.is_payments_paused():
         try:
@@ -76,7 +76,7 @@ async def handle_join_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
 
     # price_locked_in stores the USD price in cents (matching groups.price_usd_cents).
     # The watcher uses required_nano_amount (set by generate_payment_request) as the
-    # authoritative verification amount — price_locked_in is only used as a human-readable
+    # authoritative verification amount price_locked_in is only used as a human-readable
     # record and fallback. Store USD cents as a float here for consistency.
     price_locked_in = group["price_usd_cents"] / 100.0 if group["price_usd_cents"] else group["price"]
     user_db_id = await queries.upsert_user(
@@ -98,7 +98,7 @@ async def handle_join_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
     interval  = group["billing_interval_days"]
 
     # Compute the total GRAM the member will actually pay (price + buyer fee).
-    # group["price"] is stale — derive live from CoinGecko.
+    # group["price"] is stale derive live from CoinGecko.
     if price_usd:
         try:
             from renewise.utils.coingecko import get_ton_usd_price
@@ -119,7 +119,7 @@ async def handle_join_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
         except Exception:
             price_line = f"💰 ${price_usd:.2f} USD per {interval} days"
     else:
-        # Legacy row — fall back to stored GRAM value, no fee info
+        # Legacy row fall back to stored GRAM value, no fee info
         price_line = f"💰 {group['price']:.4f} GRAM per {interval} days"
 
     safe_first_name = html.escape(user.first_name or "there")
@@ -138,7 +138,7 @@ async def handle_join_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
 
     # Build the Pay Now deep-link button.
     # This routes through /start pay_{group_id} which guarantees the bot can DM
-    # the user (they just tapped a link that opens the bot) — no more "can't DM"
+    # the user (they just tapped a link that opens the bot) no more "can't DM"
     # silent failures from users who haven't started the bot yet.
     bot_me = await ctx.bot.get_me()
     pay_link = f"https://t.me/{bot_me.username}?start=pay_{group['id']}"
@@ -151,7 +151,7 @@ async def handle_join_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
     try:
         await ctx.bot.send_message(user.id, welcome, parse_mode="HTML", reply_markup=pay_kb)
     except Exception:
-        # User hasn't started the bot yet — they can't receive DMs.
+        # User hasn't started the bot yet they can't receive DMs.
         # The Pay Now button is a deep-link so tapping it opens the bot DM
         # and fires /start pay_{group_id}, at which point we can DM them.
         # Nothing more to do here; the /start handler takes over.
@@ -223,7 +223,7 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     vault_addr  = pending["vault_addr"]
     amount_ton  = pending["amount_ton"]
 
-    # payment_url is already ton:// with &init= — use directly for the QR
+    # payment_url is already ton:// with &init= use directly for the QR
     ton_qr_url = payment_url
 
     # Show USD equivalent so the user can sanity-check the amount
@@ -282,8 +282,8 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 f"<b>How to pay:</b>\n"
                 f"• Tap the button below to open your wallet\n"
                 f"• Or start a chat with this bot to get the QR code\n\n"
-                f"💡 <b>Your wallet may show a warning.</b> This is normal — your GRAM is safe!\n\n"
-                f"Send the <b>exact amount shown</b> — overpayments are refunded automatically."
+                f"💡 <b>Your wallet may show a warning.</b> This is normal your GRAM is safe!\n\n"
+                f"Send the <b>exact amount shown</b> overpayments are refunded automatically."
             )
             try:
                 await query.edit_message_text(
@@ -320,7 +320,7 @@ async def cb_ive_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 await query.edit_message_text(text, **kwargs)
         except TgBadRequest as e:
             if "message is not modified" in str(e).lower():
-                pass  # user tapped the button twice — harmless
+                pass  # user tapped the button twice harmless
             else:
                 raise
 
@@ -406,7 +406,7 @@ async def cb_ive_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             from renewise.watcher.inprocess_watcher import _process_payment_inprocess
             from renewise.db.connection import _db as _conn
 
-            # Fetch required amount from DB — avoids re-computing the exchange rate
+            # Fetch required amount from DB avoids re-computing the exchange rate
             async with _conn() as db:
                 req_row = await db.fetchrow(
                     "SELECT required_nano_amount FROM subscriptions "
@@ -424,7 +424,7 @@ async def cb_ive_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 amount_nano = extract_in_msg_value(tx)
                 if not tx_hash or await is_tx_processed(tx_hash):
                     continue
-                # Only skip genuinely low-value txs — if required_nano itself is
+                # Only skip genuinely low-value txs if required_nano itself is
                 # >= amount_nano it may be stale (generated at a different rate).
                 # Let _process_payment_inprocess make the authoritative call;
                 # its stale guard will re-derive required from the vault getter.
@@ -434,7 +434,7 @@ async def cb_ive_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                         tx_hash, amount_nano, required_nano,
                     )
                     continue
-                # Found a plausible unprocessed tx — let the watcher decide
+                # Found a plausible unprocessed tx let the watcher decide
                 found_unprocessed = True
                 await _process_payment_inprocess(
                     ctx.application, vault_address, tx_hash, amount_nano,
@@ -508,7 +508,7 @@ async def cb_ive_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             try:
                 await ctx.bot.delete_message(chat_id=user.id, message_id=pay_msg_id)
             except Exception:
-                pass  # already deleted or too old — harmless
+                pass  # already deleted or too old harmless
         ctx.bot_data["pending_joins"].pop(user.id, None)
         next_renewal = datetime.now(timezone.utc) + timedelta(days=ivl)
         renewal_str  = next_renewal.strftime("%d/%m/%Y")
@@ -535,7 +535,7 @@ async def cb_ive_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await _confirm_and_welcome(group_id, chat_id, interval, group_name)
         return
 
-    # DB not confirmed yet — trigger an immediate on-chain recheck (same logic as
+    # DB not confirmed yet trigger an immediate on-chain recheck (same logic as
     # the no-session fallback path) so the user gets instant feedback after paying.
     if not vault_address:
         checked_at = datetime.now(timezone.utc).strftime("%H:%M:%S UTC")
@@ -572,7 +572,7 @@ async def cb_ive_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         txs = await fetch_transactions(vault_address, limit=10)
         found_unprocessed = False
         # Pass a local insufficient_seen set so _process_payment_inprocess does NOT
-        # send a "partial payment" DM during a manual I've-Paid check — the user
+        # send a "partial payment" DM during a manual I've-Paid check the user
         # just told us they paid, so showing "you're short" immediately is confusing
         # and races with the confirmation message.
         _seen_insufficient: set[str] = set()
@@ -659,7 +659,7 @@ async def cb_cancel_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
             parse_mode="HTML",
         )
     except Exception:
-        # Message may not have a caption (text fallback path) — try plain edit
+        # Message may not have a caption (text fallback path) try plain edit
         try:
             await query.edit_message_text(
                 "❌ <b>Payment cancelled.</b>\n\n"
