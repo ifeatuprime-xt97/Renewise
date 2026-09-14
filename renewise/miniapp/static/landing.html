@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Renewise — Your community. Your wallet. Automated.</title>
 
@@ -10,52 +10,49 @@
   <meta name="description"
     content="Renewise automates crypto membership payments and access management for Telegram communities — without custody, middlemen, or manual verification. Built on Telegram and TON.">
   <meta name="robots" content="index, follow">
+  <link rel="canonical" href="/home">
+  <link rel="icon" type="image/jpeg" href="/logo">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Renewise">
   <meta property="og:title" content="Renewise — Your community. Your wallet. Automated.">
   <meta property="og:description"
-    content="Renewise automates crypto membership payments and access management for Telegram communities — without custody, middlemen, or manual verification.">
+    content="Non-custodial crypto membership payments for Telegram communities. Built on Telegram and TON.">
+  <meta property="og:url" content="/home">
   <meta property="og:image" content="/logo">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Renewise — Your community. Your wallet. Automated.">
   <meta name="twitter:description"
-    content="Automated crypto membership payments and access management for Telegram communities. Non-custodial, built on TON.">
+    content="Non-custodial crypto membership payments for Telegram communities. Built on Telegram and TON.">
   <meta name="twitter:image" content="/logo">
-  <meta name="theme-color" content="#081120">
-
-  <link rel="icon" type="image/jpeg" href="/logo">
-  <link rel="shortcut icon" type="image/jpeg" href="/logo">
-  <link rel="apple-touch-icon" href="/logo">
+  <meta name="theme-color" content="#070B14">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet">
 
   <style>
-    /* ── Design tokens — ton.org-inspired dark navy identity, TON blue accent ── */
+    /* ─────────────────────────────────────────────
+       Renewise public identity
+       Type: Space Grotesk / Inter / IBM Plex Mono
+       Surface: deep navy, hairline rules, one accent
+    ───────────────────────────────────────────── */
     :root {
-      --bg: #081120;
-      --bg-soft: #0c1830;
-      --surface: #0f1e38;
-      --text: #eaf2fc;
-      --sub: #a3b5cf;
-      --faint: #7386a3;
+      --bg: #070B14;
+      --bg-raise: #0A1120;
+      --surface: #0C1424;
+      --text: #E8EEF9;
+      --sub: #97A5BC;
+      --faint: #5F6E88;
       --accent: #0098EA;
-      --accent-dark: #2faef0;
-      --accent-soft: rgba(0, 152, 234, .14);
-      --border: rgba(255, 255, 255, .08);
-      --border-strong: rgba(255, 255, 255, .15);
-      --success: #2fd08a;
-      --shadow-card: 0 1px 2px rgba(0, 0, 0, .30), 0 12px 32px -12px rgba(0, 0, 0, .50);
-      --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, .35), 0 20px 44px -14px rgba(0, 0, 0, .65);
-      --font-display: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --r-lg: 24px;
-      --r-md: 16px;
-      --r-sm: 12px;
-      --max-w: 1120px;
+      --accent-bright: #4FC3FF;
+      --green: #35D07F;
+      --hairline: rgba(148, 178, 255, .10);
+      --hairline-strong: rgba(148, 178, 255, .22);
+      --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+      --max-w: 1160px;
     }
 
     *,
@@ -68,7 +65,7 @@
 
     html {
       scroll-behavior: smooth;
-      scroll-padding-top: 84px;
+      scroll-padding-top: 92px;
     }
 
     body {
@@ -76,78 +73,98 @@
       color: var(--text);
       font-family: var(--font-body);
       font-size: 16px;
-      line-height: 1.6;
+      line-height: 1.65;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
     a {
-      color: var(--accent);
+      color: var(--accent-bright);
       text-decoration: none;
+    }
+
+    ::selection {
+      background: rgba(0, 152, 234, .35);
+      color: #fff;
     }
 
     .container {
       max-width: var(--max-w);
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 0 28px;
     }
 
-    /* ══════════════════════════════════════════════════
-       NAVIGATION
-    ══════════════════════════════════════════════════ */
+    /* ── Background texture: faint blueprint grid ── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image:
+        linear-gradient(var(--hairline) 1px, transparent 1px),
+        linear-gradient(90deg, var(--hairline) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 1100px 700px at 50% 0%, #000 30%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse 1100px 700px at 50% 0%, #000 30%, transparent 75%);
+    }
+
+    /* ════════════════════════════════════════════
+       NAV
+    ════════════════════════════════════════════ */
     .nav {
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(8, 17, 32, 0.85);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
+      background: rgba(7, 11, 20, .82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--hairline);
     }
 
     .nav-inner {
       display: flex;
       align-items: center;
-      gap: 28px;
-      height: 68px;
+      gap: 32px;
+      height: 66px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 11px;
       flex-shrink: 0;
     }
 
     .brand img {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
       object-fit: cover;
     }
 
     .brand-wordmark {
       font-family: var(--font-display);
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -.2px;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -.02em;
       color: var(--text);
     }
 
     .brand-wordmark .wise {
-      color: var(--accent);
+      color: var(--accent-bright);
     }
 
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 24px;
-      margin-left: 12px;
+      gap: 26px;
+      margin-left: 8px;
     }
 
     .nav-links a {
       color: var(--sub);
-      font-size: 14.5px;
-      font-weight: 600;
+      font-size: 13.5px;
+      font-weight: 500;
+      letter-spacing: .01em;
       transition: color .15s;
     }
 
@@ -158,22 +175,23 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       margin-left: auto;
     }
 
+    /* ── Buttons: sharp, mono-labelled — not pill clones ── */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      border-radius: 999px;
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 15px;
+      gap: 9px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: .02em;
       cursor: pointer;
-      border: none;
-      transition: background .15s, border-color .15s, color .15s, transform .1s, box-shadow .15s;
+      border: 1px solid transparent;
+      transition: background .16s, border-color .16s, color .16s, transform .1s;
       white-space: nowrap;
     }
 
@@ -182,40 +200,42 @@
     }
 
     .btn:active {
-      transform: scale(.985);
+      transform: translateY(1px);
     }
 
     .btn-primary {
       background: var(--accent);
-      color: #fff;
-      padding: 11px 22px;
+      color: #04121F;
+      padding: 11px 20px;
+      font-weight: 600;
     }
 
     .btn-primary:hover {
-      background: var(--accent-dark);
-      box-shadow: 0 8px 20px -6px rgba(0, 152, 234, .45);
+      background: var(--accent-bright);
     }
 
     .btn-secondary {
-      background: rgba(255, 255, 255, .05);
+      background: transparent;
       color: var(--text);
-      border: 1px solid var(--border-strong);
-      padding: 10px 20px;
+      border-color: var(--hairline-strong);
+      padding: 10px 18px;
     }
 
     .btn-secondary:hover {
       border-color: var(--accent);
-      color: var(--accent);
+      color: var(--accent-bright);
     }
 
     .btn-ghost {
-      background: var(--accent-soft);
-      color: var(--accent);
-      padding: 11px 22px;
+      background: transparent;
+      color: var(--accent-bright);
+      border-color: rgba(0, 152, 234, .35);
+      padding: 10px 18px;
     }
 
     .btn-ghost:hover {
-      background: rgba(0, 152, 234, .16);
+      background: rgba(0, 152, 234, .10);
+      border-color: var(--accent);
     }
 
     .nav-menu-toggle {
@@ -229,7 +249,7 @@
 
     .mobile-menu {
       display: none;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--hairline);
       background: var(--bg);
     }
 
@@ -239,11 +259,11 @@
 
     .mobile-menu a {
       display: block;
-      padding: 14px 24px;
+      padding: 14px 28px;
       color: var(--sub);
-      font-weight: 600;
-      font-size: 15px;
-      border-top: 1px solid var(--border);
+      font-size: 14px;
+      font-weight: 500;
+      border-top: 1px solid var(--hairline);
     }
 
     .mobile-menu a:first-child {
@@ -252,248 +272,283 @@
 
     .mobile-menu a:hover {
       color: var(--text);
-      background: var(--bg-soft);
+      background: var(--bg-raise);
     }
 
-    /* ══════════════════════════════════════════════════
-       HERO
-    ══════════════════════════════════════════════════ */
+    /* ════════════════════════════════════════════
+       HERO — asymmetric: copy left, terminal right
+    ════════════════════════════════════════════ */
     .hero {
       position: relative;
-      overflow: hidden;
-      padding: 110px 0 96px;
+      padding: 96px 0 88px;
       background:
-        radial-gradient(ellipse 900px 460px at 50% -140px, rgba(0, 152, 234, .16), transparent 70%),
+        radial-gradient(ellipse 760px 420px at 68% 8%, rgba(0, 152, 234, .13), transparent 65%),
         var(--bg);
     }
 
-    .hero-inner {
-      position: relative;
-      text-align: center;
-      max-width: 780px;
-      margin: 0 auto;
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 56px;
+      align-items: center;
     }
 
-    .hero-badge {
+    .hero-eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 7px 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(0, 152, 234, .28);
-      background: var(--accent-soft);
-      color: var(--accent-dark);
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: .2px;
-      margin-bottom: 28px;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--sub);
+      margin-bottom: 26px;
     }
 
-    .hero-badge .dot {
+    .hero-eyebrow .dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: var(--success);
-      box-shadow: 0 0 8px rgba(47, 208, 138, .55);
+      background: var(--green);
+      box-shadow: 0 0 10px rgba(53, 208, 127, .7);
+      animation: dot-ping 2.4s ease-out infinite;
     }
 
     .hero h1 {
       font-family: var(--font-display);
-      font-size: clamp(36px, 6.4vw, 62px);
-      font-weight: 800;
-      line-height: 1.08;
-      letter-spacing: -1.2px;
-      margin-bottom: 22px;
+      font-size: clamp(38px, 5.6vw, 64px);
+      font-weight: 700;
+      line-height: 1.04;
+      letter-spacing: -.03em;
+      margin-bottom: 24px;
     }
 
     .hero h1 .wise {
-      color: var(--accent);
+      color: var(--accent-bright);
     }
 
-    .hero p {
-      font-size: clamp(16px, 2.2vw, 19px);
+    .hero h1 .outline {
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(232, 238, 249, .55);
+    }
+
+    .hero-lede {
+      font-size: 17px;
       color: var(--sub);
-      max-width: 640px;
-      margin: 0 auto 38px;
-      line-height: 1.65;
+      max-width: 520px;
+      margin-bottom: 36px;
+      line-height: 1.7;
     }
 
     .hero-ctas {
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 14px;
       flex-wrap: wrap;
-      margin-bottom: 22px;
+      margin-bottom: 30px;
     }
 
     .btn-hero-primary {
-      padding: 16px 32px;
-      font-size: 16.5px;
-      box-shadow: 0 12px 30px -8px rgba(0, 152, 234, .42);
+      padding: 15px 26px;
+      font-size: 14px;
     }
 
     .btn-hero-secondary {
-      padding: 15px 28px;
-      font-size: 16px;
+      padding: 14px 24px;
+      font-size: 14px;
     }
 
     .hero-note {
-      font-size: 13.5px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
       color: var(--faint);
     }
 
     .hero-note a {
       color: var(--sub);
-      font-weight: 600;
-      text-decoration: underline;
-      text-underline-offset: 3px;
+      border-bottom: 1px solid var(--hairline-strong);
+      padding-bottom: 1px;
+      transition: color .15s, border-color .15s;
     }
 
     .hero-note a:hover {
-      color: var(--accent);
+      color: var(--accent-bright);
+      border-color: var(--accent);
     }
 
-    /* ══════════════════════════════════════════════════
-       SECTIONS — shared
-    ══════════════════════════════════════════════════ */
+    /* ── Terminal card — the product, live ── */
+    .terminal {
+      background: #050910;
+      border: 1px solid var(--hairline-strong);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 24px 70px -30px rgba(0, 0, 0, .9), 0 0 0 1px rgba(0, 152, 234, .04);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.9;
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--hairline);
+      background: rgba(148, 178, 255, .03);
+    }
+
+    .terminal-bar .tdot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--hairline-strong);
+    }
+
+    .terminal-bar .tdot:first-child {
+      background: rgba(255, 115, 120, .55);
+    }
+
+    .terminal-bar .tdot:nth-child(2) {
+      background: rgba(240, 180, 41, .55);
+    }
+
+    .terminal-bar .tdot:nth-child(3) {
+      background: rgba(53, 208, 127, .55);
+    }
+
+    .terminal-bar .ttitle {
+      margin-left: 8px;
+      font-size: 11.5px;
+      color: var(--faint);
+      letter-spacing: .06em;
+    }
+
+    .terminal-body {
+      padding: 20px 22px 24px;
+      color: var(--sub);
+    }
+
+    .terminal-body .ln {
+      display: block;
+      white-space: pre;
+    }
+
+    .terminal-body .p {
+      color: var(--accent-bright);
+    }
+
+    .terminal-body .g {
+      color: var(--green);
+    }
+
+    .terminal-body .dim {
+      color: var(--faint);
+    }
+
+    .terminal-body .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 15px;
+      background: var(--accent-bright);
+      vertical-align: text-bottom;
+      animation: blink 1.1s steps(1) infinite;
+    }
+
+    /* ════════════════════════════════════════════
+       SECTIONS — editorial: index, rule, heading
+    ════════════════════════════════════════════ */
     section {
-      padding: 84px 0;
+      padding: 88px 0;
     }
 
     .section-alt {
-      background: var(--bg-soft);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+      background: var(--bg-raise);
+      border-top: 1px solid var(--hairline);
+      border-bottom: 1px solid var(--hairline);
     }
 
     .section-head {
-      max-width: 640px;
-      margin-bottom: 48px;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 32px;
+      align-items: start;
+      margin-bottom: 56px;
     }
 
-    .section-head.center {
-      margin-left: auto;
-      margin-right: auto;
-      text-align: center;
-    }
-
-    .kicker {
-      display: inline-block;
-      font-size: 12.5px;
-      font-weight: 800;
-      letter-spacing: 1.2px;
+    .section-index {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: .16em;
       text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 14px;
+      color: var(--accent-bright);
+      padding-top: 10px;
+    }
+
+    .section-index::after {
+      content: "";
+      display: block;
+      width: 44px;
+      height: 1px;
+      background: var(--accent);
+      margin-top: 14px;
+      opacity: .6;
     }
 
     .section-head h2 {
       font-family: var(--font-display);
-      font-size: clamp(26px, 4vw, 38px);
-      font-weight: 800;
-      letter-spacing: -.8px;
-      line-height: 1.18;
+      font-size: clamp(26px, 3.6vw, 38px);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      line-height: 1.14;
       margin-bottom: 14px;
+      max-width: 620px;
     }
 
     .section-head p {
       color: var(--sub);
-      font-size: 16.5px;
+      font-size: 16px;
+      max-width: 560px;
     }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: 30px;
-      box-shadow: var(--shadow-card);
-      transition: box-shadow .2s, transform .2s, border-color .2s;
-    }
-
-    .card:hover {
-      box-shadow: var(--shadow-card-hover);
-      transform: translateY(-2px);
-      border-color: rgba(0, 152, 234, .25);
-    }
-
-    .card h3 {
-      font-family: var(--font-display);
-      font-size: 18.5px;
-      font-weight: 800;
-      letter-spacing: -.3px;
-      margin-bottom: 10px;
-    }
-
-    .card p {
-      color: var(--sub);
-      font-size: 15px;
-    }
-
-    .card .card-icon {
-      width: 46px;
-      height: 46px;
-      border-radius: 14px;
-      background: var(--accent-soft);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 18px;
-    }
-
-    .card .card-icon svg {
-      stroke: var(--accent);
-    }
-
-    /* ══════════════════════════════════════════════════
-       HOW IT WORKS — steps
-    ══════════════════════════════════════════════════ */
+    /* ════════════════════════════════════════════
+       HOW IT WORKS — numbered ledger, not cards
+    ════════════════════════════════════════════ */
     .steps {
-      counter-reset: step;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 18px;
+      border-top: 1px solid var(--hairline);
     }
 
     .step {
-      counter-increment: step;
-      position: relative;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: 28px;
-      box-shadow: var(--shadow-card);
-      transition: box-shadow .2s, transform .2s;
+      display: grid;
+      grid-template-columns: 88px 300px 1fr;
+      gap: 28px;
+      padding: 26px 0;
+      border-bottom: 1px solid var(--hairline);
+      align-items: baseline;
+      transition: background .18s, padding-left .18s;
     }
 
     .step:hover {
-      box-shadow: var(--shadow-card-hover);
-      transform: translateY(-2px);
+      background: rgba(0, 152, 234, .035);
+      padding-left: 14px;
     }
 
-    .step::before {
-      content: counter(step, decimal-leading-zero);
-      font-family: var(--font-display);
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--accent);
-      letter-spacing: 1px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      background: var(--accent-soft);
-      margin-bottom: 16px;
+    .step-no {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--faint);
+      letter-spacing: .1em;
+    }
+
+    .step-no b {
+      color: var(--accent-bright);
+      font-weight: 600;
     }
 
     .step h3 {
       font-family: var(--font-display);
       font-size: 17.5px;
-      font-weight: 800;
-      letter-spacing: -.3px;
-      margin-bottom: 8px;
+      font-weight: 600;
+      letter-spacing: -.01em;
     }
 
     .step p {
@@ -501,121 +556,223 @@
       font-size: 14.5px;
     }
 
-    /* ══════════════════════════════════════════════════
-       AUDIENCE grids (admins / developers)
-    ══════════════════════════════════════════════════ */
+    .step code {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      background: rgba(0, 152, 234, .10);
+      color: var(--accent-bright);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    /* ════════════════════════════════════════════
+       FEATURE GRID — hairline cells, corner accents
+    ════════════════════════════════════════════ */
     .grid-2 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 18px;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--hairline);
+      border-left: 1px solid var(--hairline);
     }
 
-    .feature-list {
-      list-style: none;
-      display: grid;
-      gap: 14px;
+    .cell {
+      position: relative;
+      padding: 34px 32px 36px;
+      border-right: 1px solid var(--hairline);
+      border-bottom: 1px solid var(--hairline);
+      background: rgba(12, 20, 36, .35);
+      transition: background .2s;
     }
 
-    .feature-list li {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
+    .cell:hover {
+      background: rgba(0, 152, 234, .05);
+    }
+
+    /* corner bracket on hover — terminal cursor vibe */
+    .cell::before,
+    .cell::after {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-color: var(--accent);
+      border-style: solid;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .cell::before {
+      top: 10px;
+      left: 10px;
+      border-width: 1px 0 0 1px;
+    }
+
+    .cell::after {
+      bottom: 10px;
+      right: 10px;
+      border-width: 0 1px 1px 0;
+    }
+
+    .cell:hover::before,
+    .cell:hover::after {
+      opacity: 1;
+    }
+
+    .cell-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--faint);
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    .cell h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -.01em;
+      margin-bottom: 10px;
+    }
+
+    .cell p {
       color: var(--sub);
-      font-size: 15px;
+      font-size: 14.5px;
     }
 
-    .feature-list li strong {
-      color: var(--text);
-      font-weight: 700;
-    }
-
-    .feature-list .tick {
-      flex-shrink: 0;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: rgba(47, 208, 138, .14);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 2px;
-    }
-
-    .feature-list .tick svg {
-      stroke: var(--success);
+    .cell .cell-icon {
+      color: var(--accent-bright);
+      margin-bottom: 14px;
     }
 
     .cta-inline {
-      margin-top: 24px;
+      margin-top: 28px;
     }
 
-    /* ══════════════════════════════════════════════════
-       NON-CUSTODIAL / TELEGRAM + TON
-    ══════════════════════════════════════════════════ */
+    /* ════════════════════════════════════════════
+       NON-CUSTODIAL — split panels
+    ════════════════════════════════════════════ */
     .split {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 18px;
+      gap: 0;
+      border: 1px solid var(--hairline);
     }
 
-    .split .card {
+    .split .cell {
+      border: none;
+    }
+
+    .split .cell:first-child {
+      border-right: 1px solid var(--hairline);
+    }
+
+    /* ════════════════════════════════════════════
+       STACK TICKER — marquee of tech
+    ════════════════════════════════════════════ */
+    .ticker {
+      overflow: hidden;
+      position: relative;
+      padding: 22px 0;
+      border-top: 1px solid var(--hairline);
+      border-bottom: 1px solid var(--hairline);
+      background: rgba(5, 9, 16, .6);
+    }
+
+    .ticker::before,
+    .ticker::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 120px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .ticker::before {
+      left: 0;
+      background: linear-gradient(90deg, var(--bg-raise), transparent);
+    }
+
+    .ticker::after {
+      right: 0;
+      background: linear-gradient(-90deg, var(--bg-raise), transparent);
+    }
+
+    .ticker-track {
       display: flex;
-      flex-direction: column;
+      gap: 56px;
+      width: max-content;
+      animation: marquee 30s linear infinite;
     }
 
-    .split .card p {
-      flex: 1;
+    .ticker:hover .ticker-track {
+      animation-play-state: paused;
     }
 
-    .tag-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .tag {
+    .ticker-item {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 8px 15px;
-      border-radius: 999px;
-      border: 1px solid var(--border-strong);
-      background: rgba(255, 255, 255, .04);
-      color: var(--sub);
+      gap: 10px;
+      font-family: var(--font-mono);
       font-size: 13px;
-      font-weight: 600;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--sub);
+      white-space: nowrap;
     }
 
-    .tag svg {
-      stroke: var(--accent);
+    .ticker-item svg {
+      stroke: var(--accent-bright);
     }
 
-    /* ══════════════════════════════════════════════════
-       DOCS CTA banner
-    ══════════════════════════════════════════════════ */
+    /* ════════════════════════════════════════════
+       DOCS BANNER
+    ════════════════════════════════════════════ */
     .docs-banner {
+      position: relative;
       background:
-        radial-gradient(ellipse 520px 240px at 12% 0%, rgba(0, 152, 234, .18), transparent 65%),
+        radial-gradient(ellipse 480px 220px at 8% 0%, rgba(0, 152, 234, .14), transparent 65%),
         var(--surface);
-      border: 1px solid rgba(0, 152, 234, .30);
-      border-radius: var(--r-lg);
-      padding: 48px 44px;
+      border: 1px solid var(--hairline-strong);
+      padding: 52px 48px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 28px;
+      gap: 32px;
       flex-wrap: wrap;
-      box-shadow: var(--shadow-card);
+    }
+
+    .docs-banner::before,
+    .docs-banner::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: var(--accent);
+      border-style: solid;
+    }
+
+    .docs-banner::before {
+      top: -1px;
+      left: -1px;
+      border-width: 2px 0 0 2px;
+    }
+
+    .docs-banner::after {
+      bottom: -1px;
+      right: -1px;
+      border-width: 0 2px 2px 0;
     }
 
     .docs-banner h2 {
       font-family: var(--font-display);
-      font-size: clamp(22px, 3.4vw, 30px);
-      font-weight: 800;
-      letter-spacing: -.6px;
-      margin-bottom: 8px;
+      font-size: clamp(24px, 3.2vw, 32px);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      margin-bottom: 10px;
     }
 
     .docs-banner p {
@@ -624,19 +781,41 @@
       max-width: 560px;
     }
 
-    /* ══════════════════════════════════════════════════
+    /* ════════════════════════════════════════════
        COMMUNITY
-    ══════════════════════════════════════════════════ */
+    ════════════════════════════════════════════ */
     .community {
       text-align: center;
     }
 
-    /* ══════════════════════════════════════════════════
+    .community .section-head {
+      display: block;
+      max-width: 640px;
+      margin: 0 auto 40px;
+    }
+
+    .community .section-index {
+      display: block;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .community .section-index::after {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .community .section-head h2,
+    .community .section-head p {
+      max-width: none;
+    }
+
+    /* ════════════════════════════════════════════
        FOOTER
-    ══════════════════════════════════════════════════ */
+    ════════════════════════════════════════════ */
     footer {
-      border-top: 1px solid var(--border);
-      padding: 40px 0 48px;
+      border-top: 1px solid var(--hairline);
+      padding: 44px 0 52px;
     }
 
     .footer-inner {
@@ -649,28 +828,144 @@
 
     .footer-links {
       display: flex;
-      gap: 22px;
+      gap: 24px;
       flex-wrap: wrap;
     }
 
     .footer-links a {
       color: var(--sub);
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 13.5px;
+      font-weight: 500;
     }
 
     .footer-links a:hover {
-      color: var(--accent);
+      color: var(--accent-bright);
     }
 
     .footer-copy {
+      font-family: var(--font-mono);
+      font-size: 12px;
       color: var(--faint);
-      font-size: 13.5px;
+      letter-spacing: .04em;
     }
 
-    /* ══════════════════════════════════════════════════
+    /* ════════════════════════════════════════════
+       ANIMATIONS
+    ════════════════════════════════════════════ */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(26px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @keyframes slide-left {
+      from { opacity: 0; transform: translateX(30px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @keyframes slide-down {
+      from { opacity: 0; transform: translateY(-14px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @keyframes dot-ping {
+      0%   { box-shadow: 0 0 0 0 rgba(53, 208, 127, .5); }
+      70%  { box-shadow: 0 0 0 9px rgba(53, 208, 127, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(53, 208, 127, 0); }
+    }
+
+    @keyframes blink {
+      0%, 49%  { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .nav {
+      animation: slide-down .55s cubic-bezier(.22, .8, .3, 1) both;
+    }
+
+    .hero-eyebrow  { animation: fade-up .6s cubic-bezier(.22, .8, .3, 1) .05s both; }
+    .hero h1       { animation: fade-up .6s cubic-bezier(.22, .8, .3, 1) .14s both; }
+    .hero-lede     { animation: fade-up .6s cubic-bezier(.22, .8, .3, 1) .24s both; }
+    .hero-ctas     { animation: fade-up .6s cubic-bezier(.22, .8, .3, 1) .34s both; }
+    .hero-note     { animation: fade-up .6s cubic-bezier(.22, .8, .3, 1) .44s both; }
+    .terminal      { animation: slide-left .7s cubic-bezier(.22, .8, .3, 1) .30s both; }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .6s cubic-bezier(.22, .8, .3, 1),
+        transform .6s cubic-bezier(.22, .8, .3, 1);
+      will-change: opacity, transform;
+    }
+
+    .reveal.in {
+      opacity: 1;
+      transform: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      .reveal {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* ════════════════════════════════════════════
        RESPONSIVE
-    ══════════════════════════════════════════════════ */
+    ════════════════════════════════════════════ */
+    @media (max-width: 960px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 44px;
+      }
+
+      .terminal {
+        max-width: 560px;
+      }
+
+      .section-head {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .section-index::after {
+        display: none;
+      }
+
+      .step {
+        grid-template-columns: 64px 1fr;
+        grid-template-rows: auto auto;
+      }
+
+      .step p {
+        grid-column: 2;
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .split .cell:first-child {
+        border-right: none;
+        border-bottom: 1px solid var(--hairline);
+      }
+    }
+
     @media (max-width: 860px) {
       .nav-links {
         display: none;
@@ -688,43 +983,40 @@
       .nav-inner {
         height: 60px;
       }
-
-      .split {
-        grid-template-columns: 1fr;
-      }
-
-      .docs-banner {
-        padding: 32px 24px;
-      }
     }
 
     @media (max-width: 640px) {
       section {
-        padding: 60px 0;
+        padding: 64px 0;
       }
 
       .hero {
-        padding: 68px 0 64px;
+        padding: 64px 0 60px;
       }
 
       .hero-ctas .btn {
         width: 100%;
       }
 
-      .card {
-        padding: 24px;
+      .cell {
+        padding: 26px 22px 30px;
+      }
+
+      .docs-banner {
+        padding: 36px 26px;
       }
 
       .footer-inner {
         flex-direction: column;
         align-items: flex-start;
-        gap: 16px;
+        gap: 18px;
       }
     }
   </style>
 </head>
 
 <body>
+  <div class="grid-bg" aria-hidden="true"></div>
 
   <!-- ═════════════════════════ NAV ═════════════════════════ -->
   <header class="nav">
@@ -765,7 +1057,7 @@
       <a href="/docs#faq">FAQ</a>
       <a href="https://t.me/renewise" target="_blank" rel="noopener">Join Telegram</a>
       <a href="https://t.me/Renewisebot" target="_blank" rel="noopener"
-        style="color:#0098EA;font-weight:800">Open in Telegram →</a>
+        style="color:#4FC3FF;font-weight:600">Open in Telegram →</a>
     </div>
   </header>
 
@@ -773,72 +1065,101 @@
 
     <!-- ═════════════════════════ HERO ═════════════════════════ -->
     <section class="hero">
-      <div class="container hero-inner">
-        <div class="hero-badge"><span class="dot"></span> Built for Telegram · Powered by TON</div>
-        <h1>Your community.<br>Your wallet. <span class="wise">Automated.</span></h1>
-        <p>
-          Renewise automates crypto membership payments and access management for Telegram communities —
-          without custody, middlemen, or manual verification.
-        </p>
-        <div class="hero-ctas">
-          <a class="btn btn-primary btn-hero-primary" href="https://t.me/Renewisebot" target="_blank" rel="noopener">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 2L2 12l6 2 2 7 4-6 5 3z" />
-            </svg>
-            Open Renewise in Telegram
-          </a>
-          <a class="btn btn-secondary btn-hero-secondary" href="/docs">Read Documentation</a>
+      <div class="container hero-grid">
+        <div>
+          <div class="hero-eyebrow"><span class="dot"></span> Telegram · TON · Non-custodial</div>
+          <h1>Your community.<br>Your wallet. <span class="wise">Automated.</span></h1>
+          <p class="hero-lede">
+            Renewise automates crypto membership payments and access management for Telegram communities —
+            without custody, middlemen, or manual verification.
+          </p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary btn-hero-primary" href="https://t.me/Renewisebot" target="_blank" rel="noopener">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2L2 12l6 2 2 7 4-6 5 3z" />
+              </svg>
+              Open Renewise in Telegram
+            </a>
+            <a class="btn btn-secondary btn-hero-secondary" href="/docs">Read Documentation</a>
+          </div>
+          <p class="hero-note">
+            Product updates and announcements:
+            <a href="https://t.me/renewise" target="_blank" rel="noopener">Join Renewise on Telegram</a>
+          </p>
         </div>
-        <p class="hero-note">
-          Product updates and announcements:
-          <a href="https://t.me/renewise" target="_blank" rel="noopener">Join Renewise on Telegram</a>
-        </p>
+
+        <div class="terminal" aria-hidden="true">
+          <div class="terminal-bar">
+            <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
+            <span class="ttitle">renewise — vault watcher</span>
+          </div>
+          <div class="terminal-body">
+            <span class="ln"><span class="dim">$</span> renewise watch --vault</span>
+            <span class="ln dim">listening for incoming TON…</span>
+            <span class="ln"></span>
+            <span class="ln"><span class="g">◆</span> payment detected <span class="dim">0.42 TON</span></span>
+            <span class="ln"><span class="g">◆</span> split executed <span class="dim">admin 0.399 · fee 0.021</span></span>
+            <span class="ln"><span class="p">◆</span> access granted <span class="dim">@member → your group</span></span>
+            <span class="ln dim">renewal scheduled · reminder in 27 days</span>
+            <span class="ln"></span>
+            <span class="ln"><span class="dim">$</span> <span class="cursor"></span></span>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- ═════════════════════════ HOW IT WORKS ═════════════════════════ -->
     <section id="how-it-works" class="section-alt">
       <div class="container">
-        <div class="section-head center">
-          <span class="kicker">How Renewise Works</span>
-          <h2>From join request to settlement, fully automated</h2>
-          <p>Renewise runs the entire paid-membership lifecycle for your Telegram group or channel — you set the
-            price, everything else happens on its own.</p>
+        <div class="section-head">
+          <span class="section-index">01 / How it works</span>
+          <div>
+            <h2>From join request to settlement, fully automated</h2>
+            <p>Renewise runs the entire paid-membership lifecycle for your Telegram group or channel — you set the
+              price, everything else happens on its own.</p>
+          </div>
         </div>
 
         <div class="steps">
           <div class="step">
+            <span class="step-no"><b>01</b> / 07</span>
             <h3>Create / connect your community</h3>
             <p>Add the Renewise bot to your Telegram group or channel as an admin, then launch the setup wizard
               from the Mini App or with <code>/createpaywall</code>.</p>
           </div>
           <div class="step">
+            <span class="step-no"><b>02</b> / 07</span>
             <h3>Set membership pricing</h3>
             <p>Choose a USD price and a billing interval — weekly or monthly. Renewise converts it to TON at
               payment time using a live rate, locked in on-chain.</p>
           </div>
           <div class="step">
+            <span class="step-no"><b>03</b> / 07</span>
             <h3>Members pay</h3>
             <p>When someone requests to join, the bot DMs them a payment link — a QR code and a <code>ton://</code>
               deep-link — payable from any TON wallet.</p>
           </div>
           <div class="step">
+            <span class="step-no"><b>04</b> / 07</span>
             <h3>Payment is verified automatically</h3>
             <p>Renewise watches the blockchain, detects the incoming payment, and verifies the exact amount —
               no manual confirmation, no screenshots, no trust required.</p>
           </div>
           <div class="step">
+            <span class="step-no"><b>05</b> / 07</span>
             <h3>Access is granted automatically</h3>
             <p>The join request is approved the moment the on-chain payment is confirmed, and the member
               receives a welcome message.</p>
           </div>
           <div class="step">
+            <span class="step-no"><b>06</b> / 07</span>
             <h3>Renewals are tracked</h3>
             <p>Members get a renewal reminder before expiry. Paying again extends access — the same vault
               address is reused, so renewals are instant.</p>
           </div>
           <div class="step">
+            <span class="step-no"><b>07</b> / 07</span>
             <h3>Expired memberships are removed</h3>
             <p>If a membership lapses after a grace period, Renewise removes the member automatically and
               keeps your community exclusive.</p>
@@ -851,17 +1172,20 @@
     <section id="for-communities">
       <div class="container">
         <div class="section-head">
-          <span class="kicker">For Community Admins</span>
-          <h2>Paid membership management on autopilot</h2>
-          <p>Everything a group or channel admin needs to run a paid community — without a payment processor,
-            a custodian, or a spreadsheet.</p>
+          <span class="section-index">02 / For admins</span>
+          <div>
+            <h2>Paid membership management on autopilot</h2>
+            <p>Everything a group or channel admin needs to run a paid community — without a payment processor,
+              a custodian, or a spreadsheet.</p>
+          </div>
         </div>
 
         <div class="grid-2">
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Membership</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -873,10 +1197,11 @@
               renewals, and removals. Your community stays exclusive without you lifting a finger.</p>
           </div>
 
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Verification</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
@@ -887,10 +1212,11 @@
               deterministic.</p>
           </div>
 
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Access</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
@@ -900,10 +1226,11 @@
               period protects late payers, and expired members are removed automatically.</p>
           </div>
 
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Settlement</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
                 <path d="M16 3H8L4 7h16l-4-4z" />
               </svg>
@@ -920,17 +1247,20 @@
     <section id="for-developers" class="section-alt">
       <div class="container">
         <div class="section-head">
-          <span class="kicker">For Developers</span>
-          <h2>Accept TON payments in your own bot or Mini App</h2>
-          <p>The Renewise Payments API lets Telegram bots and Mini Apps integrate crypto payments — no
-            smart-contract knowledge required.</p>
+          <span class="section-index">03 / For developers</span>
+          <div>
+            <h2>Accept TON payments in your own bot or Mini App</h2>
+            <p>The Renewise Payments API lets Telegram bots and Mini Apps integrate crypto payments — no
+              smart-contract knowledge required.</p>
+          </div>
         </div>
 
         <div class="grid-2">
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Keys</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
               </svg>
             </div>
@@ -939,10 +1269,11 @@
               and mainnet. Test keys use free test TON; live keys settle real funds.</p>
           </div>
 
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Flow</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="16 18 22 12 16 6" />
                 <polyline points="8 6 2 12 8 18" />
               </svg>
@@ -952,10 +1283,11 @@
               Renewise handles the on-chain split and settlement automatically.</p>
           </div>
 
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Webhooks</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                 <polyline points="22,6 12,13 2,6" />
               </svg>
@@ -965,10 +1297,11 @@
               verifiable, with a delivery log and automatic retries.</p>
           </div>
 
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Telegram-native</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -980,7 +1313,7 @@
           </div>
         </div>
 
-        <p style="margin-top:26px">
+        <p class="cta-inline">
           <a class="btn btn-ghost" href="/docs#developer-guide">Read the Developer Guide →</a>
         </p>
       </div>
@@ -989,18 +1322,21 @@
     <!-- ═════════════════════════ NON-CUSTODIAL ═════════════════════════ -->
     <section id="non-custodial">
       <div class="container">
-        <div class="section-head center">
-          <span class="kicker">Non-Custodial by Design</span>
-          <h2>Renewise never holds your funds</h2>
-          <p>Payments are settled by smart contracts on the TON blockchain — not by a Renewise-controlled
-            account.</p>
+        <div class="section-head">
+          <span class="section-index">04 / Non-custodial</span>
+          <div>
+            <h2>Renewise never holds your funds</h2>
+            <p>Payments are settled by smart contracts on the TON blockchain — not by a Renewise-controlled
+              account.</p>
+          </div>
         </div>
 
         <div class="split">
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Architecture</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
             </div>
@@ -1011,10 +1347,11 @@
               the platform wallet, and any overpayment is held in the vault for a trustless refund.</p>
           </div>
 
-          <div class="card">
-            <div class="card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
+          <div class="cell">
+            <span class="cell-tag">Guarantees</span>
+            <div class="cell-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -1029,49 +1366,92 @@
     </section>
 
     <!-- ═════════════════════════ TELEGRAM + TON ═════════════════════════ -->
-    <section id="telegram-ton" class="section-alt">
+    <section id="telegram-ton" class="section-alt" style="padding-bottom:0;border-bottom:none">
       <div class="container">
-        <div class="section-head center">
-          <span class="kicker">Telegram + TON</span>
-          <h2>Built for the Telegram ecosystem</h2>
-          <p>Renewise is a Telegram-native product that uses the TON blockchain's payment infrastructure —
-            the same stack Telegram's Web3 ecosystem runs on.</p>
+        <div class="section-head">
+          <span class="section-index">05 / The stack</span>
+          <div>
+            <h2>Built for the Telegram ecosystem</h2>
+            <p>Renewise is a Telegram-native product that uses the TON blockchain's payment infrastructure —
+              the same stack Telegram's Web3 ecosystem runs on.</p>
+          </div>
         </div>
+      </div>
 
-        <div class="tag-row" style="justify-content:center">
-          <span class="tag">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+      <div class="ticker" aria-label="Technology stack">
+        <div class="ticker-track">
+          <span class="ticker-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M21 2L2 12l6 2 2 7 4-6 5 3z" />
             </svg>
             Telegram Bot API
           </span>
-          <span class="tag">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+          <span class="ticker-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
               stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" />
               <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
             TON blockchain settlement
           </span>
-          <span class="tag">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+          <span class="ticker-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
               stroke-linejoin="round">
               <rect x="4" y="4" width="16" height="16" rx="2" />
               <rect x="9" y="9" width="6" height="6" />
             </svg>
             Tact smart contracts
           </span>
-          <span class="tag">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+          <span class="ticker-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
             Mini App dashboard
           </span>
-          <span class="tag">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+          <span class="ticker-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+            Instant crypto payments
+          </span>
+          <!-- duplicate for seamless loop -->
+          <span class="ticker-item" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 2L2 12l6 2 2 7 4-6 5 3z" />
+            </svg>
+            Telegram Bot API
+          </span>
+          <span class="ticker-item" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+            TON blockchain settlement
+          </span>
+          <span class="ticker-item" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="2" />
+              <rect x="9" y="9" width="6" height="6" />
+            </svg>
+            Tact smart contracts
+          </span>
+          <span class="ticker-item" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            Mini App dashboard
+          </span>
+          <span class="ticker-item" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
@@ -1099,14 +1479,16 @@
     <!-- ═════════════════════════ COMMUNITY / UPDATES ═════════════════════════ -->
     <section id="community" class="section-alt community">
       <div class="container">
-        <div class="section-head center">
-          <span class="kicker">Stay in the loop</span>
-          <h2>Follow Renewise for product updates</h2>
-          <p>New features, improvements, and announcements are posted to the official Renewise channel on
-            Telegram.</p>
+        <div class="section-head">
+          <span class="section-index">06 / Stay in the loop</span>
+          <div>
+            <h2>Follow Renewise for product updates</h2>
+            <p>New features, improvements, and announcements are posted to the official Renewise channel on
+              Telegram.</p>
+          </div>
         </div>
         <a class="btn btn-primary btn-hero-primary" href="https://t.me/renewise" target="_blank" rel="noopener">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 2L2 12l6 2 2 7 4-6 5 3z" />
           </svg>
@@ -1148,6 +1530,33 @@
       menu.addEventListener('click', function (e) {
         if (e.target.tagName === 'A') menu.classList.remove('open');
       });
+    })();
+
+    // Scroll-reveal animations with stagger
+    (function () {
+      if (!('IntersectionObserver' in window)) return;
+      var els = document.querySelectorAll(
+        '.section-head, .cell, .step, .docs-banner, .ticker'
+      );
+      if (!els.length) return;
+      els.forEach(function (el) { el.classList.add('reveal'); });
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          var el = entry.target;
+          var parent = el.parentElement;
+          var delay = 0;
+          if (parent && (parent.classList.contains('steps') ||
+            parent.classList.contains('grid-2') ||
+            parent.classList.contains('split'))) {
+            var siblings = Array.prototype.slice.call(parent.children);
+            delay = Math.min(siblings.indexOf(el), 7) * 70;
+          }
+          setTimeout(function () { el.classList.add('in'); }, delay);
+          io.unobserve(el);
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      els.forEach(function (el) { io.observe(el); });
     })();
   </script>
 </body>
