@@ -4,78 +4,155 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ReneWise Checkout</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+  <!-- Task 1: preconnect + non-blocking font link (replaces render-blocking @import) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════
+       Design tokens — dark (default)
+       Task 2: full token set so light-mode override only swaps values
+    ════════════════════════════════════════════════════════════════════════ */
     :root {
-      --bg-1: #06070c;
-      --bg-2: #0b0f1a;
-      --accent: #0098EA;
-      --accent-soft: rgba(0, 152, 234, 0.12);
-      --text: #f4f7fb;
-      --text-muted: rgba(244, 247, 251, 0.55);
-      --text-faint: rgba(244, 247, 251, 0.35);
-      --border: rgba(255, 255, 255, 0.07);
-      --surface: rgba(22, 27, 40, 0.85);
-      --success: #34d399;
-      --danger: #f87171;
+      --bg-1:         #06070c;
+      --bg-2:         #0b0f1a;
+      --accent:       #0098EA;
+      --accent-soft:  rgba(0, 152, 234, 0.12);
+      --accent-border:rgba(0, 152, 234, 0.22);
+      --text:         #f4f7fb;
+      --text-muted:   rgba(244, 247, 251, 0.60);
+      --text-faint:   rgba(244, 247, 251, 0.38);
+      --border:       rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.18);
+      /* card — solid fallback + glass override below */
+      --card-bg:      rgba(22, 27, 40, 0.92);
+      --card-shadow:  0 1px 0 rgba(255,255,255,0.06) inset, 0 24px 60px rgba(0,0,0,0.55);
+      --card-glow-a:  rgba(0, 152, 234, 0.18);
+      --card-glow-b:  rgba(139, 92, 246, 0.10);
+      --btn-bg:       rgba(255, 255, 255, 0.05);
+      --btn-bg-hover: rgba(255, 255, 255, 0.09);
+      --note-bg:      rgba(0, 152, 234, 0.07);
+      --note-border:  rgba(0, 152, 234, 0.18);
+      --note-text:    rgba(255, 255, 255, 0.62);
+      --note-strong:  rgba(255, 255, 255, 0.92);
+      --testnet-bg:   rgba(139, 92, 246, 0.10);
+      --testnet-border:rgba(139, 92, 246, 0.35);
+      --testnet-text: rgba(255, 255, 255, 0.85);
+      --success:      #34d399;
+      --danger:       #f87171;
+      --success-bg:   rgba(52,  211, 153, 0.12);
+      --success-ring: rgba(52,  211, 153, 0.35);
+      --success-glow: rgba(52,  211, 153, 0.18);
+      --danger-bg:    rgba(248, 113, 113, 0.12);
+      --danger-ring:  rgba(248, 113, 113, 0.35);
+      --danger-glow:  rgba(248, 113, 113, 0.15);
+      --loader-track: rgba(255, 255, 255, 0.10);
+      --amount-grad:  linear-gradient(180deg, #ffffff 20%, rgba(255,255,255,0.72) 100%);
+      --amount-color: #ffffff; /* plain-color fallback for browsers without gradient clip */
+      --crypto-bg:    rgba(255, 255, 255, 0.04);
     }
 
+    /* ─── Task 2: light-mode token overrides ────────────────────────────── */
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-1:          #eef2f8;
+        --bg-2:          #e4eaf4;
+        --text:          #0f172a;
+        --text-muted:    rgba(15, 23, 42, 0.58);
+        --text-faint:    rgba(15, 23, 42, 0.38);
+        --border:        rgba(0, 0, 0, 0.08);
+        --border-hover:  rgba(0, 0, 0, 0.16);
+        --card-bg:       #ffffff;
+        --card-shadow:   0 1px 0 rgba(255,255,255,0.9) inset, 0 8px 32px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.08);
+        --card-glow-a:   rgba(0, 152, 234, 0.07);
+        --card-glow-b:   rgba(139, 92, 246, 0.04);
+        --btn-bg:        rgba(0, 0, 0, 0.04);
+        --btn-bg-hover:  rgba(0, 0, 0, 0.08);
+        --note-bg:       rgba(0, 152, 234, 0.06);
+        --note-border:   rgba(0, 152, 234, 0.20);
+        --note-text:     rgba(15, 23, 42, 0.65);
+        --note-strong:   #0f172a;
+        --testnet-bg:    rgba(139, 92, 246, 0.07);
+        --testnet-border:rgba(139, 92, 246, 0.28);
+        --testnet-text:  #3b0764;
+        --success:       #059669;
+        --danger:        #dc2626;
+        --success-bg:    rgba(5,   150, 105, 0.08);
+        --success-ring:  rgba(5,   150, 105, 0.30);
+        --success-glow:  rgba(5,   150, 105, 0.10);
+        --danger-bg:     rgba(220, 38,  38,  0.08);
+        --danger-ring:   rgba(220, 38,  38,  0.28);
+        --danger-glow:   rgba(220, 38,  38,  0.10);
+        --loader-track:  rgba(0, 0, 0, 0.10);
+        --amount-grad:   linear-gradient(180deg, #0f172a 20%, rgba(15,23,42,0.72) 100%);
+        --amount-color:  #0f172a;
+        --crypto-bg:     rgba(0, 0, 0, 0.04);
+      }
+    }
+
+    /* ─── Reset ─────────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html { height: 100%; }
 
+    /* Task 5: 100dvh for mobile browser chrome; safe-area bottom padding */
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       color: var(--text);
       min-height: 100%;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 32px 16px 48px;
+      /* Task 3: reduce top padding so amount is higher on small viewports */
+      padding: 20px 16px calc(36px + env(safe-area-inset-bottom, 0px));
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       background:
-        radial-gradient(ellipse 90% 55% at 50% -10%, rgba(0, 152, 234, 0.16) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 85% 110%, rgba(99, 102, 241, 0.10) 0%, transparent 65%),
+        radial-gradient(ellipse 90% 55% at 50% -10%, rgba(0,152,234,0.14) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 110%, rgba(99,102,241,0.08) 0%, transparent 65%),
         linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
       background-attachment: fixed;
     }
 
     /* ── Card ─────────────────────────────────────────────────────────────── */
     .checkout-card {
-      background: var(--surface);
+      /* Task 5: solid background always present — glass is progressive enhancement */
+      background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 28px;
+      border-radius: 24px;
       width: 100%;
-      max-width: 410px;
-      padding: 30px 26px 26px;
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.06) inset,
-        0 24px 60px rgba(0, 0, 0, 0.55);
+      max-width: 390px;
+      /* Task 3: tighter padding to keep amount above fold */
+      padding: 20px 20px 22px;
+      box-shadow: var(--card-shadow);
       text-align: center;
       position: relative;
       isolation: isolate;
       overflow: hidden;
     }
 
+    /* Task 5: glass only where supported — backdrop must be on element with solid fallback */
     @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-      .checkout-card {
-        background: rgba(22, 27, 40, 0.62);
-        -webkit-backdrop-filter: blur(24px);
-        backdrop-filter: blur(24px);
+      @media (prefers-color-scheme: dark), (prefers-color-scheme: no-preference) {
+        .checkout-card {
+          background: rgba(22, 27, 40, 0.72);
+          -webkit-backdrop-filter: blur(28px) saturate(160%);
+          backdrop-filter: blur(28px) saturate(160%);
+        }
       }
     }
 
-    /* soft aurora glow at the top of the card */
     .card-glow {
       position: absolute;
       inset: 0;
       border-radius: inherit;
       background:
-        radial-gradient(ellipse 70% 34% at 50% 0%, rgba(0, 152, 234, 0.18) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 20% at 15% 8%, rgba(139, 92, 246, 0.10) 0%, transparent 70%);
+        radial-gradient(ellipse 70% 34% at 50% 0%, var(--card-glow-a) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 20% at 15% 8%, var(--card-glow-b) 0%, transparent 70%);
       pointer-events: none;
       z-index: 0;
     }
@@ -87,27 +164,30 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 26px;
+      /* Task 3: reduce gap below header */
+      margin-bottom: 14px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 8px;
     }
 
     .brand-dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 12px rgba(0, 152, 234, 0.9);
+      box-shadow: 0 0 10px rgba(0, 152, 234, 0.85);
+      /* Task 5: will-change prevents Safari compositing flicker on animated elements */
+      will-change: transform, opacity;
       animation: pulse 2.4s ease-in-out infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%      { opacity: 0.55; transform: scale(0.82); }
+      0%, 100% { opacity: 1;    transform: scale(1);    }
+      50%       { opacity: 0.5; transform: scale(0.80); }
     }
 
     .merchant-name {
@@ -119,10 +199,10 @@
 
     .order-ref {
       font-size: 11px;
-      font-family: 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
+      font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
       color: var(--accent);
       background: var(--accent-soft);
-      border: 1px solid rgba(0, 152, 234, 0.22);
+      border: 1px solid var(--accent-border);
       padding: 4px 10px;
       border-radius: 999px;
       max-width: 150px;
@@ -133,23 +213,35 @@
 
     /* ── Amount ───────────────────────────────────────────────────────────── */
     .amount-label {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1.4px;
       color: var(--text-faint);
-      margin-bottom: 6px;
+      /* Task 3: reduce gap */
+      margin-bottom: 4px;
     }
 
     .amount-usd {
-      font-size: 46px;
+      font-size: 44px;
       font-weight: 800;
       letter-spacing: -1.5px;
       line-height: 1.05;
-      background: linear-gradient(180deg, #ffffff 20%, rgba(255, 255, 255, 0.72) 100%);
+      /* Task 5: plain color first — gradient clip is progressive enhancement */
+      color: var(--amount-color);
+      background: var(--amount-grad);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
+    }
+
+    /* Task 5: browsers that don't support background-clip:text get the plain color */
+    @supports not (-webkit-background-clip: text) {
+      .amount-usd {
+        background: none;
+        -webkit-text-fill-color: unset;
+        color: var(--amount-color);
+      }
     }
 
     .amount-crypto {
@@ -159,10 +251,10 @@
       font-size: 13px;
       font-weight: 500;
       color: var(--text-muted);
-      margin-top: 8px;
-      background: rgba(255, 255, 255, 0.04);
+      margin-top: 6px;
+      background: var(--crypto-bg);
       border: 1px solid var(--border);
-      padding: 5px 14px;
+      padding: 4px 13px;
       border-radius: 999px;
     }
 
@@ -171,6 +263,7 @@
       height: 6px;
       border-radius: 50%;
       background: var(--accent);
+      flex-shrink: 0;
     }
 
     /* ── Fee breakdown ────────────────────────────────────────────────────── */
@@ -180,7 +273,8 @@
       gap: 4px 16px;
       font-size: 11.5px;
       color: var(--text-faint);
-      margin: 14px auto 0;
+      /* Task 3: tighter margin */
+      margin: 10px auto 0;
       text-align: left;
       width: fit-content;
     }
@@ -193,13 +287,13 @@
     /* ── Testnet banner ───────────────────────────────────────────────────── */
     #testnet-banner {
       display: none;
-      background: rgba(139, 92, 246, 0.10);
-      border: 1px solid rgba(139, 92, 246, 0.35);
-      border-radius: 14px;
-      padding: 11px 14px;
-      margin-bottom: 18px;
+      background: var(--testnet-bg);
+      border: 1px solid var(--testnet-border);
+      border-radius: 12px;
+      padding: 10px 13px;
+      margin-bottom: 14px;
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.85);
+      color: var(--testnet-text);
       line-height: 1.55;
       text-align: left;
     }
@@ -208,19 +302,20 @@
 
     /* ── QR ───────────────────────────────────────────────────────────────── */
     .qr-wrap {
-      margin: 24px 0 6px;
+      /* Task 3: tighter margin above QR */
+      margin: 16px 0 5px;
       display: flex;
       justify-content: center;
     }
 
     .qr-container {
       background: #ffffff;
-      padding: 16px;
-      border-radius: 20px;
+      padding: 14px;
+      border-radius: 18px;
       box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.12),
-        0 12px 32px rgba(0, 0, 0, 0.45),
-        0 0 44px rgba(0, 152, 234, 0.14);
+        0 10px 28px rgba(0, 0, 0, 0.40),
+        0 0 36px rgba(0, 152, 234, 0.12);
     }
 
     #qrcode img, #qrcode canvas { display: block; margin: 0 auto; border-radius: 4px; }
@@ -228,7 +323,7 @@
     .qr-caption {
       font-size: 11.5px;
       color: var(--text-faint);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     /* ── Wallet buttons ───────────────────────────────────────────────────── */
@@ -238,22 +333,23 @@
       text-transform: uppercase;
       letter-spacing: 1.6px;
       color: var(--text-faint);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
+    /* Task 4: grid always produces balanced rows */
     .wallets-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
     }
 
     .wallet-btn {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.045);
+      gap: 9px;
+      padding: 11px 13px;
+      border-radius: 14px;
+      background: var(--btn-bg);
       border: 1px solid var(--border);
       color: var(--text);
       font-size: 13px;
@@ -261,90 +357,104 @@
       font-family: inherit;
       text-decoration: none;
       cursor: pointer;
-      transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+      transition: background 0.16s ease, border-color 0.16s ease, transform 0.10s ease;
       -webkit-tap-highlight-color: transparent;
+      /* Task 4: prevent text overflow on narrow buttons */
+      min-width: 0;
+      overflow: hidden;
     }
 
+    .wallet-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
     .wallet-btn:hover {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.16);
+      background: var(--btn-bg-hover);
+      border-color: var(--border-hover);
     }
 
     .wallet-btn:active { transform: scale(0.97); }
 
+    /* Primary — full width */
     .wallet-btn.primary {
       grid-column: 1 / -1;
       background: linear-gradient(135deg, #0098EA 0%, #0077c8 100%);
       border: none;
-      box-shadow: 0 10px 26px rgba(0, 152, 234, 0.35);
+      box-shadow: 0 8px 22px rgba(0, 152, 234, 0.35);
       justify-content: center;
-      padding: 14px;
+      padding: 13px;
       font-size: 14px;
     }
 
     .wallet-btn.primary:hover {
-      background: linear-gradient(135deg, #1aa5f2 0%, #0084da 100%);
+      background: linear-gradient(135deg, #18a6f4 0%, #0082d8 100%);
+    }
+
+    .wallet-btn.primary:active { transform: scale(0.98); }
+
+    /* Task 4: if a secondary button ends up alone (odd count), make it full-width */
+    .wallet-btn.full {
+      grid-column: 1 / -1;
+      justify-content: center;
     }
 
     .wallet-btn .wallet-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
+      width: 26px;
+      height: 26px;
+      /* Task 4: consistent corner radius on all icons */
+      border-radius: 10px;
       flex-shrink: 0;
     }
 
-    .wallet-btn.primary .wallet-icon { width: 24px; height: 24px; }
+    .wallet-btn.primary .wallet-icon { width: 22px; height: 22px; }
 
-    /* ── Info note (wallet warning) ───────────────────────────────────────── */
+    /* ── Info note ────────────────────────────────────────────────────────── */
     .info-note {
-      background: rgba(0, 152, 234, 0.07);
-      border: 1px solid rgba(0, 152, 234, 0.18);
-      border-radius: 14px;
-      padding: 11px 13px;
-      margin-bottom: 14px;
+      background: var(--note-bg);
+      border: 1px solid var(--note-border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
       font-size: 11.5px;
-      color: rgba(255, 255, 255, 0.62);
+      color: var(--note-text);
       text-align: left;
-      line-height: 1.55;
+      line-height: 1.5;
       display: flex;
-      gap: 9px;
+      gap: 8px;
       align-items: flex-start;
     }
 
-    .info-note svg { flex-shrink: 0; margin-top: 2px; color: var(--accent); }
+    .info-note svg { flex-shrink: 0; margin-top: 1px; color: var(--accent); }
 
-    .info-note strong { color: rgba(255, 255, 255, 0.9); font-weight: 600; }
+    .info-note strong { color: var(--note-strong); font-weight: 600; }
 
     /* ── I've Paid button ─────────────────────────────────────────────────── */
     .ive-paid-btn {
       width: 100%;
-      margin-top: 16px;
-      padding: 15px;
-      border: none;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
       color: var(--text);
       font-size: 14px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
-      transition: background 0.18s ease, transform 0.12s ease;
+      transition: background 0.16s ease, transform 0.10s ease;
       -webkit-tap-highlight-color: transparent;
     }
 
-    .ive-paid-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.10); }
+    .ive-paid-btn:hover:not(:disabled) { background: var(--btn-bg-hover); }
     .ive-paid-btn:active:not(:disabled) { transform: scale(0.98); }
-    .ive-paid-btn:disabled { opacity: 0.55; cursor: wait; }
+    .ive-paid-btn:disabled { opacity: 0.50; cursor: wait; }
 
     .polling-note {
-      margin-top: 12px;
+      margin-top: 10px;
       font-size: 11.5px;
       color: var(--text-faint);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 7px;
+      gap: 6px;
       min-height: 16px;
     }
 
@@ -361,7 +471,7 @@
     /* ── Status screens ───────────────────────────────────────────────────── */
     .status-screen {
       display: none;
-      padding: 24px 0 12px;
+      padding: 28px 0 14px;
       flex-direction: column;
       align-items: center;
     }
@@ -379,18 +489,18 @@
     }
 
     .status-success {
-      background: rgba(52, 211, 153, 0.12);
-      border: 1px solid rgba(52, 211, 153, 0.35);
+      background: var(--success-bg);
+      border: 1px solid var(--success-ring);
       color: var(--success);
-      box-shadow: 0 0 40px rgba(52, 211, 153, 0.18);
+      box-shadow: 0 0 40px var(--success-glow);
       animation: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .status-error {
-      background: rgba(248, 113, 113, 0.12);
-      border: 1px solid rgba(248, 113, 113, 0.35);
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-ring);
       color: var(--danger);
-      box-shadow: 0 0 40px rgba(248, 113, 113, 0.15);
+      box-shadow: 0 0 40px var(--danger-glow);
       animation: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
@@ -404,6 +514,7 @@
       font-weight: 700;
       letter-spacing: -0.4px;
       margin-bottom: 8px;
+      color: var(--text);
     }
 
     .status-screen p {
@@ -415,23 +526,25 @@
 
     /* ── Loader ───────────────────────────────────────────────────────────── */
     .loader {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       margin: 40px auto;
       border-radius: 50%;
-      border: 3px solid rgba(255, 255, 255, 0.10);
+      border: 3px solid var(--loader-track);
       border-top-color: var(--accent);
-      animation: spin 0.9s linear infinite;
+      /* Task 5: hint GPU layer to avoid jank on Safari */
+      will-change: transform;
+      animation: spin 0.85s linear infinite;
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Footer ───────────────────────────────────────────────────────────── */
     .powered-by {
-      margin-top: 22px;
+      margin-top: 18px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       font-size: 11.5px;
       color: var(--text-faint);
     }
@@ -439,7 +552,7 @@
     .powered-by img {
       height: 20px;
       border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     }
 
     .powered-by strong {
@@ -582,7 +695,7 @@
           <img class="wallet-icon"
                src="https://tonkeeper.com/assets/tonconnect-icon.png"
                alt="Tonkeeper"
-               width="24" height="24">
+               width="22" height="22">
           <span>Open Tonkeeper</span>
         </a>
 
@@ -591,7 +704,7 @@
           <img class="wallet-icon"
                src="https://wallet.tg/images/logo-288.png"
                alt="Telegram Wallet"
-               width="28" height="28">
+               width="26" height="26">
           <span>Telegram Wallet</span>
         </a>
 
@@ -600,16 +713,16 @@
           <img class="wallet-icon"
                src="https://mytonwallet.io/img/icon-256x256.png"
                alt="MyTonWallet"
-               width="28" height="28">
+               width="26" height="26">
           <span>MyTonWallet</span>
         </a>
 
-        <!-- Tonhub -->
-        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
+        <!-- Tonhub — .full makes it span both columns so no orphaned button -->
+        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn full">
           <img class="wallet-icon"
                src="https://tonhub.com/tonconnect_logo.png"
                alt="Tonhub"
-               width="28" height="28">
+               width="26" height="26">
           <span>Tonhub</span>
         </a>
       `;

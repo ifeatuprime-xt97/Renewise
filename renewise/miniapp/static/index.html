@@ -5835,8 +5835,10 @@ http_response_code(200);</pre>
         WebApp.HapticFeedback.notificationOccurred('success');
 
         if (data.is_new && data.webhook_secret) {
-          // Only show the secret on first-time setup
-          alert(`Webhook configured!\n\nSigning secret (save this now shown once):\n\n${data.webhook_secret}`);
+          // Only show the secret on first-time setup — in the copyable modal,
+          // never in an alert() where the text cannot be selected/copied.
+          await showSecretKeyModal('🔗 Webhook Signing Secret — Save This Now', data.webhook_secret,
+            'Webhook configured! This is the only time the signing secret will be shown. Copy it before closing.');
         } else {
           WebApp.showAlert('Webhook URL updated. Your existing signing secret is unchanged.');
         }
@@ -5859,7 +5861,8 @@ http_response_code(200);</pre>
         const data = await r.json();
 
         WebApp.HapticFeedback.notificationOccurred('success');
-        alert(`New signing secret (save this now shown once):\n\n${data.webhook_secret}`);
+        await showSecretKeyModal('🔗 New Webhook Signing Secret — Save This Now', data.webhook_secret,
+          'Secret rotated. The old secret is now invalid — copy the new one before closing.');
 
         await _renderDevApp(currentPlatformId);
       } catch (e) {
