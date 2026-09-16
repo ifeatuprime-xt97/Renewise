@@ -186,6 +186,34 @@ function verifySignature(rawBody, header, secret) {
 
 Return `HTTP 200` within 5 seconds to acknowledge receipt. Any non-2xx response or timeout is recorded as a failed delivery and visible in your Dashboard → **Webhook → Recent Deliveries**.
 
+### Testing Webhooks Locally
+
+Renewise must be able to reach your endpoint over the internet — `localhost` URLs will always fail because the server cannot reach your machine. During development, use a tunnel tool to expose your local port publicly.
+
+**Using ngrok (recommended):**
+
+```bash
+ngrok http 4555
+# ngrok prints something like:
+# Forwarding  https://abc123.ngrok-free.dev -> http://localhost:4555
+```
+
+Then register the **left-hand HTTPS URL with the `/webhook` path appended** — not the full forwarding line, not the bare domain:
+
+```
+✅  https://abc123.ngrok-free.dev/webhook   ← register this
+❌  https://abc123.ngrok-free.dev           ← bare domain, no path — will 404
+❌  https://abc123.ngrok-free.dev -> http://localhost:4555  ← the whole ngrok line, not a URL
+```
+
+Enter this URL in the Dashboard → **Webhook → Edit**. The webhook secret shown after saving must match your `WEBHOOK_SECRET` environment variable — if you re-register, the secret rotates and you must update your local config.
+
+> Free ngrok accounts get a new random URL each time ngrok restarts. Re-register the new URL in the Dashboard after each restart, or use a paid ngrok plan with a fixed domain.
+
+**Verifying the tunnel is working:**
+
+Check your ngrok terminal — the **Connections** counter must increment when a payment fires. If it stays at `0`, the URL stored in the Dashboard is wrong (re-register). If ngrok shows a hit but your app returns non-200, check your signature verification and that your handler is mounted at exactly `/webhook`.
+
 ---
 
 ## 6. Rotating Keys

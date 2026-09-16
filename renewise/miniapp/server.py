@@ -1595,8 +1595,15 @@ async def api_developer_set_webhook(
     telegram_user_id = user["id"]
     await verify_platform_ownership(platform_id, telegram_user_id)
 
-    if not body.url.startswith("https://") and not body.url.startswith("http://"):
-        raise HTTPException(status_code=400, detail="Invalid URL format")
+    from urllib.parse import urlparse as _urlparse
+    _parsed = _urlparse(body.url)
+    if _parsed.scheme not in ("http", "https") or not _parsed.netloc:
+        raise HTTPException(status_code=400, detail="Invalid URL format: must be a full http(s) URL")
+    if not _parsed.path or _parsed.path == "/":
+        raise HTTPException(
+            status_code=400,
+            detail="Webhook URL must include a path, e.g. https://yourdomain.com/webhook"
+        )
 
     result = await platform_svc.set_platform_webhook(platform_id, body.url, telegram_user_id)
     return {"ok": True, "webhook_secret": result["secret"], "is_new": result["is_new"]}

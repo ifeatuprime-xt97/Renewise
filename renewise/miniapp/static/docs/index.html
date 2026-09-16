@@ -1505,6 +1505,26 @@ function verifySignature(rawBody, header, secret) {
         <p>Return <code>HTTP 200</code> within 5 seconds to acknowledge receipt. Any non-2xx response or
           timeout is recorded as a failed delivery and visible in your Dashboard → Webhook → Recent
           Deliveries. The webhook signing secret can be rotated without changing the URL.</p>
+
+        <h3>Testing Webhooks Locally</h3>
+        <p>Renewise must reach your endpoint over the public internet — <code>localhost</code> URLs will
+          always fail because the server cannot reach your machine. During development, use a tunnel tool
+          to expose your local port publicly.</p>
+        <p><strong>Using ngrok:</strong></p>
+        <pre><code>ngrok http 4555
+# Forwarding  https://abc123.ngrok-free.dev -&gt; http://localhost:4555</code></pre>
+        <p>Register the <strong>left-hand HTTPS URL with your handler path appended</strong>. Common mistakes:</p>
+        <ul>
+          <li>✅ <code>https://abc123.ngrok-free.dev/webhook</code> — correct</li>
+          <li>❌ <code>https://abc123.ngrok-free.dev</code> — bare domain with no path, will 404</li>
+          <li>❌ <code>https://abc123.ngrok-free.dev -&gt; http://localhost:4555</code> — the whole ngrok line, not a URL</li>
+        </ul>
+        <p>Enter the correct URL in Dashboard → <strong>Webhook → Edit</strong>. If you re-register, the
+          secret rotates — update your <code>WEBHOOK_SECRET</code> env var to match.</p>
+        <p><strong>Verify it's working:</strong> the ngrok terminal's <em>Connections</em> counter must
+          increment when a payment fires. If it stays at <code>0</code>, the URL stored in the Dashboard
+          is wrong. If ngrok shows a hit but your app returns non-200, check your signature verification
+          and that your handler is mounted at exactly the registered path.</p>
       </section>
 
       <!-- ── SECURITY ─────────────────────────────────────────── -->
