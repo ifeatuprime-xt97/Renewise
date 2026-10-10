@@ -1318,7 +1318,7 @@ async def api_developer_debug_charges(
         # Check which vaults are being watched
         from renewise.db.queries import get_vaults_to_watch
         watched_vaults = await get_vaults_to_watch()
-        watched_vault_addresses = {addr for addr, _net in watched_vaults}
+        watched_vault_addresses = {addr for addr, _net, _ts in watched_vaults}
 
         results = []
         for c in charges:
@@ -2102,8 +2102,11 @@ async def api_group_delete(
     chat_title = group.get("chat_title") or f"Chat {group['telegram_chat_id']}"
     telegram_chat_id = group["telegram_chat_id"]
 
-    # i. Pause immediately
-    await queries.set_group_status(group_id, "paused")
+    # i. Suspend immediately — closes race window with watcher (join_request
+    #    declines requests for suspended groups, preventing a pending subscription
+    #    from activating between this and the cascade delete).
+    await queries.set_group_status(group_id, "suspended")
+    await queries.cancel_pending_group_subscriptions(group_id)
 
     # ii. Notify subscribers before leaving
     subscribers = await queries.get_active_subscribers(group_id)

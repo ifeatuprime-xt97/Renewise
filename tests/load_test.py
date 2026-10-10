@@ -97,7 +97,7 @@ async def _setup_test_data(n: int) -> list[dict]:
         tg_chat_id  = 8_000_000 + i
 
         user_db_id  = await upsert_user(tg_user_id)
-        group_db_id = await upsert_group(tg_chat_id, admin_telegram_id=1)
+        group_db_id = await upsert_group(tg_chat_id, admin_telegram_id=1, initial_status="active")
 
         # Set price on the group row
         import aiosqlite

@@ -66,7 +66,7 @@ async def main():
     TEST_ADMIN_ID = 9999999
     TEST_USER_ID  = 9999998
 
-    group_id = await queries.upsert_group(TEST_CHAT_ID, TEST_ADMIN_ID)
+    group_id = await queries.upsert_group(TEST_CHAT_ID, TEST_ADMIN_ID, initial_status="active")
     user_id  = await queries.upsert_user(TEST_USER_ID)
 
     sub_id = await queries.create_subscription(

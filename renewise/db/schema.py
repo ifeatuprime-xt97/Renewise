@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS groups (
     buyer_fee_bps         INTEGER,
     admin_fee_bps         INTEGER,
     invite_link           TEXT,
-    status                TEXT NOT NULL DEFAULT 'active'
+    status                TEXT NOT NULL DEFAULT 'suspended'
                           CHECK(status IN ('active','paused','frozen','suspended')),
     created_at            DATETIME DEFAULT CURRENT_TIMESTAMP
 )
@@ -89,6 +89,7 @@ CREATE_PROCESSED_TX = """
 CREATE TABLE IF NOT EXISTS processed_tx_hashes (
     tx_hash          TEXT PRIMARY KEY,
     sub_id           INTEGER,
+    is_partial       INTEGER NOT NULL DEFAULT 0,
     processed_at     DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 """
@@ -301,7 +302,7 @@ async def init_db() -> None:
                 buyer_fee_bps         INTEGER,
                 admin_fee_bps         INTEGER,
                 invite_link           TEXT,
-                status                TEXT NOT NULL DEFAULT 'active'
+                status                TEXT NOT NULL DEFAULT 'suspended'
                                       CHECK(status IN ('active','paused','frozen','suspended')),
                 created_at            TIMESTAMPTZ DEFAULT NOW()
             )
@@ -364,6 +365,7 @@ async def init_db() -> None:
             CREATE TABLE IF NOT EXISTS processed_tx_hashes (
                 tx_hash      TEXT PRIMARY KEY,
                 sub_id       INTEGER,
+                is_partial   INTEGER NOT NULL DEFAULT 0,
                 processed_at TIMESTAMPTZ DEFAULT NOW()
             )
             """,
@@ -606,6 +608,8 @@ async def init_db() -> None:
                 "DO $$ BEGIN ALTER TABLE users ADD COLUMN terms_accepted_at TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 # processed_tx_hashes — subscription link
                 "DO $$ BEGIN ALTER TABLE processed_tx_hashes ADD COLUMN sub_id INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # processed_tx_hashes — partial payment flag (BUG-01 fix)
+                "DO $$ BEGIN ALTER TABLE processed_tx_hashes ADD COLUMN is_partial INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 ]
                 for mig in pg_migrations:
                     await db.execute(mig)
@@ -682,6 +686,8 @@ async def init_db() -> None:
             "ALTER TABLE groups ADD COLUMN chat_type TEXT NOT NULL DEFAULT 'group'",
             # ── sub_id on processed_tx_hashes (Fix 1 — schema/watcher drift) ──
             "ALTER TABLE processed_tx_hashes ADD COLUMN sub_id INTEGER",
+            # ── is_partial on processed_tx_hashes (BUG-01 fix) ────────────────
+            "ALTER TABLE processed_tx_hashes ADD COLUMN is_partial INTEGER NOT NULL DEFAULT 0",
             # ── Platform columns (may be missing on pre-platform DBs) ──────────
             "ALTER TABLE platforms ADD COLUMN wallet_address TEXT",
             "ALTER TABLE platforms ADD COLUMN wallet_passcode_hash TEXT",

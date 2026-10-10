@@ -297,8 +297,9 @@ async def update_platform_wallet(platform_id: int, wallet_address: str, actor_te
         current_wallet = row["wallet_address"]
         existing_hash = row["wallet_passcode_hash"]
         
-        # Friction only applies to CHANGING an existing wallet
-        if current_wallet:
+        # Friction applies to CHANGING an existing wallet OR setting a wallet
+        # when a passcode is already configured (user explicitly locked setup).
+        if current_wallet or existing_hash:
             # Hard lockout check comes first — even a correct passcode is
             # rejected while locked (prevents continued online guessing).
             remaining = _remaining_lockout_seconds(row["passcode_locked_until"])

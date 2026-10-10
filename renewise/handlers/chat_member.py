@@ -35,20 +35,18 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
 
     # ── Bot gained admin ──────────────────────────────────────────────────────
     if isinstance(new_status, ChatMemberAdministrator):
-        # Always upsert the group so it exists in the DB, writing chat_type
-        # so channels and groups are distinguished from the very first event.
-        await queries.upsert_group(
-            telegram_chat_id=chat.id,
-            admin_telegram_id=adder.id,
-            chat_type=chat.type,
-        )
-
         # Capture the exact permissions granted
         can_invite   = bool(getattr(new_status, "can_invite_users",  False))
         can_manage   = bool(getattr(new_status, "can_manage_chat",   False))
         can_post     = bool(getattr(new_status, "can_post_messages", False))
 
-        # Persist for Step 2 "Done Check Now" detection
+        # Check whether all required permissions are present BEFORE touching the groups table.
+        # We do NOT upsert_group here when permissions are missing — the group must not appear
+        # in "My Networks" until the paywall setup wizard completes successfully.
+        required = _required_perms(chat.type)
+        missing  = [p for p in required if not getattr(new_status, p, False)]
+
+        # Persist the grant event regardless — used by "Done Check Now" detection
         await queries.record_admin_grant(
             telegram_chat_id=chat.id,
             chat_title=chat.title or str(chat.id),
@@ -59,23 +57,25 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
             can_post_messages=can_post,
         )
 
-        # Check whether all required permissions are present
-        required = _required_perms(chat.type)
-        missing  = [p for p in required if not getattr(new_status, p, False)]
-
         if missing:
+            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
             perm_labels = {
-                "can_invite_users":  "Invite Users via Link",
-                "can_manage_chat":   "Manage Chat",
+                "can_invite_users":  "Add Users / Process Join Requests",
+                "can_manage_chat":   "Ban Users",
                 "can_post_messages": "Post Messages",
             }
             missing_str = "\n".join(f"  ❌ {perm_labels.get(p, p)}" for p in missing)
             msg = (
                 f"⚠️ I've been added as admin to <b>{chat.title}</b>, "
-                f"but I'm missing required permissions:\n"
+                f"but I'm missing required permissions:\n\n"
                 f"{missing_str}\n\n"
-                "Please grant these and then tap <b>✅ Done Check Now</b> in our chat again."
+                "Please grant these permissions in the group/channel settings, "
+                "then tap <b>✅ I've Done It</b> below."
             )
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ I've Done It", callback_data="pw:check_now")],
+                [InlineKeyboardButton("🔙 Cancel Setup",  callback_data="pw:back_to_start")],
+            ])
             paywall_msg_id = ctx.application.user_data.get(adder.id, {}).get("paywall_msg_id")
             success = False
             if paywall_msg_id:
@@ -84,17 +84,34 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
                         chat_id=adder.id,
                         message_id=paywall_msg_id,
                         text=msg,
-                        parse_mode="HTML"
+                        parse_mode="HTML",
+                        reply_markup=kb,
                     )
                     success = True
                 except Exception:
                     pass
             if not success:
                 try:
-                    await ctx.bot.send_message(adder.id, msg, parse_mode="HTML")
+                    await ctx.bot.send_message(adder.id, msg, parse_mode="HTML", reply_markup=kb)
                 except Exception as e:
                     log.warning("Could not DM adder %s: %s", adder.id, e)
         else:
+            # All permissions present — now it's safe to record the group in the DB.
+            # We defer upsert_group until here so that an incomplete admin grant
+            # (missing permissions) never creates an 'active' group that would
+            # appear in "My Networks" before setup is complete.
+            await queries.upsert_group(
+                telegram_chat_id=chat.id,
+                admin_telegram_id=adder.id,
+                chat_type=chat.type,
+            )
+
+            # Check if this is a re-add to a previously frozen group.
+            # If so, the group stays 'frozen' until activate_paywall() runs.
+            # DM note tells the admin they need to re-run the setup wizard.
+            existing_group = await queries.get_group_by_chat_id(chat.id)
+            is_reactivation = existing_group and existing_group["status"] == "frozen"
+
             # Fetch the grant we just recorded so we have its DB id
             from renewise.db.queries import get_recent_admin_grants
             grants = await get_recent_admin_grants(adder.id, minutes=2)
@@ -119,7 +136,12 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
                 ])
                 msg = (
                     f"✅ I'm now admin in <b>{chat.title}</b> with all required permissions!\n\n"
-                    f"Is this the right {chat_kind} to set up a paywall for?\n\n"
+                    + (
+                        "⚠️ This group was previously paused. Completing the setup wizard below "
+                        "will reactivate it and resume accepting new members.\n\n"
+                        if is_reactivation else ""
+                    )
+                    + f"Is this the right {chat_kind} to set up a paywall for?\n\n"
                     f"📌 <b>{chat.title}</b> ({kind_label})"
                 )
                 paywall_msg_id = ctx.application.user_data.get(adder.id, {}).get("paywall_msg_id")
@@ -178,7 +200,7 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
         # If the group is already paused, this removal was triggered by the
         # intentional delete flow (pause → leave_chat). Skip freeze and the
         # warning DM — the admin already knows what's happening.
-        if group and group["status"] == "paused":
+        if group and group["status"] in ("paused", "suspended"):
             return
 
         await queries.freeze_group(chat.id)

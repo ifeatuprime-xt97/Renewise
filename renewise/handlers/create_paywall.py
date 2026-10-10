@@ -104,8 +104,8 @@ def _grant_has_perms(grant, chat_type: str) -> list[str]:
 
 def _instructions_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("✅ Done Check Now", callback_data="pw:check_now")],
-        [InlineKeyboardButton("🔙 Back",             callback_data="pw:back_to_start")],
+        [InlineKeyboardButton("✅ I've Done It", callback_data="pw:check_now")],
+        [InlineKeyboardButton("🔙 Back",          callback_data="pw:back_to_start")],
     ])
 
 
@@ -226,7 +226,7 @@ async def cmd_create_paywall(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
     return STEP_INSTRUCTIONS
 
 
-# ── Step 1 callback: user says "Done Check Now" ─────────────────────────────
+# ── Step 1 callback: user says "I've Done It" ────────────────────────────────
 
 async def cb_check_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     """Query recent_admin_grants for this user (last 15 min) and branch."""
@@ -284,7 +284,8 @@ async def _present_single_grant(query, ctx, grant) -> int:
         msg = await query.edit_message_text(
             f"\u26a0\ufe0f I found <b>{title}</b> ({kind}), but I'm missing required permissions:\n\n"
             f"{missing_str}\n\n"
-            "Please update my permissions in the group/channel settings and try again.",
+            "Please update my permissions in the group/channel settings, "
+            "then tap <b>✅ I've Done It</b> below.",
             parse_mode="HTML",
             reply_markup=_instructions_kb(),
         )
@@ -354,10 +355,17 @@ async def cb_grant_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
         await query.edit_message_text(
             f"\u26a0\ufe0f I found <b>{title}</b> ({kind}), but I'm still missing required permissions:\n\n"
             f"{missing_str}\n\n"
-            "Please grant them and tap <b>\u2705 Done Check Now</b> in our DM.",
+            "Please grant them and tap <b>\u2705 I've Done It</b> below.",
             parse_mode="HTML",
             reply_markup=_instructions_kb(),
         )
+        # Seed wizard state so that when the user taps "I've Done It" → cb_check_now
+        # → _present_single_grant, subsequent steps have the context they need.
+        ctx.user_data[_W] = {}
+        _w(ctx)["grant_id"]   = grant["id"]
+        _w(ctx)["chat_id"]    = grant["telegram_chat_id"]
+        _w(ctx)["chat_title"] = title
+        _w(ctx)["chat_type"]  = grant["chat_type"]
         return STEP_INSTRUCTIONS
 
     # Set fresh wizard state and jump directly to fee transparency screen

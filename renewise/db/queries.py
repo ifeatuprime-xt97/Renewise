@@ -64,25 +64,36 @@ async def upsert_group(
     telegram_chat_id: int,
     admin_telegram_id: int,
     chat_type: str | None = None,
+    initial_status: str = "suspended",
 ) -> int:
+    """
+    Insert or update a group row.
+
+    On INSERT: uses `initial_status` (default 'suspended') so a newly-added
+    group does not appear in "My Networks" until activate_paywall() sets it
+    to 'active'.  This prevents zero-price groups showing up mid-wizard.
+
+    On CONFLICT (group already exists): never resets status — the admin may be
+    re-adding the bot to a frozen group, which activate_paywall() will restore.
+    """
     async with _db() as db:
         if chat_type:
             row = await db.fetchrow(
-                "INSERT INTO groups (telegram_chat_id, admin_telegram_id, chat_type) "
-                "VALUES ($1,$2,$3) "
+                "INSERT INTO groups (telegram_chat_id, admin_telegram_id, chat_type, status) "
+                "VALUES ($1,$2,$3,$4) "
                 "ON CONFLICT(telegram_chat_id) DO UPDATE SET "
                 "admin_telegram_id=EXCLUDED.admin_telegram_id, "
                 "chat_type=EXCLUDED.chat_type "
                 "RETURNING id",
-                telegram_chat_id, admin_telegram_id, chat_type,
+                telegram_chat_id, admin_telegram_id, chat_type, initial_status,
             )
         else:
             row = await db.fetchrow(
-                "INSERT INTO groups (telegram_chat_id, admin_telegram_id) VALUES ($1,$2) "
+                "INSERT INTO groups (telegram_chat_id, admin_telegram_id, status) VALUES ($1,$2,$3) "
                 "ON CONFLICT(telegram_chat_id) DO UPDATE SET "
                 "admin_telegram_id=EXCLUDED.admin_telegram_id "
                 "RETURNING id",
-                telegram_chat_id, admin_telegram_id,
+                telegram_chat_id, admin_telegram_id, initial_status,
             )
         return row["id"]
 
@@ -102,7 +113,7 @@ async def get_group_by_chat_id(telegram_chat_id: int) -> Row | None:
 async def get_groups_for_admin(admin_telegram_id: int) -> list[Row]:
     async with _db() as db:
         return await db.fetch(
-            "SELECT * FROM groups WHERE admin_telegram_id=$1 AND status != 'frozen'",
+            "SELECT * FROM groups WHERE admin_telegram_id=$1 AND status IN ('active', 'paused')",
             admin_telegram_id,
         )
 
@@ -663,6 +674,20 @@ async def cancel_subscription(user_id: int, group_id: int) -> None:
         await db.execute(
             "UPDATE subscriptions SET status='cancelled' WHERE user_id=$1 AND group_id=$2",
             user_id, group_id,
+        )
+
+
+async def cancel_pending_group_subscriptions(group_id: int) -> None:
+    """
+    Cancel all pending subscriptions for a group before deletion.
+    Called during the delete flow to close the race window where the watcher
+    could activate a pending subscription between set_group_status and delete_group.
+    """
+    async with _db() as db:
+        await db.execute(
+            "UPDATE subscriptions SET status='cancelled' "
+            "WHERE group_id=$1 AND status='pending'",
+            group_id,
         )
 
 

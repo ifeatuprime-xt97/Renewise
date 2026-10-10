@@ -219,9 +219,20 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
-    payment_url = pending["payment_url"]   # https://app.tonkeeper.com/... (Telegram button)
-    vault_addr  = pending["vault_addr"]
-    amount_ton  = pending["amount_ton"]
+    payment_url = pending.get("payment_url")
+    vault_addr  = pending.get("vault_addr")
+    amount_ton  = pending.get("amount_ton")
+
+    # payment_url is required — if missing the session predates the deep-link
+    # flow and the data is stale. Treat it the same as no pending data.
+    if not payment_url or not vault_addr or not amount_ton:
+        await query.edit_message_text(
+            "⚠️ Session expired. Please request to join again.\n\n"
+            "Your previous request has been cancelled so you can re-request immediately.",
+            parse_mode="HTML",
+        )
+        ctx.bot_data.get("pending_joins", {}).pop(user.id, None)
+        return
 
     # payment_url is already ton:// with &init= use directly for the QR
     ton_qr_url = payment_url

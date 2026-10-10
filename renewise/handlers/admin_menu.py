@@ -483,8 +483,6 @@ async def _schedule_wallet_change(
     activates_at = now_utc + timedelta(hours=WALLET_CHANGE_DELAY_HOURS)
     activates_at_str = activates_at.strftime("%Y-%m-%d %H:%M:%S")
 
-    superseded = await queries.get_superseded_pending_wallet_change(group["id"], admin_id)
-
     change_id = await queries.create_pending_wallet_change(
         group_id=group["id"],
         old_wallet=old_wallet,
@@ -493,6 +491,9 @@ async def _schedule_wallet_change(
         activates_at=activates_at_str,
     )
 
+    # Fetch the row that create_pending_wallet_change just cancelled (if any).
+    # create_pending_wallet_change cancels all prior pending rows for this group,
+    # so the most-recently-cancelled row IS the superseded one.
     superseded_row = await queries.get_superseded_pending_wallet_change(group["id"], admin_id)
     if superseded_row and superseded_row["id"] != change_id:
         await queries.audit(
@@ -1008,7 +1009,12 @@ async def msg_support(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(
         "✅ Your message has been sent to our support team. We'll get back to you shortly!",
     )
-    await _show_network_picker(update, ctx)
+    # Only show the network picker if the admin has active/paused networks.
+    # If they came from the paywall setup wizard (no active network yet),
+    # showing "no networks" right after a support submission is confusing.
+    _groups = await queries.get_groups_for_admin(update.effective_user.id)
+    if _groups:
+        await _show_network_picker(update, ctx)
     return ConversationHandler.END
 
 def build_support_handler() -> ConversationHandler:
@@ -1089,7 +1095,9 @@ async def cb_members_page(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
     if not await _verify_admin_access(update.effective_user.id, gid):
         await query.edit_message_text("❌ Unauthorized.")
         return
-    await _send_members_page(update, ctx, gid, 0, int(page_str))
+    g = await queries.get_group_by_id(gid)
+    chat_id_tg = g["telegram_chat_id"] if g else 0
+    await _send_members_page(update, ctx, gid, chat_id_tg, int(page_str))
 
 
 async def cb_member_view(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1461,8 +1469,14 @@ async def msg_delete_confirm_name(update: Update, ctx: ContextTypes.DEFAULT_TYPE
 
     admin_id = update.effective_user.id
 
-    # ── i. Pause immediately ──────────────────────────────────────────────────
-    await queries.set_group_status(group["id"], "paused")
+    # ── i. Suspend immediately (not just pause) ───────────────────────────────
+    # Using 'suspended' rather than 'paused' closes the race window with the
+    # watcher: join_request.py declines requests for suspended groups, so no
+    # new subscription can activate between this line and delete_group().
+    await queries.set_group_status(group["id"], "suspended")
+    # Cancel any pending subscriptions so the watcher cannot activate them
+    # during the window between status change and the cascade delete below.
+    await queries.cancel_pending_group_subscriptions(group["id"])
 
     # ── iv. Notify active/pending subscribers BEFORE leaving ─────────────────
     subscribers = await queries.get_active_subscribers(group["id"])
