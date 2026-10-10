@@ -38,7 +38,7 @@ services:
       - key: MIN_CONFIRMATIONS
         value: 1
       - key: POLL_INTERVAL_SECONDS
-        value: 15
+        value: 60
       - key: WEBHOOK_SECRET
         sync: false
       - key: SUPPORT_USERNAME

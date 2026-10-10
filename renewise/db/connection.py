@@ -213,9 +213,10 @@ async def _get_pool() -> Any:
             import asyncpg
             _pg_pool = await asyncpg.create_pool(
                 DATABASE_URL,
-                min_size=2,
-                max_size=10,
+                min_size=0,            # Never hold idle connections — Neon bills per connection-second
+                max_size=5,            # Free tier doesn't need more than 5 concurrent
                 command_timeout=30,
+                max_inactive_connection_lifetime=60,  # Release connections idle >60s back to Neon
                 # Neon requires SSL; the connection string already includes
                 # sslmode=require so no extra ssl= kwarg needed.
             )

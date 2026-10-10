@@ -372,12 +372,13 @@ async def run_scheduler() -> None:
     scheduler.start()
     log.info("Scheduler started (renewal_reminder @:05, grace_enforcement @:15)")
 
-    # Run both jobs immediately on startup so we don't wait up to an hour
-    await renewal_reminder_job()
-    await grace_enforcement_job()
-    await stale_pending_cleanup_job()
-    await apply_wallet_changes_job()
-    await pending_send_refund_retry_job()
+    # Startup job runs intentionally skipped to avoid hammering Neon on every
+    # cold start / Render restart. Each cron job will fire at its next scheduled
+    # interval (renewal_reminder @:05, grace_enforcement @:15, etc.).
+    # On a free-tier Render + Neon stack restarts are frequent — running 5 DB
+    # jobs on every boot burned a significant chunk of compute hours for no
+    # operational benefit.
+    log.info("Scheduler running — jobs will fire at their first cron interval.")
 
     # Keep running until interrupted.
     # Use asyncio.get_running_loop() (not the deprecated get_event_loop()) and

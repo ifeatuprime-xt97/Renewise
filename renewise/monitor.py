@@ -52,7 +52,7 @@ log = logging.getLogger(__name__)
 # ── Tunables ──────────────────────────────────────────────────────────────────
 
 # How often the main monitor loop runs
-MONITOR_INTERVAL_SECONDS: int = 300          # 5 minutes
+MONITOR_INTERVAL_SECONDS: int = 900          # 15 minutes — reduced from 5 to save Neon compute on free tier
 
 # TonCenter: alert after this many consecutive failures
 TONCENTER_FAILURE_THRESHOLD: int = 3

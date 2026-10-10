@@ -774,7 +774,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                     await _apply_wallet_changes_inprocess(app)
                     _last_wallet_apply = now
 
-                if now - _last_charge_expire >= 300:
+                if now - _last_charge_expire >= 1800:  # every 30 min — reduced from 5 min to save DB compute
                     await _expire_stale_charges_inprocess()
                     _last_charge_expire = now
 
