@@ -30,7 +30,7 @@
 
   <style>
     /* ─────────────────────────────────────────────
-       Renewise public identity — docs
+       Renewise public identity docs
        Type: Space Grotesk / Inter / IBM Plex Mono
        Surface: deep navy, hairline rules, one accent
     ───────────────────────────────────────────── */
@@ -235,7 +235,7 @@
     }
 
     /* ════════════════════════════════════════════
-       LAYOUT — sidebar + content
+       LAYOUT sidebar + content
     ════════════════════════════════════════════ */
     .layout {
       display: grid;
@@ -1507,7 +1507,7 @@ function verifySignature(rawBody, header, secret) {
           Deliveries. The webhook signing secret can be rotated without changing the URL.</p>
 
         <h3>Testing Webhooks Locally</h3>
-        <p>Renewise must reach your endpoint over the public internet — <code>localhost</code> URLs will
+        <p>Renewise must reach your endpoint over the public internet <code>localhost</code> URLs will
           always fail because the server cannot reach your machine. During development, use a tunnel tool
           to expose your local port publicly.</p>
         <p><strong>Using ngrok:</strong></p>
@@ -1515,12 +1515,12 @@ function verifySignature(rawBody, header, secret) {
 # Forwarding  https://abc123.ngrok-free.dev -&gt; http://localhost:4555</code></pre>
         <p>Register the <strong>left-hand HTTPS URL with your handler path appended</strong>. Common mistakes:</p>
         <ul>
-          <li>✅ <code>https://abc123.ngrok-free.dev/webhook</code> — correct</li>
-          <li>❌ <code>https://abc123.ngrok-free.dev</code> — bare domain with no path, will 404</li>
-          <li>❌ <code>https://abc123.ngrok-free.dev -&gt; http://localhost:4555</code> — the whole ngrok line, not a URL</li>
+          <li>✅ <code>https://abc123.ngrok-free.dev/webhook</code> correct</li>
+          <li>❌ <code>https://abc123.ngrok-free.dev</code> bare domain with no path, will 404</li>
+          <li>❌ <code>https://abc123.ngrok-free.dev -&gt; http://localhost:4555</code> the whole ngrok line, not a URL</li>
         </ul>
         <p>Enter the correct URL in Dashboard → <strong>Webhook → Edit</strong>. If you re-register, the
-          secret rotates — update your <code>WEBHOOK_SECRET</code> env var to match.</p>
+          secret rotates update your <code>WEBHOOK_SECRET</code> env var to match.</p>
         <p><strong>Verify it's working:</strong> the ngrok terminal's <em>Connections</em> counter must
           increment when a payment fires. If it stays at <code>0</code>, the URL stored in the Dashboard
           is wrong. If ngrok shows a hit but your app returns non-200, check your signature verification
@@ -1545,7 +1545,7 @@ function verifySignature(rawBody, header, secret) {
         <h3>Non-custodial architecture</h3>
         <ul>
           <li>Renewise cannot freeze, reverse, or redirect a completed on-chain payment.</li>
-          <li>The trigger wallet — the only hot wallet in the system — holds a small gas reserve, topped up as needed. If
+          <li>The trigger wallet the only hot wallet in the system holds a small gas reserve, topped up as needed. If
             compromised, an attacker can only trigger refunds the contract has already validated; they
             cannot redirect funds or drain any other balance.</li>
         </ul>

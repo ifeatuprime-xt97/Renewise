@@ -142,7 +142,7 @@ async def main():
             seqno = -1  # uninitialized
 
         if seqno == -1:
-            print("Deployer wallet is uninitialized — deploying it via send_init_external()...")
+            print("Deployer wallet is uninitialized deploying it via send_init_external()...")
             await wallet.send_init_external()
             print("Wallet deploy tx sent. Waiting 15 seconds...")
             await asyncio.sleep(15)

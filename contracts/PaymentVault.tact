@@ -14,7 +14,7 @@ message PaymentLog {
 }
 
 // Sent by trigger_wallet to forward held overage to the buyer.
-// Gated: only trigger_wallet may send this — all other senders are rejected.
+// Gated: only trigger_wallet may send this all other senders are rejected.
 message Refund {
     recipient: Address;
 }
@@ -34,7 +34,7 @@ contract PaymentVault {
     overage_held:    Int as coins;  // nanoTON held for refund (0 if no overpayment)
     accumulated_paid: Int as coins; // nanoTON received so far towards the required amount
 
-    // 0.05 TON gas reserve — must match MIN_GAS_RESERVE_NANO in vault.py
+    // 0.05 TON gas reserve must match MIN_GAS_RESERVE_NANO in vault.py
     // Higher than the old 0.02 to cover the potential Refund{} send path.
     const MIN_GAS_RESERVE: Int = ton("0.05");
 
@@ -103,7 +103,7 @@ contract PaymentVault {
 
         // 1. Admin share.
         // Mode 0 (regular): forward fees are deducted from the message value itself.
-        // This is the correct pattern when splitting a fixed incoming amount — the
+        // This is the correct pattern when splitting a fixed incoming amount the
         // contract does NOT need extra balance beyond what arrived. SendPayGasSeparately
         // (flag +1) is wrong here because it requires the contract to have additional
         // pre-existing balance to cover fwd_fees, which doesn't exist on first deploy,
@@ -116,7 +116,7 @@ contract PaymentVault {
             body:   emptyCell()
         });
 
-        // 2. Platform share — same pattern.
+        // 2. Platform share same pattern.
         send(SendParameters{
             to:     self.platform_wallet,
             value:  platform_amount,
@@ -128,7 +128,7 @@ contract PaymentVault {
         // 3. Log message to off-chain watcher (includes overage so watcher can
         //    detect and record the refund amount without reading chain state).
         //    A small non-zero value (0.001 TON) is attached so the message can
-        //    cover its own forward fees — sending value=0 causes an action_fine
+        //    cover its own forward fees sending value=0 causes an action_fine
         //    when skipped, which cascades to fail subsequent sends silently.
         send(SendParameters{
             to:    self.log_address,
@@ -147,7 +147,7 @@ contract PaymentVault {
         // NOTE: No SendRemainingBalance sweep. The gas dust stays in the vault
         // to fund the future Refund{} message call if overage > 0.
         // If overage == 0 the dust is negligible (< 0.012 TON) and remains
-        // locked in the vault permanently — an acceptable trade-off.
+        // locked in the vault permanently an acceptable trade-off.
     }
 
     // ── Refund handler ────────────────────────────────────────────────────────

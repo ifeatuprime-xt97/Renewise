@@ -41,12 +41,12 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
         can_post     = bool(getattr(new_status, "can_post_messages", False))
 
         # Check whether all required permissions are present BEFORE touching the groups table.
-        # We do NOT upsert_group here when permissions are missing — the group must not appear
+        # We do NOT upsert_group here when permissions are missing the group must not appear
         # in "My Networks" until the paywall setup wizard completes successfully.
         required = _required_perms(chat.type)
         missing  = [p for p in required if not getattr(new_status, p, False)]
 
-        # Persist the grant event regardless — used by "Done Check Now" detection
+        # Persist the grant event regardless used by "Done Check Now" detection
         await queries.record_admin_grant(
             telegram_chat_id=chat.id,
             chat_title=chat.title or str(chat.id),
@@ -96,7 +96,7 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
                 except Exception as e:
                     log.warning("Could not DM adder %s: %s", adder.id, e)
         else:
-            # All permissions present — now it's safe to record the group in the DB.
+            # All permissions present now it's safe to record the group in the DB.
             # We defer upsert_group until here so that an incomplete admin grant
             # (missing permissions) never creates an 'active' group that would
             # appear in "My Networks" before setup is complete.
@@ -199,7 +199,7 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
 
         # If the group is already paused, this removal was triggered by the
         # intentional delete flow (pause → leave_chat). Skip freeze and the
-        # warning DM — the admin already knows what's happening.
+        # warning DM the admin already knows what's happening.
         if group and group["status"] in ("paused", "suspended"):
             return
 

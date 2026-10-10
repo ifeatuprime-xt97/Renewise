@@ -119,7 +119,7 @@ async def main():
 
         # Check if the deployer wallet contract is itself deployed yet.
         # A freshly funded wallet has never sent a tx, so its V4R2 contract code
-        # is not on-chain — get_seqno() will fail with exit code -256.
+        # is not on-chain get_seqno() will fail with exit code -256.
         # Fix: send a tiny self-transfer (seqno=0) to deploy the wallet first.
         try:
             seqno = await wallet.get_seqno()
@@ -127,7 +127,7 @@ async def main():
             seqno = -1  # uninitialized
 
         if seqno == -1:
-            print("Deployer wallet is uninitialized — deploying it via send_init_external()...")
+            print("Deployer wallet is uninitialized deploying it via send_init_external()...")
             # send_init_external() is pytoniq's built-in method for deploying a fresh
             # wallet: it builds an external msg with the wallet's state_init + seqno=0
             # and broadcasts it so the V4R2 contract code lands on-chain.

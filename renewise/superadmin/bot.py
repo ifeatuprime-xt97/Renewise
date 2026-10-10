@@ -1,22 +1,22 @@
 """
 renewise Super-Admin Bot
 ========================
-Authorised users only — access_control middleware silently blocks everyone else.
+Authorised users only access_control middleware silently blocks everyone else.
 
 Available commands
 ------------------
-/start          — main menu
-/overview       — platform stats
-/groups         — paginated group list
-/killswitch     — global kill switch
-/lookup <term>  — search by TX hash or Telegram user ID
-/msgadmin <id> <text>  — DM an admin via the main bot
-/announce       — send a public announcement to all users / admins / active subs
-/txfeed         — platform-wide transaction feed (filterable by status)
-/revenue        — revenue breakdown (all-time, MoM, by status)
-/pendingrefunds — overpayment refund queue
-/auditlog       — recent platform audit events
-/help           — command list
+/start          main menu
+/overview       platform stats
+/groups         paginated group list
+/killswitch     global kill switch
+/lookup <term>  search by TX hash or Telegram user ID
+/msgadmin <id> <text>  DM an admin via the main bot
+/announce       send a public announcement to all users / admins / active subs
+/txfeed         platform-wide transaction feed (filterable by status)
+/revenue        revenue breakdown (all-time, MoM, by status)
+/pendingrefunds overpayment refund queue
+/auditlog       recent platform audit events
+/help           command list
 """
 import html
 import logging
@@ -57,7 +57,7 @@ log = logging.getLogger(__name__)
 # ── Middleware ────────────────────────────────────────────────────────────────
 
 async def access_control(update: Update, context):
-    """Block every update from non-allowlisted users — silently, no reply."""
+    """Block every update from non-allowlisted users silently, no reply."""
     user_id = update.effective_user.id if update.effective_user else None
     if user_id not in ALLOWED_SUPERADMIN_IDS:
         raise ApplicationHandlerStop()
@@ -82,10 +82,10 @@ def _trigger_health(balance: float | None, configured: bool) -> tuple[str, str]:
     if balance is None:
         return "❓", "Balance unavailable (TonCenter error)"
     if balance < _TW_CRITICAL_TON:
-        return "🔴", f"CRITICAL — {balance:.4f} GRAM"
+        return "🔴", f"CRITICAL {balance:.4f} GRAM"
     if balance < _TW_LOW_TON:
-        return "🟡", f"Low — {balance:.4f} GRAM"
-    return "🟢", f"Healthy — {balance:.4f} GRAM"
+        return "🟡", f"Low {balance:.4f} GRAM"
+    return "🟢", f"Healthy {balance:.4f} GRAM"
 
 
 async def _guard_group_exists(update: Update, group_id: int) -> bool:
@@ -196,18 +196,18 @@ async def start_cmd(update: Update, context):
 async def help_cmd(update: Update, context):
     text = (
         "🛡 <b>Super-Admin Commands</b>\n\n"
-        "/start — main menu\n"
-        "/overview — platform stats\n"
-        "/groups — paginated group list\n"
-        "/killswitch — global kill switch\n"
-        "/lookup &lt;tx_hash|user_id&gt; — search\n"
-        "/msgadmin &lt;user_id&gt; &lt;text&gt; — DM admin via main bot\n"
-        "/announce — send public announcement\n"
-        "/txfeed — platform-wide TX feed\n"
-        "/revenue — revenue breakdown\n"
-        "/pendingrefunds — overpayment refund queue\n"
-        "/auditlog — recent audit events\n"
-        "/help — this list"
+        "/start main menu\n"
+        "/overview platform stats\n"
+        "/groups paginated group list\n"
+        "/killswitch global kill switch\n"
+        "/lookup &lt;tx_hash|user_id&gt; search\n"
+        "/msgadmin &lt;user_id&gt; &lt;text&gt; DM admin via main bot\n"
+        "/announce send public announcement\n"
+        "/txfeed platform-wide TX feed\n"
+        "/revenue revenue breakdown\n"
+        "/pendingrefunds overpayment refund queue\n"
+        "/auditlog recent audit events\n"
+        "/help this list"
     )
     await update.message.reply_text(text, parse_mode="HTML")
 
@@ -237,12 +237,12 @@ async def show_overview(update: Update, context):
         can_cover = int(tw_balance / _GAS_PER_REFUND)
         gas_note  = f"Can cover ~{can_cover} more refund{'s' if can_cover != 1 else ''} at 0.01 GRAM/each"
     elif tw_configured:
-        gas_note = "⚠️ Cannot cover any refunds — top up required!"
+        gas_note = "⚠️ Cannot cover any refunds top up required!"
     else:
         gas_note = "Manual refunds only (TRIGGER_WALLET not set)"
 
     msg = (
-        "📊 <b>Platform Overview — This Month</b>\n\n"
+        "📊 <b>Platform Overview This Month</b>\n\n"
         f"<b>Kill Switch:</b>    {ks_status}\n"
         f"<b>GMV:</b>            ${stats['monthly_gmv']:.2f} USD\n"
         f"<b>Fee Revenue:</b>    ${fee_rev:.2f} USD\n"
@@ -320,7 +320,7 @@ async def show_platform_details(update: Update, context, platform_id: int):
     pk_test = p.get('publishable_key_test', 'N/A')
     pk_live = p.get('publishable_key_live') or 'Not generated'
 
-    # Fee display — show per-platform override if set, else "global default"
+    # Fee display show per-platform override if set, else "global default"
     global_buyer, global_admin = await get_global_fees()
     p_buyer = p.get("buyer_fee_bps")
     p_admin = p.get("admin_fee_bps")
@@ -328,7 +328,7 @@ async def show_platform_details(update: Update, context, platform_id: int):
     admin_disp = f"{p_admin} bps ({p_admin/100:.2f}%) ✏️" if p_admin is not None else f"{global_admin} bps (global default)"
 
     text = (
-        f"📡 <b>Platform #{p['id']} — {name}</b>\n\n"
+        f"📡 <b>Platform #{p['id']} {name}</b>\n\n"
         f"<b>Owner ID:</b>  <code>{p['owner_telegram_id']}</code>\n"
         f"<b>Test Key:</b>   <code>{pk_test}</code>\n"
         f"<b>Live Key:</b>   <code>{pk_live}</code>\n"
@@ -376,9 +376,9 @@ async def show_platform_charges(update: Update, context, platform_id: int, page:
     }
 
     if not rows:
-        text = f"📋 <b>Platform #{platform_id} — Transactions</b>\n\nNo charges yet."
+        text = f"📋 <b>Platform #{platform_id} Transactions</b>\n\nNo charges yet."
     else:
-        lines = [f"📋 <b>Platform #{platform_id} — Transactions</b>  ({page + 1}/{total_pages})\n"]
+        lines = [f"📋 <b>Platform #{platform_id} Transactions</b>  ({page + 1}/{total_pages})\n"]
         for r in rows:
             icon    = status_icon.get(r["status"], "•")
             amt     = f"${r['amount_usd_cents'] / 100:.2f}"
@@ -473,7 +473,7 @@ async def show_group_details(update: Update, context, group_id: int):
     price_cents = g.get("price_usd_cents") or 0
     title = html.escape(g.get("chat_title") or str(g["telegram_chat_id"]))
     text = (
-        f"📝 <b>Group #{g['id']} — {title}</b>\n\n"
+        f"📝 <b>Group #{g['id']} {title}</b>\n\n"
         f"<b>Chat ID:</b>   <code>{g['telegram_chat_id']}</code>\n"
         f"<b>Admin ID:</b>  <code>{g['admin_telegram_id']}</code>\n"
         f"<b>Price:</b>     ${price_cents / 100:.2f} USD / {g.get('billing_interval_days', 30)}d\n"
@@ -512,9 +512,9 @@ async def show_sa_payment_history(update: Update, context, group_id: int, page: 
 
     icon_map = {"active": "✅", "comped": "🎁", "expired": "⏰", "cancelled": "❌", "pending": "⏳"}
     if not rows:
-        text = f"💳 <b>Payment History — Group {group_id}</b>\n\nNo records."
+        text = f"💳 <b>Payment History Group {group_id}</b>\n\nNo records."
     else:
-        lines = [f"💳 <b>Payment History — Group {group_id}</b> ({page + 1}/{total_pages})\n"]
+        lines = [f"💳 <b>Payment History Group {group_id}</b> ({page + 1}/{total_pages})\n"]
         for r in rows:
             name  = html.escape(r["first_name"] or "Unknown")
             uname = f" (@{html.escape(r['username'])})" if r["username"] else ""
@@ -623,7 +623,7 @@ async def show_user_detail(update: Update, context, telegram_user_id: int):
 
     ban_line = ""
     if user.get("is_banned"):
-        ban_line = f"\n⛔ <b>BANNED</b> — {html.escape(user.get('ban_reason') or 'N/A')}"
+        ban_line = f"\n⛔ <b>BANNED</b> {html.escape(user.get('ban_reason') or 'N/A')}"
     elif user.get("is_suspended"):
         ban_line = "\n⏸ <b>SUSPENDED</b>"
 
@@ -659,7 +659,7 @@ async def show_user_detail(update: Update, context, telegram_user_id: int):
         total_admin_rev = sum(float(g.get("revenue_usd") or 0) for g in user["admin_groups"])
         total_admin_subs = sum(int(g.get("active_subs") or 0) for g in user["admin_groups"])
         text += (
-            f"\n👑 <b>Admin — {len(user['admin_groups'])} group(s)</b>\n"
+            f"\n👑 <b>Admin {len(user['admin_groups'])} group(s)</b>\n"
             f"  Active members: <b>{total_admin_subs}</b>  |  "
             f"Revenue: <b>${total_admin_rev:.2f} USD</b>\n"
         )
@@ -679,7 +679,7 @@ async def show_user_detail(update: Update, context, telegram_user_id: int):
         total_dev_rev = sum((p.get("revenue_cents") or 0) for p in user["dev_platforms"]) / 100
         total_dev_charges = sum(int(p.get("completed_charges") or 0) for p in user["dev_platforms"])
         text += (
-            f"\n🔌 <b>Developer — {len(user['dev_platforms'])} platform(s)</b>\n"
+            f"\n🔌 <b>Developer {len(user['dev_platforms'])} platform(s)</b>\n"
             f"  Completed charges: <b>{total_dev_charges}</b>  |  "
             f"Revenue: <b>${total_dev_rev:.2f} USD</b>\n"
         )
@@ -731,9 +731,9 @@ async def show_announce_prompt(update: Update, context):
     text = (
         "📣 <b>Send Public Announcement</b>\n\n"
         "Choose who receives this message:\n\n"
-        "• <b>All Users</b> — every registered user\n"
-        "• <b>All Admins</b> — group admins only\n"
-        "• <b>Active Subscribers</b> — users with an active subscription\n"
+        "• <b>All Users</b> every registered user\n"
+        "• <b>All Admins</b> group admins only\n"
+        "• <b>Active Subscribers</b> users with an active subscription\n"
     )
     kb = [
         [InlineKeyboardButton("👥 All Users",           callback_data="sa_announce_audience_all_users")],
@@ -782,7 +782,7 @@ async def announce_text_handler(update: Update, context):
         return
     text = update.message.text.strip()
     if not text:
-        await update.message.reply_text("❌ Empty message — announcement cancelled.")
+        await update.message.reply_text("❌ Empty message announcement cancelled.")
         return
 
     audience_labels = {
@@ -798,7 +798,7 @@ async def announce_text_handler(update: Update, context):
     context.user_data["announce_confirm_audience"] = audience
 
     await update.message.reply_text(
-        f"📣 <b>Preview — {label}</b>\n\n"
+        f"📣 <b>Preview {label}</b>\n\n"
         f"<blockquote>{html.escape(preview)}</blockquote>\n\n"
         "Send this to all recipients?",
         parse_mode="HTML",
@@ -915,9 +915,9 @@ async def show_tx_feed(update: Update, context, status_filter: str, page: int):
 
     label = _TX_STATUS_LABELS.get(status_filter, status_filter)
     if not rows:
-        text = f"💹 <b>TX Feed — {label}</b>\n\nNo transactions found."
+        text = f"💹 <b>TX Feed {label}</b>\n\nNo transactions found."
     else:
-        lines = [f"💹 <b>TX Feed — {label}</b>  ({page + 1}/{total_pages})\n"]
+        lines = [f"💹 <b>TX Feed {label}</b>  ({page + 1}/{total_pages})\n"]
         icon_map = {"active": "✅", "comped": "🎁", "expired": "⏰",
                     "cancelled": "❌", "pending": "⏳"}
         for r in rows:
@@ -944,7 +944,7 @@ async def show_tx_feed(update: Update, context, status_filter: str, page: int):
     # Break filter buttons into two rows of 3
     kb = [filter_row[:3], filter_row[3:]]
 
-    # Per-TX recheck buttons (only for paywall rows — developer charge rechecks
+    # Per-TX recheck buttons (only for paywall rows developer charge rechecks
     # are not supported since they use a different processing path)
     for r in rows:
         if r.get("tx_hash") and r.get("sub_id") is not None:
@@ -1026,7 +1026,7 @@ async def show_admin_detail(update: Update, context, admin_tg_id: int):
     uname = f" (@{html.escape(detail['username'])})" if detail.get("username") else ""
     ban_line = ""
     if detail["is_banned"]:
-        ban_line = f"\n⛔ <b>BANNED</b> — reason: {html.escape(detail.get('ban_reason') or 'N/A')}"
+        ban_line = f"\n⛔ <b>BANNED</b> reason: {html.escape(detail.get('ban_reason') or 'N/A')}"
     elif detail["is_suspended"]:
         ban_line = "\n⏸ <b>SUSPENDED</b>"
 
@@ -1083,7 +1083,7 @@ async def show_admin_detail(update: Update, context, admin_tg_id: int):
 # ── Force-cancel / force-expire subscription (from payment history) ───────────
 
 async def show_sub_actions(update: Update, context, sub_id: int, group_id: int):
-    """Actions panel for a single subscription — force cancel or expire."""
+    """Actions panel for a single subscription force cancel or expire."""
     from renewise.db.queries import get_payment_detail
     sub = await get_payment_detail(sub_id)
     if not sub:
@@ -1184,7 +1184,7 @@ async def show_trigger_status(update: Update, context):
             f"{'s' if can_cover != 1 else ''}</b>."
         )
     elif tw_configured:
-        gas_note  = "⚠️ <b>Cannot cover any refunds — please top up immediately!</b>"
+        gas_note  = "⚠️ <b>Cannot cover any refunds please top up immediately!</b>"
     else:
         gas_note  = "Automatic refunds are <b>disabled</b>. Set TRIGGER_WALLET and TRIGGER_MNEMONIC."
 
@@ -1287,7 +1287,7 @@ async def pending_refunds_cmd(update: Update, context):
 # ── Audit log viewer ──────────────────────────────────────────────────────────
 
 async def show_audit_page(update: Update, context, page: int):
-    """Paginated platform-wide audit log — read-only."""
+    """Paginated platform-wide audit log read-only."""
     from renewise.db.connection import _db as _conn
     LIMIT = 8
     offset = page * LIMIT
@@ -1339,7 +1339,7 @@ async def auditlog_cmd(update: Update, context):
 # ── Pending wallet changes ────────────────────────────────────────────────────
 
 async def show_pending_wallet_changes(update: Update, context):
-    """All pending wallet changes across all groups — superadmin read + cancel view."""
+    """All pending wallet changes across all groups superadmin read + cancel view."""
     from renewise.db.connection import _db as _conn
 
     async with _conn() as db:
@@ -1849,7 +1849,7 @@ async def _reply_text_handler(update: Update, context):
 
 
 async def _multiplex_text_handler(update: Update, context):
-    """Single TEXT handler — delegates to whichever multi-step flow is active."""
+    """Single TEXT handler delegates to whichever multi-step flow is active."""
     if "fee_group_id" in context.user_data:
         await fee_text_handler(update, context)
     elif "fee_platform_id" in context.user_data:
@@ -1868,7 +1868,7 @@ async def _multiplex_text_handler(update: Update, context):
         await lookup_text_handler(update, context)
     elif "announce_pending" in context.user_data:
         await announce_text_handler(update, context)
-    # else: no active flow — ignore
+    # else: no active flow ignore
 
 # ── Master callback handler ───────────────────────────────────────────────────
 
@@ -1960,7 +1960,7 @@ async def sa_callback_handler(update: Update, context):
                 pass
             await show_platforms_page(update, context, 0)
         else:
-            await query.answer("Platform not found — may have already been deleted.", show_alert=True)
+            await query.answer("Platform not found may have already been deleted.", show_alert=True)
             await show_platforms_page(update, context, 0)
 
     elif data.startswith("sa_platform_delete_"):
@@ -1974,7 +1974,7 @@ async def sa_callback_handler(update: Update, context):
         name = html.escape(p["platform_name"])
         charges = p.get("total_charges", 0)
         await query.edit_message_text(
-            f"🗑 <b>Delete Platform #{pid} — {name}?</b>\n\n"
+            f"🗑 <b>Delete Platform #{pid} {name}?</b>\n\n"
             f"This will permanently remove:\n"
             f"• All API keys (test and live)\n"
             f"• All {charges} charge record(s)\n"
@@ -2175,7 +2175,7 @@ async def sa_callback_handler(update: Update, context):
         }
         label = audience_labels.get(audience, audience)
         await query.edit_message_text(
-            f"📣 <b>Announcement Sent — {label}</b>\n\n"
+            f"📣 <b>Announcement Sent {label}</b>\n\n"
             f"✅ Delivered: <b>{sent}</b>\n"
             f"❌ Failed:    <b>{fail}</b>",
             parse_mode="HTML",
@@ -2204,7 +2204,7 @@ async def sa_callback_handler(update: Update, context):
         await query.answer()
 
     # ── reply to support ticket (from support ticket button) ─────────────────
-    # NOTE: sa_reply_ MUST come before sa_r_ — "sa_reply_123" starts with
+    # NOTE: sa_reply_ MUST come before sa_r_ "sa_reply_123" starts with
     # "sa_r_" and would be misrouted to the TX-recheck branch otherwise.
     elif data.startswith("sa_reply_"):
         target_user_id = int(data.split("_")[2])
@@ -2241,7 +2241,7 @@ async def sa_callback_handler(update: Update, context):
         await _process_payment_inprocess(context.application, vault_address, tx_hash, amount_nano)
         status = await get_tx_processed_status(tx_hash)
         if status and status.get("sub_id"):
-            await query.message.reply_text(f"✅ Recheck <code>{html.escape(tx_hash[:16])}…</code>: <b>verified</b> — sub activated.", parse_mode="HTML")
+            await query.message.reply_text(f"✅ Recheck <code>{html.escape(tx_hash[:16])}…</code>: <b>verified</b> sub activated.", parse_mode="HTML")
         elif status:
             await query.message.reply_text(f"❌ Recheck <code>{html.escape(tx_hash[:16])}…</code>: <b>failed</b> (insufficient amount?).", parse_mode="HTML")
         else:
@@ -2507,7 +2507,7 @@ async def sa_callback_handler(update: Update, context):
             cur = g["price_usd_cents"] if g else 0
             context.user_data["sa_price_group_id"] = gid
             await query.edit_message_text(
-                f"💰 <b>Update Price — Group {gid}</b>\n\n"
+                f"💰 <b>Update Price Group {gid}</b>\n\n"
                 f"Current: <b>${(cur or 0) / 100:.2f} USD</b>\n\n"
                 "Send new USD price, e.g. <code>9.99</code>",
                 parse_mode="HTML",

@@ -6,15 +6,15 @@ Uses the unified _db() adapter so it works with both SQLite and PostgreSQL (Neon
 
 Tables
 ──────
-vault_registry      — vault_address → (subscription_id, user_id, group_id)
-processed_tx_hashes — idempotency set for payment processing
-reminder_log        — tracks which (subscription_id, cycle) had a reminder sent
+vault_registry      vault_address → (subscription_id, user_id, group_id)
+processed_tx_hashes idempotency set for payment processing
+reminder_log        tracks which (subscription_id, cycle) had a reminder sent
 """
 from __future__ import annotations
 from renewise.config import DATABASE_PATH, USE_POSTGRES
 from renewise.db.connection import _db, Row
 
-# ── DDL (SQLite — used only when DATABASE_URL is not set) ────────────────────
+# ── DDL (SQLite used only when DATABASE_URL is not set) ────────────────────
 
 CREATE_VAULT_REGISTRY = """
 CREATE TABLE IF NOT EXISTS vault_registry (
@@ -77,7 +77,7 @@ async def migrate() -> None:
                 try:
                     await db.execute(stmt)
                 except Exception:
-                    pass  # column already exists — safe
+                    pass  # column already exists safe
         # Backfill: reset partial/incorrectly-processed txs before this fix.
         # Arm 1: bot subscription txs whose subscription is still 'pending'
         # Arm 2: platform charge txs whose charge is still 'pending'
@@ -213,7 +213,7 @@ async def mark_tx_processed(tx_hash: str, sub_id: int | None = None, is_partial:
     Atomically insert tx hash. Returns True on first insert, False if duplicate.
 
     is_partial=True records a partial-payment tx for auditing but does NOT
-    prevent the seeding loop from re-examining it on restart — only fully
+    prevent the seeding loop from re-examining it on restart only fully
     processed txs (is_partial=False) are seeded into the skip-set.
 
     PostgreSQL: uses INSERT … ON CONFLICT DO NOTHING + checking affected rows.

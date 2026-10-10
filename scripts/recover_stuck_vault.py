@@ -236,13 +236,13 @@ async def main(telegram_user_id: int) -> None:
         has_out_msgs = any(len(tx.get("out_msgs", [])) > 0 for tx in txs[:3])
         if not has_out_msgs:
             print("  STUCK (Case B): Contract deployed, but Pay{} opcode was never received.")
-            print("  Plain TON arrived without the message body — no split was triggered.")
+            print("  Plain TON arrived without the message body no split was triggered.")
             print("  FIX: Send a NEW message WITH the Pay{} body to trigger the split.")
         else:
             print("  STUCK (Case C): Pay{} was triggered but residual balance remains.")
             print("  The split ran but something left dust behind. Likely OK if small amount.")
     elif vault_state == "active" and vault_balance == 0:
-        print("  Vault is EMPTY — funds were split correctly.")
+        print("  Vault is EMPTY funds were split correctly.")
         print("  If subscription is not active yet, check the watcher log or run /ive_paid.")
         return
     else:

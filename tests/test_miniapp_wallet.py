@@ -2,11 +2,11 @@
 Mini App API tests for wallet change endpoints.
 
 Tests:
-  PUT  /api/groups/{id}/wallet          — schedules a change, not immediate
-  POST /api/groups/{id}/wallet-change/{cid}/cancel — cancels it
-  GET  /api/groups/{id}/wallet-change-history      — returns history
+  PUT  /api/groups/{id}/wallet          schedules a change, not immediate
+  POST /api/groups/{id}/wallet-change/{cid}/cancel cancels it
+  GET  /api/groups/{id}/wallet-change-history      returns history
 
-Uses httpx.AsyncClient with FastAPI's ASGI transport — no real server needed.
+Uses httpx.AsyncClient with FastAPI's ASGI transport no real server needed.
 Auth is bypassed by overriding the get_telegram_user dependency.
 DB is an in-memory SQLite instance shared per test via a lifespan override.
 """
@@ -62,7 +62,7 @@ async def client(conn, monkeypatch):
 
     - Patches queries._db to use the shared in-memory connection wrapped in _SqConn.
     - Overrides get_telegram_user to return a fixed admin user (id=999).
-    - Skips the lifespan (init_db / cleanup tasks) — DB is already set up.
+    - Skips the lifespan (init_db / cleanup tasks) DB is already set up.
     """
     from renewise.db.connection import _SqConn
 
@@ -103,7 +103,7 @@ async def client(conn, monkeypatch):
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
-# Valid mainnet bounceable (EQ) addresses — CRC16-verified, 48-char base64url.
+# Valid mainnet bounceable (EQ) addresses CRC16-verified, 48-char base64url.
 # tag=0x11 (bounceable mainnet), workchain=0x00, deterministic 32-byte payload.
 VALID_WALLET  = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAd99"
 VALID_WALLET2 = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAu8e"

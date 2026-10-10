@@ -43,7 +43,7 @@ class KeepAliveSettings:
 
     @property
     def should_serve(self) -> bool:
-        """Always bind $PORT when set — Render kills web services that don't."""
+        """Always bind $PORT when set Render kills web services that don't."""
         return self.port > 0
 
     @property
@@ -118,7 +118,7 @@ async def handle_generate_payment_link(request: web.Request) -> web.Response:
     Internal endpoint: generate a GRAM payment link for a platform charge.
 
     Called by the Mini App API (Vercel) which cannot run the contract locally.
-    Protected by INTERNAL_API_SECRET — never expose this to the public.
+    Protected by INTERNAL_API_SECRET never expose this to the public.
 
     POST /internal/generate-payment-link
     Headers: X-Internal-Secret: <INTERNAL_API_SECRET>
@@ -230,7 +230,7 @@ async def run_keepalive(settings: KeepAliveSettings | None = None) -> None:
     """Bind the health server and/or run the ping loop until cancelled."""
     settings = settings or load_settings()
     if not settings.should_run:
-        log.info("Keep-alive idle — disabled or no PORT / URLs configured.")
+        log.info("Keep-alive idle disabled or no PORT / URLs configured.")
         return
 
     if settings.should_ping and settings.interval >= 15 * 60:
@@ -301,7 +301,7 @@ async def start_keepalive_background(
 
     settings = settings or load_settings()
     if not settings.should_run:
-        log.info("Keep-alive idle — disabled or no PORT / URLs configured.")
+        log.info("Keep-alive idle disabled or no PORT / URLs configured.")
         return None
 
     _started = True
@@ -311,7 +311,7 @@ async def start_keepalive_background(
 
 
 def reset_started_for_tests() -> None:
-    """Test helper — do not use in production code."""
+    """Test helper do not use in production code."""
     global _started
     _started = False
 

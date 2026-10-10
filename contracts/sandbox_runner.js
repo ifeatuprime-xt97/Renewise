@@ -11,16 +11,16 @@
  *   price          (string, nanoTON)
  *   buyer_fee_bps  (number)
  *   admin_fee_bps  (number)
- *   send_amount    (string, nanoTON — what the payer actually sends)
+ *   send_amount    (string, nanoTON what the payer actually sends)
  *   subscription_id (number)
  *
  * Output JSON fields:
  *   success          (bool)
  *   exit_code        (number | null)
  *   aborted          (bool)
- *   admin_delta      (string, nanoTON received by admin — no tip, overage held in vault)
+ *   admin_delta      (string, nanoTON received by admin no tip, overage held in vault)
  *   platform_delta   (string, nanoTON received by platform treasury)
- *   vault_balance    (string, nanoTON left in vault — includes overage if any)
+ *   vault_balance    (string, nanoTON left in vault includes overage if any)
  *   total_fees       (string, nanoTON total gas consumed)
  *   error            (string | null)
  */

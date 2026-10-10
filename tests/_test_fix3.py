@@ -18,7 +18,7 @@ src = inspect.getsource(refund_mod._process_wallet_submission)
 assert "if not TRIGGER_MNEMONIC" in src, "Fallback guard missing!"
 assert "pending_send" in src or "queued for manual" in src, "Manual queue path missing!"
 assert "ALLOWED_SUPERADMIN_IDS" in src, "Superadmin alert missing from fallback!"
-print("✅ Fallback code path confirmed in refund.py — unset TRIGGER_MNEMONIC → manual queue + superadmin alert.")
+print("✅ Fallback code path confirmed in refund.py unset TRIGGER_MNEMONIC → manual queue + superadmin alert.")
 
 # ── Part 3: confirm startup warning in bot.py ─────────────────────────────────
 import renewise.bot as bot_mod

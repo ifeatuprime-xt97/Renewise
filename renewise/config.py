@@ -18,7 +18,7 @@ DATABASE_PATH: str = os.getenv("DATABASE_PATH", "./data/renewise.db")
 # Neon / PostgreSQL connection string.
 # When set, the app uses asyncpg instead of aiosqlite.
 # Format: postgresql://user:password@host/dbname?sslmode=require
-# Leave blank to use SQLite (DATABASE_PATH) — default for local dev.
+# Leave blank to use SQLite (DATABASE_PATH) default for local dev.
 DATABASE_URL: str  = os.getenv("DATABASE_URL", "")
 
 # ── DB mode helper ────────────────────────────────────────────────────────────
@@ -46,14 +46,14 @@ PLATFORM_WALLET: str = os.getenv("PLATFORM_WALLET", "")
 # Can be the same as PLATFORM_WALLET or a dedicated chain-watcher address.
 LOG_ADDRESS: str = os.getenv("LOG_ADDRESS", "")
 
-# Dedicated trigger wallet — a cheap hot wallet used ONLY to send Refund{}
+# Dedicated trigger wallet a cheap hot wallet used ONLY to send Refund{}
 # messages to vaults. NOT the platform fee-collection wallet.
 # Compromise of this wallet can only trigger refunds the contract already
-# validated — it cannot drain any funds.
+# validated it cannot drain any funds.
 TRIGGER_WALLET: str = os.getenv("TRIGGER_WALLET", "")
 TRIGGER_MNEMONIC: str = os.getenv("TRIGGER_MNEMONIC", "")
 
-# Overpayment threshold in USD — refunds are only issued above this amount.
+# Overpayment threshold in USD refunds are only issued above this amount.
 OVERPAYMENT_REFUND_THRESHOLD_USD: float = float(os.getenv("OVERPAYMENT_REFUND_THRESHOLD_USD", "1.00"))
 
 # Fee basis points (1 bps = 0.01%).
@@ -96,5 +96,5 @@ KEEP_ALIVE_PORT: int = _safe_int(os.getenv("KEEP_ALIVE_PORT") or os.getenv("PORT
 # ── Wallet change protection ──────────────────────────────────────────────────
 # How long (in hours) a submitted wallet change sits in "pending" before it
 # applies automatically.  The admin receives an immediate DM and can cancel
-# within this window.  Adjust here — never hardcode the number inline.
+# within this window.  Adjust here never hardcode the number inline.
 WALLET_CHANGE_DELAY_HOURS: int = int(os.getenv("WALLET_CHANGE_DELAY_HOURS", "24"))

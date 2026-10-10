@@ -12,9 +12,9 @@ bot process (which holds the Application instance and its HTTP session).
 
 Actions handled
 ───────────────
-approve_and_welcome  — approve join request + send welcome DM
-send_renewal_reminder — DM the user a renewal reminder with [Renew Now] button
-kick_member          — ban then immediately unban (Telegram kick pattern)
+approve_and_welcome  approve join request + send welcome DM
+send_renewal_reminder DM the user a renewal reminder with [Renew Now] button
+kick_member          ban then immediately unban (Telegram kick pattern)
 
 Integration
 ───────────
@@ -71,7 +71,7 @@ async def _handle_approve_and_welcome(
     tg_user_id = row["telegram_user_id"]
     chat_id    = row["telegram_chat_id"]
 
-    # Delete the "partial payment" warning if one was sent earlier — it's stale now
+    # Delete the "partial payment" warning if one was sent earlier it's stale now
     insuf_msg_id = app.bot_data.get("insufficient_msgs", {}).pop((user_id, group_id), None)
     if insuf_msg_id:
         try:
@@ -88,10 +88,10 @@ async def _handle_approve_and_welcome(
     except Exception as exc:
         log.warning("approve_chat_join_request failed (may already be approved): %s", exc)
 
-    # Send welcome DM — and delete the QR/payment-details message if still present
+    # Send welcome DM and delete the QR/payment-details message if still present
     try:
         group = await get_group_by_id(group_id)
-        # aiosqlite.Row supports [] but not .get() — use dict() conversion for safety
+        # aiosqlite.Row supports [] but not .get() use dict() conversion for safety
         group_dict = dict(group) if group else {}
         group_name = group_dict.get("chat_title") or str(group_dict.get("telegram_chat_id", "the group"))
 
@@ -412,7 +412,7 @@ async def _listener_loop(app: Application) -> None:
             except Exception as exc:
                 log.error("Bot listener error: %s", exc)
     except asyncio.CancelledError:
-        # Task cancelled on shutdown — unsubscribe cleanly before exiting.
+        # Task cancelled on shutdown unsubscribe cleanly before exiting.
         log.info("Bot listener cancelled, unsubscribing from Redis.")
         try:
             await pubsub.unsubscribe(BOT_ACTIONS_CHANNEL)

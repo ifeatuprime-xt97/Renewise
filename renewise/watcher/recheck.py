@@ -6,10 +6,10 @@ a payment.  Exposed to the Phase 4 super-admin bot.
 
 Two call patterns:
   1. recheck_by_tx_hash(tx_hash, vault_address)
-     — fetches the specific tx from TonCenter and enqueues it.
+     fetches the specific tx from TonCenter and enqueues it.
 
   2. recheck_by_subscription(user_db_id, group_id)
-     — looks up the vault address from vault_registry, fetches recent txs,
+     looks up the vault address from vault_registry, fetches recent txs,
        and enqueues any that haven't been processed yet.
 
 Both are async and safe to call from the bot's handler context.

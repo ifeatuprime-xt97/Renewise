@@ -30,7 +30,7 @@ async def authenticate_platform(authorization: Annotated[str, Header()]) -> dict
     
     async with _db() as db:
         if is_test:
-            # Test keys are stored as plaintext — compare directly
+            # Test keys are stored as plaintext compare directly
             row = await db.fetchrow(
                 "SELECT * FROM platforms WHERE secret_key_test = $1",
                 secret_key
@@ -95,7 +95,7 @@ async def create_charge(
         
     # Generate payment request.
     # When INTERNAL_API_URL is set (Vercel deployment), the .boc and wallet
-    # config live on Render — proxy the generation there. Otherwise generate locally.
+    # config live on Render proxy the generation there. Otherwise generate locally.
     import os as _os
     _internal_url = _os.environ.get("INTERNAL_API_URL", "").rstrip("/")
     _internal_secret = _os.environ.get("INTERNAL_API_SECRET", "")
@@ -152,7 +152,7 @@ async def create_charge(
             # Give a more specific message based on the error type
             _ename = type(_e).__name__
             if "ContentType" in _ename or "JSON" in _ename:
-                _detail = "Internal service returned a non-JSON response — Render may not be running the latest code with the /internal/generate-payment-link endpoint."
+                _detail = "Internal service returned a non-JSON response Render may not be running the latest code with the /internal/generate-payment-link endpoint."
             elif "ClientConnectorError" in _ename or "ServerDisconnectedError" in _ename:
                 _detail = "Could not reach the internal Render service. Check INTERNAL_API_URL and that Render is running."
             elif "TimeoutError" in _ename or "asyncio" in _ename:

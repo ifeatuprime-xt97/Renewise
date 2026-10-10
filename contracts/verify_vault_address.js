@@ -3,7 +3,7 @@
  * 
  * Uses the EXACT same generated TypeScript PaymentVault class (via the compiled JS)
  * to compute the vault address for the same parameters the deploy script uses.
- * This is the ground truth — if Python doesn't match this, Python is wrong.
+ * This is the ground truth if Python doesn't match this, Python is wrong.
  */
 const { Address, beginCell, toNano, Cell } = require('@ton/core');
 
@@ -41,7 +41,7 @@ function PaymentVault_init(admin_wallet, platform_wallet, log_address, price, bu
     return { code: __code, data: __data };
 }
 
-// Use the @ton/core contractAddress function — this is the ground truth
+// Use the @ton/core contractAddress function this is the ground truth
 const { contractAddress } = require('@ton/core');
 
 // Same params as deploy_testnet.py

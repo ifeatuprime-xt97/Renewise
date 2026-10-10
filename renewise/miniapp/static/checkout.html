@@ -12,7 +12,7 @@
 
   <style>
     /* ═══════════════════════════════════════════════════════════════════════
-       Design tokens — dark (default)
+       Design tokens dark (default)
        Task 2: full token set so light-mode override only swaps values
     ════════════════════════════════════════════════════════════════════════ */
     :root {
@@ -26,7 +26,7 @@
       --text-faint:   rgba(244, 247, 251, 0.38);
       --border:       rgba(255, 255, 255, 0.08);
       --border-hover: rgba(255, 255, 255, 0.18);
-      /* card — solid fallback + glass override below */
+      /* card solid fallback + glass override below */
       --card-bg:      rgba(22, 27, 40, 0.92);
       --card-shadow:  0 1px 0 rgba(255,255,255,0.06) inset, 0 24px 60px rgba(0,0,0,0.55);
       --card-glow-a:  rgba(0, 152, 234, 0.18);
@@ -120,7 +120,7 @@
 
     /* ── Card ─────────────────────────────────────────────────────────────── */
     .checkout-card {
-      /* Task 5: solid background always present — glass is progressive enhancement */
+      /* Task 5: solid background always present glass is progressive enhancement */
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 24px;
@@ -135,7 +135,7 @@
       overflow: hidden;
     }
 
-    /* Task 5: glass only where supported — backdrop must be on element with solid fallback */
+    /* Task 5: glass only where supported backdrop must be on element with solid fallback */
     @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
       @media (prefers-color-scheme: dark), (prefers-color-scheme: no-preference) {
         .checkout-card {
@@ -227,7 +227,7 @@
       font-weight: 800;
       letter-spacing: -1.5px;
       line-height: 1.05;
-      /* Task 5: plain color first — gradient clip is progressive enhancement */
+      /* Task 5: plain color first gradient clip is progressive enhancement */
       color: var(--amount-color);
       background: var(--amount-grad);
       -webkit-background-clip: text;
@@ -373,7 +373,7 @@
 
     .wallet-btn:active { transform: scale(0.97); }
 
-    /* Primary — full width */
+    /* Primary full width */
     .wallet-btn.primary {
       grid-column: 1 / -1;
       background: linear-gradient(135deg, #0098EA 0%, #0077c8 100%);
@@ -396,7 +396,7 @@
       justify-content: center;
     }
 
-    /* Info note lives inside the grid — must span both columns and fill the width */
+    /* Info note lives inside the grid must span both columns and fill the width */
     .wallets-grid .info-note {
       grid-column: 1 / -1;
       width: 100%;
@@ -594,7 +594,7 @@
 
       <!-- shown only in test mode -->
       <div id="testnet-banner">
-        🧪 <strong style="color:#a78bfa">Test mode</strong> — pay with <strong>testnet GRAM only</strong> (free from
+        🧪 <strong style="color:#a78bfa">Test mode</strong> pay with <strong>testnet GRAM only</strong> (free from
         <a href="https://t.me/testgiver_ton_bot" target="_blank" rel="noreferrer">@testgiver_ton_bot</a>).
         No real money is charged.
       </div>
@@ -603,7 +603,7 @@
       <div class="amount-usd" id="amount-usd">$0.00</div>
       <div class="amount-crypto" id="amount-crypto"><span class="dot"></span><span id="amount-crypto-text">0 GRAM</span></div>
 
-      <!-- fee breakdown — hidden until JS populates it -->
+      <!-- fee breakdown hidden until JS populates it -->
       <div id="fee-breakdown"></div>
 
       <div class="qr-wrap">
@@ -723,7 +723,7 @@
           <span>MyTonWallet</span>
         </a>
 
-        <!-- Tonhub — .full makes it span both columns so no orphaned button -->
+        <!-- Tonhub .full makes it span both columns so no orphaned button -->
         <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn full">
           <img class="wallet-icon"
                src="https://tonhub.com/tonconnect_logo.png"
@@ -737,11 +737,11 @@
     // ─── Wallet link handler ────────────────────────────────────────────────
     function handleWalletClick(e, url, wallet) {
       // Inside Telegram WebView, ton:// links are intercepted and routed to
-      // Telegram Wallet automatically — just let the default href work.
+      // Telegram Wallet automatically just let the default href work.
       // In a regular browser, attempt to open the ton:// link; if nothing
       // handles it after 1.5s show a helpful message.
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-        return; // inside Telegram — let href handle it natively
+        return; // inside Telegram let href handle it natively
       }
       if (wallet === 'telegram') {
         e.preventDefault();
@@ -831,10 +831,10 @@
             renderStatus({ status: 'completed' });
             return;
           }
-          // Not found yet — re-enable the button with feedback
+          // Not found yet re-enable the button with feedback
           btn.disabled    = false;
           btn.textContent = '✅ I\'ve Paid';
-          if (note) note.textContent = 'No payment detected yet — try again in a moment.';
+          if (note) note.textContent = 'No payment detected yet try again in a moment.';
           // Reset the note text after 4 s
           setTimeout(function () {
             if (note) note.textContent = 'Checking every 3 seconds automatically…';
@@ -844,7 +844,7 @@
           _ivePaidInFlight = false;
           btn.disabled    = false;
           btn.textContent = '✅ I\'ve Paid';
-          if (note) note.textContent = 'Could not reach server — please try again.';
+          if (note) note.textContent = 'Could not reach server please try again.';
           setTimeout(function () {
             if (note) note.textContent = 'Checking every 3 seconds automatically…';
           }, 4000);
@@ -878,7 +878,7 @@
         document.getElementById('amount-crypto-text').textContent = amtTon + ' GRAM';
         document.getElementById('order-ref').textContent     = '#' + charge.external_reference;
 
-        // Fee breakdown — show only when there is a non-zero buyer fee
+        // Fee breakdown show only when there is a non-zero buyer fee
         if (buyerFeeBps > 0) {
           var feePct  = (buyerFeeBps / 100).toFixed(2);
           var breakdown = document.getElementById('fee-breakdown');

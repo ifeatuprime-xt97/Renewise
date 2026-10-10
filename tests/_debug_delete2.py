@@ -32,7 +32,7 @@ async def simulate_delete(group_id: int, telegram_user_id: int):
             uid = row["telegram_user_id"]
             print(f"  would DM user {uid}")
         except Exception as e:
-            print(f"  ROW ACCESS ERROR: {e} — row type={type(row)} row={row}")
+            print(f"  ROW ACCESS ERROR: {e} row type={type(row)} row={row}")
 
     # iii. Simulate leaveChat (don't actually call)
     print("leaveChat would fire here")

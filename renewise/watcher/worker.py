@@ -9,7 +9,7 @@ Run one worker:
 Run multiple workers (recommended for burst handling):
     python -m renewise.watcher.worker --concurrency 4
 
-Each worker process is independent — they share only Redis and the SQLite DB.
+Each worker process is independent they share only Redis and the SQLite DB.
 SQLite's WAL mode (set in schema.py) allows concurrent readers + one writer,
 which is sufficient for the write patterns here (one INSERT per payment).
 
@@ -66,7 +66,7 @@ def _run_worker(_: int) -> None:
     conn = redis_sync.from_url(REDIS_URL)
     queue = Queue(RQ_QUEUE_NAME, connection=conn)
 
-    # Use SimpleWorker on Windows — the default Worker uses os.fork() which
+    # Use SimpleWorker on Windows the default Worker uses os.fork() which
     # does not exist on Windows and will crash immediately.
     # Also override death_penalty_class because RQ's default uses SIGALRM
     # which doesn't exist on Windows either.
@@ -100,7 +100,7 @@ def main() -> None:
     processes: list[multiprocessing.Process] = []
 
     def _shutdown(sig, frame):
-        log.info("Shutdown signal received — stopping workers")
+        log.info("Shutdown signal received stopping workers")
         for p in processes:
             p.terminate()
         sys.exit(0)

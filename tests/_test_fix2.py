@@ -1,5 +1,5 @@
 """
-FIX 2 — vault_registry / reminder_log in init_db() verification.
+FIX 2 vault_registry / reminder_log in init_db() verification.
 
 Steps:
   1. Rename the real DB out of the way
@@ -23,7 +23,7 @@ async def run():
         os.remove(DATABASE_PATH)
         print(f"Moved real DB to {BACKUP}")
     else:
-        print("No existing DB — starting fresh anyway.")
+        print("No existing DB starting fresh anyway.")
 
     try:
         # ── Step 2: run init_db() on empty path ───────────────────────────────

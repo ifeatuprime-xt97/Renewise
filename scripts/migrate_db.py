@@ -2,7 +2,7 @@
 One-shot migration: add columns introduced in Phase 2/3 to an existing database
 that was created before those columns existed.
 
-Safe to run multiple times — uses ALTER TABLE ... IF NOT EXISTS (SQLite 3.37+)
+Safe to run multiple times uses ALTER TABLE ... IF NOT EXISTS (SQLite 3.37+)
 or catches OperationalError for older SQLite.
 """
 import sqlite3

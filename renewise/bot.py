@@ -139,7 +139,7 @@ async def post_init(app: Application) -> None:
     # ── Trigger wallet startup health check ───────────────────────────────────
     # Fetch live balance and DM superadmins if the wallet is unconfigured,
     # critical (<0.02 GRAM), or low (<0.10 GRAM).
-    # This fires ONCE at startup only — no recurring spam.
+    # This fires ONCE at startup only no recurring spam.
     from renewise.config import (
         TRIGGER_MNEMONIC as _TM,
         TRIGGER_WALLET as _TW,
@@ -185,7 +185,7 @@ async def post_init(app: Application) -> None:
         # attacker can drain overage_held from every vault to any address they
         # choose.  Mitigations already in place:
         #   • Vault enforces sender == trigger_wallet at the contract level.
-        #   • Only overage_held (user overpayments) can be redirected — platform
+        #   • Only overage_held (user overpayments) can be redirected platform
         #     fees and admin payouts have already been split and forwarded.
         #   • The trigger wallet should hold only ~2 GRAM for gas (minimal value).
         # Recommended hardening (production):
@@ -229,7 +229,7 @@ async def post_init(app: Application) -> None:
             log.warning("Trigger wallet startup check failed: %s", _exc)
 
     # Start the Redis pub/sub listener for watcher → bot actions.
-    # Only attempt if Redis is reachable — skip silently when running without Redis
+    # Only attempt if Redis is reachable skip silently when running without Redis
     # (e.g. dev/testnet mode using the in-process watcher instead).
     try:
         import redis.asyncio as _aioredis
@@ -237,7 +237,7 @@ async def post_init(app: Application) -> None:
         _r = _aioredis.from_url(REDIS_URL)
         await _r.ping()
         await _r.aclose()
-        # Redis is up — start the listener
+        # Redis is up start the listener
         from renewise.watcher.bot_listener import start_bot_listener
         app.bot_data["listener_task"] = start_bot_listener(app)
         log.info("Bot listener started (Redis connected).")
@@ -354,7 +354,7 @@ async def _send_renewal_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE, 
             f"<b>How to pay:</b>\n"
             f"• Tap the button below to open your wallet\n"
             f"• Or scan the QR code\n\n"
-            f"💡 <b>Your wallet may show a warning.</b> This is normal — your GRAM is safe!\n\n"
+            f"💡 <b>Your wallet may show a warning.</b> This is normal your GRAM is safe!\n\n"
             f"<i>Your subscription extends automatically after payment confirms.</i>"
         )
 
@@ -449,7 +449,7 @@ async def _send_payment_details(
         "amount_ton":  payment.amount,
     }
 
-    # payment.payment_url is already ton:// with &init= — use it for both the
+    # payment.payment_url is already ton:// with &init= use it for both the
     # button and the QR code. No conversion needed.
     ton_qr_url = payment.payment_url
 
@@ -492,8 +492,8 @@ async def _send_payment_details(
         f"• <b>Telegram Wallet</b> - tap the button below, instant.\n"
         f"• <b>Other GRAM Wallet</b> - tap the button below, opens your installed wallet app with everything pre-filled.\n"
         f"• Or scan the QR code\n\n"
-        f"💡 <b>Your wallet may show a warning.</b> This is normal — your GRAM is safe!\n\n"
-        f"Send the <b>exact amount shown</b> — overpayments are refunded automatically."
+        f"💡 <b>Your wallet may show a warning.</b> This is normal your GRAM is safe!\n\n"
+        f"Send the <b>exact amount shown</b> overpayments are refunded automatically."
     )
 
     kb = payment_details_kb(payment.payment_url, _support_url())
@@ -505,7 +505,7 @@ async def _send_payment_details(
         try:
             await ctx.bot.delete_message(chat_id=user_telegram_id, message_id=prev_msg_id)
         except Exception:
-            pass  # already deleted or too old — harmless
+            pass  # already deleted or too old harmless
 
     try:
         qr_bytes = await _fetch_qr_bytes(ton_qr_url)
@@ -569,7 +569,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def _start_inner(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Core /start logic — only reached after ToS is accepted."""
+    """Core /start logic only reached after ToS is accepted."""
     from renewise.db import queries
 
     # Helper: send or edit depending on whether we came via a callback (ToS accept)
@@ -902,7 +902,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
             await context.bot.send_message(
                 update.effective_chat.id,
                 "⚠️ Something went wrong while processing your request. "
-                "Please try again — the issue has been logged.",
+                "Please try again the issue has been logged.",
             )
     except Exception:
         log.exception("Failed to notify user about an error.")

@@ -1,5 +1,5 @@
 [Unit]
-Description=Renewise — Mini App FastAPI server
+Description=Renewise Mini App FastAPI server
 After=network.target renewise-bot.service
 
 [Service]

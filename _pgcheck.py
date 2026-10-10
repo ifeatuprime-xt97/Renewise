@@ -86,7 +86,7 @@ for tbl, sqlite_cols in sorted(sqlite_table_cols.items()):
         print(f"  MISSING in PG: {tbl}.{sorted(missing)}")
 
 if not issues:
-    print("  None — all SQLite columns are covered in PG DDL or migrations.")
+    print("  None all SQLite columns are covered in PG DDL or migrations.")
 
 # ── 3. Check for other non-serializable types in proxy payload ─────────────────
 print()
@@ -97,7 +97,7 @@ with open("renewise/api/platform.py", encoding="utf-8") as f:
 if "_json_safe" in ap:
     print("  OK: _json_safe helper is present in proxy payload")
 else:
-    print("  ERR: _json_safe helper MISSING — datetime objects will cause TypeError")
+    print("  ERR: _json_safe helper MISSING datetime objects will cause TypeError")
     issues.append(("api/platform.py", {"_json_safe missing"}))
 
 # ── 4. Check all places that call coingecko.get_ton_usd_price ─────────────────
@@ -109,7 +109,7 @@ with open("renewise/utils/coingecko.py", encoding="utf-8") as f:
 providers = re.findall(r"async def (_fetch_\w+)", cg)
 print(f"  {providers}")
 if len(providers) < 3:
-    print("  WARNING: fewer than 3 providers — rate limiting could cause failures")
+    print("  WARNING: fewer than 3 providers rate limiting could cause failures")
 else:
     print(f"  OK: {len(providers)} providers configured")
 

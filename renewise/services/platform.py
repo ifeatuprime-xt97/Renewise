@@ -144,7 +144,7 @@ async def regenerate_platform_keys(platform_id: int, mode: str, actor_telegram_i
                 secret_val, platform_id
             )
         else:
-            # Test mode: store raw key (test keys only access testnet — no real funds at risk)
+            # Test mode: store raw key (test keys only access testnet no real funds at risk)
             secret_val = raw_secret_key
             await db.execute(
                 "UPDATE platforms SET secret_key_test = $1 WHERE id = $2",
@@ -300,7 +300,7 @@ async def update_platform_wallet(platform_id: int, wallet_address: str, actor_te
         # Friction applies to CHANGING an existing wallet OR setting a wallet
         # when a passcode is already configured (user explicitly locked setup).
         if current_wallet or existing_hash:
-            # Hard lockout check comes first — even a correct passcode is
+            # Hard lockout check comes first even a correct passcode is
             # rejected while locked (prevents continued online guessing).
             remaining = _remaining_lockout_seconds(row["passcode_locked_until"])
             if remaining is not None:
@@ -467,7 +467,7 @@ async def set_platform_webhook(platform_id: int, url: str, actor_telegram_id: in
         )
 
         if existing:
-            # URL-only update — secret stays the same
+            # URL-only update secret stays the same
             await db.execute(
                 "UPDATE webhook_endpoints SET url = $1 WHERE id = $2",
                 url, existing["id"],
@@ -479,7 +479,7 @@ async def set_platform_webhook(platform_id: int, url: str, actor_telegram_id: in
             )
             return {"secret": None, "is_new": False}
 
-        # First-time setup — generate secret
+        # First-time setup generate secret
         # Deactivate any stale inactive rows just in case
         await db.execute(
             "UPDATE webhook_endpoints SET active = FALSE WHERE platform_id = $1", platform_id

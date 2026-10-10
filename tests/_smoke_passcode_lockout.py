@@ -9,7 +9,7 @@ import sys
 import tempfile
 
 # Point the app at a throwaway SQLite DB before any app import reads config.
-# NOTE: DATABASE_URL must be set to "" (not popped) — config.py calls
+# NOTE: DATABASE_URL must be set to "" (not popped) config.py calls
 # load_dotenv() at import time, and load_dotenv does NOT override variables
 # that already exist in os.environ, so an empty string here wins over the
 # .env file's Postgres URL and forces the SQLite path.
@@ -36,7 +36,7 @@ async def main() -> None:
         )
         gid = await db.fetchval("SELECT id FROM groups WHERE telegram_chat_id=$1", -100999001)
 
-    # 1. Set initial passkey (first time — no current required)
+    # 1. Set initial passkey (first time no current required)
     ok = await queries.set_group_passcode(gid, "1111", 4242)
     assert ok, "set_group_passcode first-time failed"
 
@@ -57,7 +57,7 @@ async def main() -> None:
         locked = True
         assert e.retry_after_seconds > 0, "retry_after_seconds not positive"
         print(f"  group lockout: retry_after_seconds={e.retry_after_seconds}")
-    assert locked, "correct passcode accepted during lockout — lockout NOT enforced"
+    assert locked, "correct passcode accepted during lockout lockout NOT enforced"
 
     # 5. set_group_passcode is also blocked while locked
     locked = False
@@ -65,7 +65,7 @@ async def main() -> None:
         await queries.set_group_passcode(gid, "2222", 4242, current_passcode="1111")
     except queries.PasscodeLockedError:
         locked = True
-    assert locked, "set_group_passcode allowed during lockout — lockout NOT enforced"
+    assert locked, "set_group_passcode allowed during lockout lockout NOT enforced"
 
     # 6. Audit log captured the lockout event
     async with _db() as db:
@@ -115,14 +115,14 @@ async def main() -> None:
     except queries.PasscodeLockedError as e:
         locked = True
         print(f"  platform lockout: retry_after_seconds={e.retry_after_seconds}")
-    assert locked, "platform correct passcode accepted during lockout — NOT enforced"
+    assert locked, "platform correct passcode accepted during lockout NOT enforced"
 
     locked = False
     try:
         await platform_svc.set_platform_passcode(pid, "4444", 4242, current_passcode="3333")
     except queries.PasscodeLockedError:
         locked = True
-    assert locked, "platform set_platform_passcode allowed during lockout — NOT enforced"
+    assert locked, "platform set_platform_passcode allowed during lockout NOT enforced"
 
     async with _db() as db:
         actions = [r["action"] for r in await db.fetch(

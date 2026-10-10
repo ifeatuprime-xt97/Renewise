@@ -1,5 +1,5 @@
 [Unit]
-Description=Renewise — Main Bot + Watcher
+Description=Renewise Main Bot + Watcher
 After=network.target
 
 [Service]

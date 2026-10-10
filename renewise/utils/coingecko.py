@@ -13,9 +13,9 @@ the timestamp, so provider 2 is only ever called when provider 1 fails.
 
 Constants
 ─────────
-CACHE_TTL       — how long a fresh price is trusted (default 30 min)
-STALE_THRESHOLD — age at which the fallback is flagged as stale (default 2 h)
-FLOOR_PRICE     — hard fallback used only on the very first process start if
+CACHE_TTL       how long a fresh price is trusted (default 30 min)
+STALE_THRESHOLD age at which the fallback is flagged as stale (default 2 h)
+FLOOR_PRICE     hard fallback used only on the very first process start if
                   both providers fail before any price has ever been fetched
                   (set conservatively low: $1.50)
 """
@@ -40,7 +40,7 @@ CACHE_TTL       = 1800   # 30 minutes: how long a price is considered fresh
 STALE_THRESHOLD = 7200   # 2 hours: after this, log WARNING + publish Redis alert
 FLOOR_PRICE     = 1.5    # last-resort fallback price (USD) before first successful fetch
 
-# CoinMarketCap API key — optional. Leave blank to skip CMC entirely.
+# CoinMarketCap API key optional. Leave blank to skip CMC entirely.
 CMC_API_KEY: str = os.getenv("CMC_API_KEY", "")
 
 # ── Shared cache (in-process) ─────────────────────────────────────────────────
@@ -74,7 +74,7 @@ async def _fetch_coingecko(session: aiohttp.ClientSession) -> float:
         timeout=aiohttp.ClientTimeout(total=5),
     ) as resp:
         if resp.status == 429:
-            raise RuntimeError(f"429 Too Many Requests — CoinGecko rate limit hit")
+            raise RuntimeError(f"429 Too Many Requests CoinGecko rate limit hit")
         resp.raise_for_status()
         data = await resp.json()
         return float(data["the-open-network"]["usd"])
@@ -100,7 +100,7 @@ async def _fetch_okx(session: aiohttp.ClientSession) -> float:
 async def _fetch_coinmarketcap(session: aiohttp.ClientSession) -> float:
     """Fetch Gram price from CoinMarketCap (requires CMC_API_KEY)."""
     if not CMC_API_KEY:
-        raise RuntimeError("CMC_API_KEY not configured — skipping CoinMarketCap")
+        raise RuntimeError("CMC_API_KEY not configured skipping CoinMarketCap")
     async with session.get(
         "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest",
         params={"symbol": "TON", "convert": "USD"},
@@ -114,7 +114,7 @@ async def _fetch_coinmarketcap(session: aiohttp.ClientSession) -> float:
             # CMC may return a status error body instead of coin data
             status = data.get("status", {})
             raise RuntimeError(
-                f"CMC response missing 'TON' key — "
+                f"CMC response missing 'TON' key "
                 f"error_code={status.get('error_code')} "
                 f"error_message={status.get('error_message')!r}"
             )
@@ -134,11 +134,11 @@ async def get_ton_usd_price() -> float:
       1. CoinGecko
       2. CoinMarketCap (if CMC_API_KEY is set)
       3. Last cached value (stale alert fires if > STALE_THRESHOLD old)
-      4. FLOOR_PRICE ($1.50) — only on very first call ever if all fail
+      4. FLOOR_PRICE ($1.50) only on very first call ever if all fail
     """
     now = time.time()
 
-    # Cache hit — price is still fresh
+    # Cache hit price is still fresh
     if _cache["timestamp"] > 0 and now - _cache["timestamp"] < CACHE_TTL:
         return _cache["price_usd"]
 
@@ -187,7 +187,7 @@ async def get_ton_usd_price() -> float:
         )
         asyncio.create_task(_publish_stale_alert(hours_old, fallback))
     elif _cache["timestamp"] == 0:
-        # First ever call and both providers failed — use the floor price
+        # First ever call and both providers failed use the floor price
         log.warning(
             "Both price providers failed on first fetch. "
             "Using FLOOR_PRICE=$%.2f", FLOOR_PRICE

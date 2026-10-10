@@ -27,7 +27,7 @@ async def main():
             data = await r.json()
     txs = data.get("result", [])
     if not txs:
-        print("No txs yet on new vault — wait a moment and retry")
+        print("No txs yet on new vault wait a moment and retry")
         return
 
     tx_hash = txs[0]["transaction_id"]["hash"]

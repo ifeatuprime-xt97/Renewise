@@ -1,7 +1,7 @@
 """
 test_reminder_jobs.py
 ─────────────────────
-Manual test: runs reminder and enforcement logic DIRECTLY — no Redis, no RQ,
+Manual test: runs reminder and enforcement logic DIRECTLY no Redis, no RQ,
 no workers needed. The bot Telegram API calls are made inline using the bot
 token from .env.
 
@@ -13,7 +13,7 @@ Pass --sub-id N to target a specific subscription row by DB id.
 
 Steps performed
 ───────────────
-TEST 1 — Renewal Reminder
+TEST 1 Renewal Reminder
   a. Set next_renewal_date = NOW + (REMINDER_WINDOW_DAYS - 1) days
   b. Clear reminder_log so the row is "unsent"
   c. Call get_subscriptions_due_reminder() → confirm row appears
@@ -22,7 +22,7 @@ TEST 1 — Renewal Reminder
      → writes reminder_log row
   e. Verify reminder_log was written  ✅
 
-TEST 2 — Grace Period Enforcement
+TEST 2 Grace Period Enforcement
   a. Set next_renewal_date = NOW - (GRACE_PERIOD_DAYS + 1) days
   b. Call get_subscriptions_past_grace() → confirm row appears
   c. Call expire_and_kick task directly (no RQ)
@@ -113,7 +113,7 @@ async def main(sub_id_arg: int | None) -> None:
     )
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # TEST 1 — Renewal Reminder
+    # TEST 1 Renewal Reminder
     # ═══════════════════════════════════════════════════════════════════════════
     log.info("\n══ TEST 1: Renewal Reminder ══")
 
@@ -145,7 +145,7 @@ async def main(sub_id_arg: int | None) -> None:
         await _restore(DATABASE_PATH, sub_id, original_date, original_status)
         sys.exit(1)
 
-    # c. Send reminder DIRECTLY (no RQ) — fires real Telegram DM
+    # c. Send reminder DIRECTLY (no RQ) fires real Telegram DM
     log.info("  Sending reminder DM directly via bot token...")
     from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -191,7 +191,7 @@ async def main(sub_id_arg: int | None) -> None:
         log.error("  %s reminder_log row NOT found", FAIL)
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # TEST 2 — Grace Period Enforcement
+    # TEST 2 Grace Period Enforcement
     # ═══════════════════════════════════════════════════════════════════════════
     log.info("\n══ TEST 2: Grace Period Enforcement ══")
 

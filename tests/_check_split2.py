@@ -53,7 +53,7 @@ async def main():
         print(f"  Platform received         : {platform_recv/1e9:.6f} TON  (expected ~{exp_platform/1e9:.6f})")
         print(sep)
         ok = admin_recv > 1_000_000 and platform_recv > 1_000_000
-        print(f"  Split fired               : {'YES — PASS' if ok else 'NO — FAIL'}")
+        print(f"  Split fired               : {'YES PASS' if ok else 'NO FAIL'}")
         print(sep)
         print()
 

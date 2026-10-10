@@ -1,4 +1,4 @@
-# Renewise Payments API — Developer Integration Guide
+# Renewise Payments API Developer Integration Guide
 
 ## Overview
 
@@ -133,7 +133,7 @@ Instead of polling, configure a webhook to receive real-time charge events.
 
 ### Setting Up
 
-In the Dashboard → **Webhook** → **Edit**, enter your HTTPS endpoint URL. You will receive a `whsec_…` signature secret — **save it immediately**, it is only shown once.
+In the Dashboard → **Webhook** → **Edit**, enter your HTTPS endpoint URL. You will receive a `whsec_…` signature secret **save it immediately**, it is only shown once.
 
 ### Payload
 
@@ -188,7 +188,7 @@ Return `HTTP 200` within 5 seconds to acknowledge receipt. Any non-2xx response 
 
 ### Testing Webhooks Locally
 
-Renewise must be able to reach your endpoint over the internet — `localhost` URLs will always fail because the server cannot reach your machine. During development, use a tunnel tool to expose your local port publicly.
+Renewise must be able to reach your endpoint over the internet `localhost` URLs will always fail because the server cannot reach your machine. During development, use a tunnel tool to expose your local port publicly.
 
 **Using ngrok (recommended):**
 
@@ -198,21 +198,21 @@ ngrok http 4555
 # Forwarding  https://abc123.ngrok-free.dev -> http://localhost:4555
 ```
 
-Then register the **left-hand HTTPS URL with the `/webhook` path appended** — not the full forwarding line, not the bare domain:
+Then register the **left-hand HTTPS URL with the `/webhook` path appended** not the full forwarding line, not the bare domain:
 
 ```
 ✅  https://abc123.ngrok-free.dev/webhook   ← register this
-❌  https://abc123.ngrok-free.dev           ← bare domain, no path — will 404
+❌  https://abc123.ngrok-free.dev           ← bare domain, no path will 404
 ❌  https://abc123.ngrok-free.dev -> http://localhost:4555  ← the whole ngrok line, not a URL
 ```
 
-Enter this URL in the Dashboard → **Webhook → Edit**. The webhook secret shown after saving must match your `WEBHOOK_SECRET` environment variable — if you re-register, the secret rotates and you must update your local config.
+Enter this URL in the Dashboard → **Webhook → Edit**. The webhook secret shown after saving must match your `WEBHOOK_SECRET` environment variable if you re-register, the secret rotates and you must update your local config.
 
 > Free ngrok accounts get a new random URL each time ngrok restarts. Re-register the new URL in the Dashboard after each restart, or use a paid ngrok plan with a fixed domain.
 
 **Verifying the tunnel is working:**
 
-Check your ngrok terminal — the **Connections** counter must increment when a payment fires. If it stays at `0`, the URL stored in the Dashboard is wrong (re-register). If ngrok shows a hit but your app returns non-200, check your signature verification and that your handler is mounted at exactly `/webhook`.
+Check your ngrok terminal the **Connections** counter must increment when a payment fires. If it stays at `0`, the URL stored in the Dashboard is wrong (re-register). If ngrok shows a hit but your app returns non-200, check your signature verification and that your handler is mounted at exactly `/webhook`.
 
 ---
 
@@ -222,7 +222,7 @@ If a secret key is compromised or you want to rotate:
 
 1. Dashboard → **Dashboard** → **API Keys** → click **Regenerate** for the relevant key.
 2. The old key is **immediately invalidated**.
-3. Copy the new secret key from the one-time alert — it will not be shown again.
+3. Copy the new secret key from the one-time alert it will not be shown again.
 4. Update your server's environment variable.
 
 ---
@@ -231,10 +231,10 @@ If a secret key is compromised or you want to rotate:
 
 Before you can receive payouts, set a **payout wallet** in the Dashboard:
 
-- **First time**: simply enter your TON wallet address — no passkey required.
+- **First time**: simply enter your TON wallet address no passkey required.
 - **Changing an existing wallet**: requires your **4-digit passkey**. Set it once via Dashboard → **Security → Set Passkey**.
 
-> Your passkey is bcrypt-hashed and never stored in plaintext. If you lose it, contact support — there is no self-service reset.
+> Your passkey is bcrypt-hashed and never stored in plaintext. If you lose it, contact support there is no self-service reset.
 
 ---
 
@@ -261,7 +261,7 @@ A test-mode charge **never touches mainnet**. A live-mode charge **never touches
 | `404` | `Not Found` | Charge ID does not exist or belongs to another platform |
 | `422` | `Unprocessable Entity` | Invalid TON address or passcode format |
 | `429` | `Too Many Requests` | Rate limit exceeded (5–60 req/min depending on endpoint) |
-| `500` | `Internal Server Error` | Server-side error — retry with exponential backoff |
+| `500` | `Internal Server Error` | Server-side error retry with exponential backoff |
 
 ---
 

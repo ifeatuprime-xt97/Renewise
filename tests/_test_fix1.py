@@ -41,11 +41,11 @@ conn.close()
 async def run():
     print("=== Functional test: double-insert via create_subscription ===")
 
-    # First call — insert
+    # First call insert
     id1 = await create_subscription(TEST_USER_ID, TEST_GROUP_ID, price_locked_in=9.99)
     print(f"First call  → subscription id={id1}")
 
-    # Second call — same pair, different price — should UPDATE not INSERT
+    # Second call same pair, different price should UPDATE not INSERT
     id2 = await create_subscription(TEST_USER_ID, TEST_GROUP_ID, price_locked_in=19.99)
     print(f"Second call → subscription id={id2}")
 
@@ -61,9 +61,9 @@ async def run():
     for r in rows:
         print(f"  id={r[0]}  status={r[1]}  price_locked_in={r[2]}")
 
-    assert len(rows) == 1, f"FAIL — expected 1 row, got {len(rows)}"
+    assert len(rows) == 1, f"FAIL expected 1 row, got {len(rows)}"
     print()
-    print("✅ Second call updated the existing row — no duplicate created")
+    print("✅ Second call updated the existing row no duplicate created")
 
     # Cleanup
     conn3 = sqlite3.connect(DATABASE_PATH)

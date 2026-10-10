@@ -68,7 +68,7 @@ dups = conn.execute("""
     HAVING cnt > 1
 """).fetchall()
 if dups:
-    print(f"WARNING: {len(dups)} duplicate (user_id, group_id) pairs found — deduplicating first")
+    print(f"WARNING: {len(dups)} duplicate (user_id, group_id) pairs found deduplicating first")
     for user_id, group_id, cnt in dups:
         rows = conn.execute("""
             SELECT id, status, created_at FROM subscriptions
@@ -94,7 +94,7 @@ if dups:
     print(f"After dedup: {deduped_count} rows (removed {old_count - deduped_count} duplicates)")
     old_count = deduped_count
 else:
-    print("No duplicates found — clean copy.")
+    print("No duplicates found clean copy.")
 
 has_updated_at       = "updated_at"       in live_cols
 has_amount_paid      = "amount_paid_so_far" in live_cols
@@ -126,7 +126,7 @@ print(f"Rows in subscriptions_new: {new_count}")
 if new_count != old_count:
     conn.rollback()
     conn.close()
-    print(f"ABORTED — row count mismatch: old={old_count} new={new_count}")
+    print(f"ABORTED row count mismatch: old={old_count} new={new_count}")
     sys.exit(1)
 
 print(f"Row counts match ({old_count}). Safe to proceed.")

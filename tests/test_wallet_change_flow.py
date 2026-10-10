@@ -11,7 +11,7 @@ Covers:
   - Item 9: suspended/frozen group skipped by apply job
   - Item 8: second submission supersedes first
 
-All tests use an in-memory SQLite DB — no file I/O, no network, no bot token.
+All tests use an in-memory SQLite DB no file I/O, no network, no bot token.
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ os.environ["DATABASE_PATH"] = ":memory:"
 import renewise.config as _cfg
 _cfg.DATABASE_PATH = ":memory:"
 
-# Now safe to import — all aiosqlite calls will use :memory:
+# Now safe to import all aiosqlite calls will use :memory:
 from renewise.db import queries
 from renewise.db.schema import init_db
 
@@ -109,7 +109,7 @@ def _past(hours: float) -> str:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# Group A — create_pending_wallet_change
+# Group A create_pending_wallet_change
 # ═════════════════════════════════════════════════════════════════════════════
 
 class TestCreatePendingWalletChange:
@@ -184,7 +184,7 @@ class TestCreatePendingWalletChange:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# Group B — cancel_pending_wallet_change
+# Group B cancel_pending_wallet_change
 # ═════════════════════════════════════════════════════════════════════════════
 
 class TestCancelPendingWalletChange:
@@ -231,7 +231,7 @@ class TestCancelPendingWalletChange:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# Group C — get_due_wallet_changes + apply_pending_wallet_change
+# Group C get_due_wallet_changes + apply_pending_wallet_change
 # ═════════════════════════════════════════════════════════════════════════════
 
 class TestApplyWalletChanges:
@@ -277,7 +277,7 @@ class TestApplyWalletChanges:
 
     @pytest.mark.asyncio
     async def test_item9_suspended_group_excluded_from_due(self, db, monkeypatch):
-        """Item 9: due change for a suspended group — group_status is returned."""
+        """Item 9: due change for a suspended group group_status is returned."""
         _patch_db(db, monkeypatch)
         gid = await _seed_group(db, status="suspended")
         change_id = await queries.create_pending_wallet_change(
@@ -303,7 +303,7 @@ class TestApplyWalletChanges:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# Group D — get_wallet_change_history
+# Group D get_wallet_change_history
 # ═════════════════════════════════════════════════════════════════════════════
 
 class TestWalletChangeHistory:

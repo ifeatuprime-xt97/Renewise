@@ -27,7 +27,7 @@ async def main():
     txs = data.get("result", [])
     print(f"Txs on vault: {len(txs)}")
     if not txs:
-        print("No transactions yet — check tonscan manually")
+        print("No transactions yet check tonscan manually")
         return
 
     tx      = txs[0]

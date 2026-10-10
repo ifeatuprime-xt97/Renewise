@@ -1,5 +1,5 @@
 """
-Deep runtime risk scan — finds issues that won't show up in syntax checks
+Deep runtime risk scan finds issues that won't show up in syntax checks
 but will cause production failures.
 """
 import re, sys, ast
@@ -34,7 +34,7 @@ cg   = src("renewise/utils/coingecko.py")
 bot  = src("renewise/bot.py")
 
 print("=" * 60)
-print("1. DATETIME SERIALIZATION — proxy payload")
+print("1. DATETIME SERIALIZATION proxy payload")
 print("=" * 60)
 
 # Check _json_safe is applied to platform dict before aiohttp json=
@@ -43,7 +43,7 @@ if "_json_safe" in ap and "_platform_payload" in ap:
 else:
     err("api/platform.py: _json_safe NOT applied to platform dict")
 
-# Check keepalive internal endpoint — the platform dict comes from JSON
+# Check keepalive internal endpoint the platform dict comes from JSON
 # (already strings from the Vercel side), so no datetime issue there
 if "generate_platform_payment_request" in ka:
     ok("keepalive.py: payment generation called in internal endpoint")
@@ -52,7 +52,7 @@ else:
 
 print()
 print("=" * 60)
-print("2. POSTGRESQL COLUMN MIGRATIONS — completeness")
+print("2. POSTGRESQL COLUMN MIGRATIONS completeness")
 print("=" * 60)
 
 mig_adds = set(re.findall(r"ALTER TABLE (\w+) ADD COLUMN (\w+)", sch))
@@ -80,7 +80,7 @@ else:
 
 print()
 print("=" * 60)
-print("3. SQL QUERIES — columns referenced that might not exist")
+print("3. SQL QUERIES columns referenced that might not exist")
 print("=" * 60)
 
 # Check for any SELECT * queries on tables where columns were added
@@ -118,7 +118,7 @@ for tbl, set_clause in unsafe_updates:
 
 print()
 print("=" * 60)
-print("4. PRICE FEED — resilience")
+print("4. PRICE FEED resilience")
 print("=" * 60)
 
 providers = re.findall(r"async def (_fetch_\w+)", cg)
@@ -129,9 +129,9 @@ floor = re.search(r"FLOOR_PRICE\s*=\s*([\d.]+)", cg)
 if floor:
     fp = float(floor.group(1))
     if fp < 1.0:
-        warn(f"FLOOR_PRICE=${fp} is very low — may cause overcharging subscribers")
+        warn(f"FLOOR_PRICE=${fp} is very low may cause overcharging subscribers")
     elif fp > 10.0:
-        warn(f"FLOOR_PRICE=${fp} is high — may undercharge on floor fallback")
+        warn(f"FLOOR_PRICE=${fp} is high may undercharge on floor fallback")
     else:
         ok(f"FLOOR_PRICE=${fp} is reasonable")
 
@@ -143,7 +143,7 @@ if ttl:
 
 print()
 print("=" * 60)
-print("5. FRONTEND — error handling completeness")
+print("5. FRONTEND error handling completeness")
 print("=" * 60)
 
 # Check all major async functions have try/catch
@@ -151,7 +151,7 @@ async_funcs = re.findall(r"async function (\w+)\([^)]*\)\s*\{([^}]{0,500})", htm
 no_catch = []
 for name, body in async_funcs:
     if "apiFetch" in body or "fetch(" in body:
-        # Has a network call — should have error handling
+        # Has a network call should have error handling
         # Check if there's a catch in the full function (body is truncated, check by name)
         func_pattern = rf"async function {re.escape(name)}\s*\([^)]*\)\s*\{{.*?^\s*\}}"
         func_match = re.search(func_pattern, html, re.DOTALL | re.MULTILINE)
@@ -180,11 +180,11 @@ for label, pattern in checks:
     if pattern in html:
         ok(f"html: {label}")
     else:
-        err(f"html: MISSING — {label}")
+        err(f"html: MISSING {label}")
 
 print()
 print("=" * 60)
-print("6. SUPERADMIN BOT — callback routing")
+print("6. SUPERADMIN BOT callback routing")
 print("=" * 60)
 
 # Check all sa_ callbacks are handled
@@ -230,7 +230,7 @@ for var, reason in critical_vars:
         if default == "":
             ok(f"config: {var} defaults to empty string (will raise in generate_payment_request if not set)")
         else:
-            warn(f"config: {var} has non-empty default '{default}' — may mask missing env var")
+            warn(f"config: {var} has non-empty default '{default}' may mask missing env var")
     else:
         ok(f"config: {var} present in config.py")
 
@@ -240,7 +240,7 @@ print("SUMMARY")
 print("=" * 60)
 total = len(issues) + len(warnings)
 if not issues and not warnings:
-    print("All checks passed — no issues found.")
+    print("All checks passed no issues found.")
 else:
     if issues:
         print(f"{len(issues)} ERROR(S):")

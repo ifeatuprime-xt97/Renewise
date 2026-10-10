@@ -1,6 +1,6 @@
 """
 Fetch full tonapi trace for the latest vault tx to see what happened
-inside the contract — including any child transactions.
+inside the contract including any child transactions.
 """
 import os, sys, asyncio, aiohttp, json, urllib.parse
 sys.path.insert(0, ".")

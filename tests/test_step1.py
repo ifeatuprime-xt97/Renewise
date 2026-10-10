@@ -31,7 +31,7 @@ try:
     cur.execute("SELECT id, buyer_fee_bps, admin_fee_bps FROM groups")
     rows = cur.fetchall()
     if not rows:
-        print("(no rows — groups table is empty)")
+        print("(no rows groups table is empty)")
     else:
         print(f"{'id':<6} {'buyer_fee_bps':<16} {'admin_fee_bps'}")
         print("-" * 40)

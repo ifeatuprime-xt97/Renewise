@@ -79,7 +79,7 @@ def payment_details_kb(payment_url: str, support_url: str = "") -> InlineKeyboar
 
     Four wallet options arranged compactly, then I've Paid / Contact Support / Cancel.
 
-    All wallet buttons use the same ton:// link — the OS routes it to whichever
+    All wallet buttons use the same ton:// link the OS routes it to whichever
     GRAM wallet the user has installed as their default handler for the ton:// scheme.
     We label them individually so users recognise their wallet name, but the URL
     is identical for all four (ton:// is the universal deep-link standard).
@@ -176,7 +176,7 @@ def network_select_kb(groups: list, action: str = "menu:home") -> InlineKeyboard
     return InlineKeyboardMarkup(buttons)
 
 
-# Backward-compat alias — existing callers of group_select_kb still work.
+# Backward-compat alias existing callers of group_select_kb still work.
 group_select_kb = network_select_kb
 
 

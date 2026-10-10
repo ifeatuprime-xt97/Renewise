@@ -13,8 +13,8 @@ After the deployment completes (2-3 minutes), you should see:
 
 ### 1. Clean Startup (Every Time)
 ```
-✓ No pending updates for main bot — clean start
-✓ No pending updates for superadmin bot — clean start
+✓ No pending updates for main bot clean start
+✓ No pending updates for superadmin bot clean start
 In-process watcher started (poll interval=5s)
 ```
 

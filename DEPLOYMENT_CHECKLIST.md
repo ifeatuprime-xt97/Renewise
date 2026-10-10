@@ -1,4 +1,4 @@
-# ReneWise Deployment Checklist — Payment Confirmation Fix
+# ReneWise Deployment Checklist Payment Confirmation Fix
 
 ## Problem Summary
 - Payments were staying "pending" after successful blockchain transactions
@@ -6,9 +6,9 @@
 - Old code still running on Render (poll interval showing 15s instead of 5s)
 
 ## Root Causes Found
-1. **Multiple bot instances running** — causing 409 Conflict errors that crash the entire service
-2. **Environment variable not set** — `POLL_INTERVAL_SECONDS` still at default 15s instead of 5s
-3. **Old deployment still active** — latest code changes not deployed to Render
+1. **Multiple bot instances running** causing 409 Conflict errors that crash the entire service
+2. **Environment variable not set** `POLL_INTERVAL_SECONDS` still at default 15s instead of 5s
+3. **Old deployment still active** latest code changes not deployed to Render
 
 ## Fixes Applied
 
@@ -54,8 +54,8 @@ Watch the logs in real-time:
 
 **✅ SUCCESS INDICATORS:**
 ```
-✓ Cleared X pending update(s) for main bot — old instances terminated
-✓ Cleared X pending update(s) for superadmin bot — old instances terminated
+✓ Cleared X pending update(s) for main bot old instances terminated
+✓ Cleared X pending update(s) for superadmin bot old instances terminated
 In-process watcher started (poll interval=5s)
 inprocess watcher: polling X vault(s)
 ```
@@ -78,7 +78,7 @@ Once logs look clean:
    FOUND charge_id=X
    inprocess_platform: charge X status updated to completed
    ```
-4. Check miniapp — status should change from "pending" to "completed" within 5 seconds
+4. Check miniapp status should change from "pending" to "completed" within 5 seconds
 
 ---
 
@@ -110,7 +110,7 @@ Once logs look clean:
 3. **Check TonCenter API key:** Verify `TONCENTER_API_KEYS` is set in environment
 
 ### If payments still don't confirm:
-1. **Verify vault address format** — should match exactly between DB and watcher
+1. **Verify vault address format** should match exactly between DB and watcher
 2. **Check miniapp logs** on Vercel for API errors
 3. **Use debug endpoint:** `GET /api/developer/debug/charges` to see recent charges
 4. **Manual recheck:** `POST /api/developer/charges/{id}/recheck` to force recheck
@@ -119,16 +119,16 @@ Once logs look clean:
 
 ## Files Modified (Summary)
 
-1. **`run.py`** — Added `clear_telegram_updates()` function to kill old instances on startup
+1. **`run.py`** Added `clear_telegram_updates()` function to kill old instances on startup
 
 Previously modified (already deployed in earlier sessions):
-- `renewise/db/queries.py` — Enhanced logging in `get_platform_charge_by_vault()`
-- `renewise/watcher/inprocess_watcher.py` — Added "NEW transaction detected" log
-- `renewise/miniapp/server.py` — Added recheck and debug endpoints
-- `renewise/miniapp/static/index.html` — Native wallet links, recheck button
-- `renewise/miniapp/static/checkout.html` — Wallet warning message
-- `renewise/handlers/join_request.py` — Friendlier payment messages
-- `renewise/bot.py` — Friendlier renewal messages
+- `renewise/db/queries.py` Enhanced logging in `get_platform_charge_by_vault()`
+- `renewise/watcher/inprocess_watcher.py` Added "NEW transaction detected" log
+- `renewise/miniapp/server.py` Added recheck and debug endpoints
+- `renewise/miniapp/static/index.html` Native wallet links, recheck button
+- `renewise/miniapp/static/checkout.html` Wallet warning message
+- `renewise/handlers/join_request.py` Friendlier payment messages
+- `renewise/bot.py` Friendlier renewal messages
 
 ---
 

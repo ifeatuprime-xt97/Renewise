@@ -98,7 +98,7 @@ async def _deliver_with_retry(ep: dict, payload: bytes, charge_id: int) -> None:
             is_last = attempt == MAX_ATTEMPTS - 1
             success = await _deliver_once(session, ep, payload, charge_id, attempt, is_last)
             if success:
-                return  # done — no further retries needed
+                return  # done no further retries needed
 
 
 async def dispatch_webhook(charge_id: int) -> None:

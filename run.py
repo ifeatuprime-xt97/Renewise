@@ -1,5 +1,5 @@
 """
-run.py  —  start BOTH bots + in-process payment watcher in a single process.
+run.py   start BOTH bots + in-process payment watcher in a single process.
 
 Usage:
     python run.py
@@ -46,10 +46,10 @@ async def clear_telegram_updates(token: str, bot_name: str = "bot") -> None:
                 # Acknowledge the last update to mark everything as read
                 last_update_id = updates[-1].update_id
                 await bot.get_updates(offset=last_update_id + 1, limit=1, timeout=1)
-                log.info("✓ Cleared %d pending update(s) for %s — old instances terminated", 
+                log.info("✓ Cleared %d pending update(s) for %s old instances terminated", 
                          len(updates), bot_name)
             else:
-                log.info("✓ No pending updates for %s — clean start", bot_name)
+                log.info("✓ No pending updates for %s clean start", bot_name)
     except Exception as exc:
         log.warning("Could not clear updates for %s (non-fatal): %s", bot_name, exc)
 
@@ -162,7 +162,7 @@ async def run_main_bot() -> None:
                         pass
 
             # Stop the updater (stops polling) then stop the app.
-            # Both must be called before `async with app` exits — __aexit__
+            # Both must be called before `async with app` exits __aexit__
             # calls shutdown() which raises RuntimeError if the app is still
             # in the "running" state when it is called.
             await app.updater.stop()
@@ -174,7 +174,7 @@ async def run_superadmin_bot() -> None:
     """Async wrapper around the superadmin bot Application."""
     from renewise.config import SUPERADMIN_BOT_TOKEN
     if not SUPERADMIN_BOT_TOKEN:
-        log.warning("SUPERADMIN_BOT_TOKEN not set — superadmin bot skipped.")
+        log.warning("SUPERADMIN_BOT_TOKEN not set superadmin bot skipped.")
         return
     
     # Clear pending updates for superadmin bot too

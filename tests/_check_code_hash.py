@@ -45,7 +45,7 @@ async def check(label, vault):
         print(f"  matches new build: {match}")
         print(f"  balance: {int(info.get('balance',0))/1e9:.6f} TON")
     except Exception as e:
-        print(f"{label}: error decoding code — {e}")
+        print(f"{label}: error decoding code {e}")
 
 async def main():
     await check("deploy.py vault (SUB_ID=1)", VAULT_DEPLOY)

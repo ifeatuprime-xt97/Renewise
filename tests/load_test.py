@@ -258,7 +258,7 @@ async def run_load_test() -> None:
     # Duplicate-fire test: enqueue the same events again (should be no-ops)
     log.info("Enqueueing same events again (idempotency test)…")
     _enqueue_all(events, q)
-    log.info("Duplicate events enqueued — workers should ignore them")
+    log.info("Duplicate events enqueued workers should ignore them")
 
     # Wait for drain
     log.info("Waiting for queue to drain (timeout=%ds)…", DRAIN_TIMEOUT)
@@ -302,9 +302,9 @@ async def run_load_test() -> None:
         if activated < NUM_PAYMENTS:
             log.error("  %d subscriptions were NOT activated", NUM_PAYMENTS - activated)
         if duplicates > 0:
-            log.error("  %d duplicate tx_hash entries found — idempotency broken!", duplicates)
+            log.error("  %d duplicate tx_hash entries found idempotency broken!", duplicates)
         if failed_count > 0:
-            log.error("  %d jobs in failed queue — check worker logs", failed_count)
+            log.error("  %d jobs in failed queue check worker logs", failed_count)
         sys.exit(1)
 
 

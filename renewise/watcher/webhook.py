@@ -22,9 +22,9 @@ Payload (TonCenter format):
 }
 
 The server also exposes:
-  GET  /health          — liveness probe
-  POST /register        — register a vault address for polling fallback
-  POST /recheck         — manual recheck (Phase 4 hook)
+  GET  /health          liveness probe
+  POST /register        register a vault address for polling fallback
+  POST /recheck         manual recheck (Phase 4 hook)
 
 Run:
     python -m renewise.watcher.webhook
@@ -162,7 +162,7 @@ async def handle_recheck(request: web.Request) -> web.Response:
             return web.json_response({"enqueued": 1})
         return web.json_response({"enqueued": 0, "reason": "tx not found"})
 
-    # No specific hash — fetch recent txs and enqueue any unprocessed ones
+    # No specific hash fetch recent txs and enqueue any unprocessed ones
     from renewise.watcher.db import is_tx_processed
     txs = await fetch_transactions(vault_address, limit=10)
     enqueued = 0

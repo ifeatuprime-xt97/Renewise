@@ -1,4 +1,4 @@
-# renewise — Phase 3: Chain-Watcher & Subscription Lifecycle
+# renewise Phase 3: Chain-Watcher & Subscription Lifecycle
 
 This document covers running the full stack locally: Phase 1 bot + Phase 3 watcher.
 
@@ -46,7 +46,7 @@ This document covers running the full stack locally: Phase 1 bot + Phase 3 watch
 
 - Python 3.11+
 - Redis 6+ running locally (or via Docker)
-- Node.js 18+ (for Tact contract compilation — one-time)
+- Node.js 18+ (for Tact contract compilation one-time)
 
 ---
 
@@ -92,22 +92,22 @@ redis-server
 
 ### 5. Start all processes (4 terminals)
 
-**Terminal 1 — Telegram bot:**
+**Terminal 1 Telegram bot:**
 ```bash
 python -m renewise.bot
 ```
 
-**Terminal 2 — RQ workers (4 concurrent):**
+**Terminal 2 RQ workers (4 concurrent):**
 ```bash
 python -m renewise.watcher.worker --concurrency 4
 ```
 
-**Terminal 3 — Webhook server + polling loop:**
+**Terminal 3 Webhook server + polling loop:**
 ```bash
 python -m renewise.watcher.webhook
 ```
 
-**Terminal 4 — Scheduler (renewal reminders + grace enforcement):**
+**Terminal 4 Scheduler (renewal reminders + grace enforcement):**
 ```bash
 python -m renewise.watcher.scheduler
 ```
@@ -195,11 +195,11 @@ Bot listener receives pub/sub message:
 The `processed_tx_hashes` table is the safety net against double-processing.
 
 - The worker does a fast pre-check (`SELECT`) before any writes.
-- The actual claim is an `INSERT OR IGNORE` — only one worker wins the race.
+- The actual claim is an `INSERT OR IGNORE` only one worker wins the race.
 - If a worker crashes after the INSERT but before activating the subscription,
   the retry will find the hash already claimed and exit cleanly.
 - The subscription activation (`UPDATE ... WHERE status='pending'`) is also
-  safe to run twice — it's a no-op if already active.
+  safe to run twice it's a no-op if already active.
 
 ---
 

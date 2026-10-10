@@ -44,7 +44,7 @@ async def main():
         try:
             trigger = b1.load_address()
             print(f"  trigger_wallet : {trigger}")
-            # Try reading price as Int(257) — which is 257 bits
+            # Try reading price as Int(257) which is 257 bits
             price = b1.load_int(257)
             bfbps = b1.load_int(257)
             print(f"  price (Int257) : {price}")

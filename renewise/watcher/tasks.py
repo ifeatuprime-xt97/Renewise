@@ -4,10 +4,10 @@ renewise/watcher/tasks.py
 RQ task definitions.  Every function here is a unit of work that runs inside
 an RQ worker process.  All tasks are:
 
-  • Idempotent  — safe to run more than once for the same input.
-  • Retry-safe  — the processed_tx_hashes check is the outermost guard, so a
+  • Idempotent  safe to run more than once for the same input.
+  • Retry-safe  the processed_tx_hashes check is the outermost guard, so a
                   partial failure followed by a retry never double-credits.
-  • Async-aware — RQ workers are synchronous; we use asyncio.run() to call
+  • Async-aware RQ workers are synchronous; we use asyncio.run() to call
                   async DB helpers.  Each task creates its own event loop so
                   there are no shared-state issues across concurrent workers.
 
@@ -64,11 +64,11 @@ def process_payment(vault_address: str, tx_hash: str, amount_nano: int) -> None:
     for every new confirmed transaction on a vault address.
 
     Steps (all-or-nothing from the idempotency perspective):
-      1. Check processed_tx_hashes — exit immediately if already done.
+      1. Check processed_tx_hashes exit immediately if already done.
       2. Look up vault_registry to find (subscription_id, user_id, group_id).
       3. Verify amount >= required payment for this subscription.
       4. Atomically insert into processed_tx_hashes (INSERT OR IGNORE).
-         If rowcount == 0 a concurrent worker beat us — exit.
+         If rowcount == 0 a concurrent worker beat us exit.
       5. Activate the subscription in the DB.
       6. Publish bot action: approve join request + send welcome DM.
     """
@@ -90,16 +90,16 @@ def process_payment(vault_address: str, tx_hash: str, amount_nano: int) -> None:
             audit,
         )
 
-        # Step 1 — fast pre-check (avoids DB write on obvious duplicates)
+        # Step 1 fast pre-check (avoids DB write on obvious duplicates)
         if await is_tx_processed(tx_hash):
             log.info("process_payment skip (already processed) | tx=%s", tx_hash)
             return False
 
-        # Step 2 — resolve vault address to subscription context
+        # Step 2 resolve vault address to subscription context
         reg = await get_vault_registration(vault_address)
         if not reg:
             log.warning(
-                "process_payment: unknown vault %s tx=%s — no registry entry",
+                "process_payment: unknown vault %s tx=%s no registry entry",
                 vault_address, tx_hash,
             )
             return False
@@ -116,7 +116,7 @@ def process_payment(vault_address: str, tx_hash: str, amount_nano: int) -> None:
             log.warning("process_payment: no subscription found for user_id=%s group_id=%s", user_id, group_id)
             return False
 
-        # Step 3 — verify amount
+        # Step 3 verify amount
         group = await get_group_by_id(group_id)
         if group:
             if sub_before["required_nano_amount"]:
@@ -127,7 +127,7 @@ def process_payment(vault_address: str, tx_hash: str, amount_nano: int) -> None:
                 # never fire a false "insufficient" for a payment that clearly covers the price.
                 if amount_nano >= required:
                     log.debug(
-                        "process_payment: amount_nano=%d >= stored required=%d — "
+                        "process_payment: amount_nano=%d >= stored required=%d "
                         "stale required_nano_amount, re-deriving | vault=%s tx=%s",
                         amount_nano, required, vault_address, tx_hash,
                     )
@@ -160,7 +160,7 @@ def process_payment(vault_address: str, tx_hash: str, amount_nano: int) -> None:
 
                 # If the subscription is already active, this is a residual
                 # internal contract message after the real payment. Mark it
-                # processed silently — no partial-payment DM for active members.
+                # processed silently no partial-payment DM for active members.
                 from renewise.db.queries import get_subscription as _get_sub
                 current_sub = await _get_sub(user_id, group_id)
                 if current_sub and current_sub["status"] == "active":
@@ -172,7 +172,7 @@ def process_payment(vault_address: str, tx_hash: str, amount_nano: int) -> None:
                     await mark_tx_processed(tx_hash, sub_id)
                     return False
 
-                # Do NOT mark as processed — leave the tx retryable.
+                # Do NOT mark as processed leave the tx retryable.
                 # Notify the user so they know what happened.
                 _publish_bot_action("insufficient_payment", {
                     "user_id":       user_id,
@@ -193,28 +193,28 @@ def process_payment(vault_address: str, tx_hash: str, amount_nano: int) -> None:
                 )
                 return False
 
-        # Step 3.5 — Kill switch check
+        # Step 3.5 Kill switch check
         from renewise.db.queries import is_payments_paused
         if await is_payments_paused():
             log.warning("process_payment: global kill switch is active. Pausing processing for tx=%s", tx_hash)
             return False
 
-        # Step 4 — atomic idempotency claim
+        # Step 4 atomic idempotency claim
         claimed = await mark_tx_processed(tx_hash, sub_id)
         if not claimed:
             log.info("process_payment: lost race on idempotency claim | tx=%s", tx_hash)
             return False
 
-        # Step 4.5 — removed duplicate is_renewal logic because we now do it at Step 2
+        # Step 4.5 removed duplicate is_renewal logic because we now do it at Step 2
 
-        # Step 5 — activate subscription
+        # Step 5 activate subscription
         new_renewal_date = await activate_subscription(user_id, group_id, tx_hash=tx_hash)
         log.info(
             "process_payment: subscription activated | sub_id=%d user_id=%d group_id=%d tx=%s is_renewal=%s",
             sub_id, user_id, group_id, tx_hash, is_renewal,
         )
 
-        # Step 6 — audit
+        # Step 6 audit
         await audit(
             group_id=group_id,
             action="payment_confirmed",

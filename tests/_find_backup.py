@@ -12,7 +12,7 @@ async def check(path):
         try:
             cur = await db.execute("SELECT id, telegram_chat_id, chat_title, chat_type, admin_telegram_id, payout_wallet_address, price_usd_cents, invite_link, billing_interval_days FROM groups ORDER BY id")
             groups = await cur.fetchall()
-            print(f"\n{path} ({size} bytes) — {len(groups)} groups:")
+            print(f"\n{path} ({size} bytes) {len(groups)} groups:")
             for g in groups:
                 print(f"  id={g['id']} title={g['chat_title']!r} type={g['chat_type']} admin={g['admin_telegram_id']} price_cents={g['price_usd_cents']}")
                 print(f"    wallet={g['payout_wallet_address']!r} invite={g['invite_link']!r}")

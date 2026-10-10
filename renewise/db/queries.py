@@ -73,7 +73,7 @@ async def upsert_group(
     group does not appear in "My Networks" until activate_paywall() sets it
     to 'active'.  This prevents zero-price groups showing up mid-wizard.
 
-    On CONFLICT (group already exists): never resets status — the admin may be
+    On CONFLICT (group already exists): never resets status the admin may be
     re-adding the bot to a frozen group, which activate_paywall() will restore.
     """
     async with _db() as db:
@@ -250,7 +250,7 @@ async def check_group_wallet_passcode(
             return False
         existing_hash = row["wallet_passcode_hash"]
         if not existing_hash:
-            return True   # no passkey set — first wallet change is always allowed
+            return True   # no passkey set first wallet change is always allowed
 
         remaining = _remaining_lockout_seconds(row["passcode_locked_until"])
         if remaining is not None:
@@ -266,7 +266,7 @@ async def check_group_wallet_passcode(
                 )
             return True
 
-        # Wrong or missing passcode — count it and hard-lock at the threshold.
+        # Wrong or missing passcode count it and hard-lock at the threshold.
         attempts = int(row["passcode_failed_attempts"] or 0) + 1
         if attempts >= PASSCODE_MAX_ATTEMPTS:
             locked_until = datetime.now(timezone.utc) + timedelta(
@@ -720,14 +720,14 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
     vaults that need watching.
 
     last_activity_epoch is a Unix timestamp (float) representing how recently
-    something happened on this vault — used by the polling loop to tier vaults:
+    something happened on this vault used by the polling loop to tier vaults:
 
       Hot  (last_activity < 30 min ago) → poll every POLL_INTERVAL_SECONDS
       Warm (last_activity >= 30 min ago) → poll every WARM_POLL_SECONDS (60s)
 
     Activity is derived from existing columns with no schema changes:
-      • Bot subscriptions  — MAX(updated_at, created_at) on the subscription row
-      • Platform charges   — MAX(created_at, completed_at) on the charge row
+      • Bot subscriptions  MAX(updated_at, created_at) on the subscription row
+      • Platform charges   MAX(created_at, completed_at) on the charge row
 
     network is 'testnet' for test-mode platform charges, 'mainnet' for everything else.
     """
@@ -738,7 +738,7 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
     async with _db() as db:
         if USE_POSTGRES:
             rows = await db.fetch(
-                # Bot subscription vaults — activity from subscription timestamps
+                # Bot subscription vaults activity from subscription timestamps
                 "SELECT DISTINCT vr.vault_address, $1::text AS network, "
                 "  EXTRACT(EPOCH FROM GREATEST("
                 "    COALESCE(s.updated_at, s.created_at), "
@@ -1022,7 +1022,7 @@ async def set_refund_wallet(refund_id: int, wallet: str) -> bool:
     'pending_wallet' → 'pending_send'.
 
     The WHERE status='pending_wallet' guard ensures only ONE concurrent
-    submission wins the race — any duplicate call on the same refund_id
+    submission wins the race any duplicate call on the same refund_id
     finds no matching row and returns False, preventing a double on-chain
     Refund{} trigger.
 
@@ -1232,7 +1232,7 @@ async def delete_group(
 
 
 
-# ── superadmin queries (inline — mirrors superadmin/queries.py simple ones) ───
+# ── superadmin queries (inline mirrors superadmin/queries.py simple ones) ───
 
 async def get_groups_page(limit: int, offset: int) -> list[Row]:
     async with _db() as db:

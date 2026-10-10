@@ -65,7 +65,7 @@ async def _require_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE, action:
     if len(groups) == 1:
         return dict(groups[0])
 
-    # Multiple networks — check if one was already selected via callback data
+    # Multiple networks check if one was already selected via callback data
     query = update.callback_query
     if query and query.data and query.data.startswith("grpsel:"):
         _, gid_str, _ = query.data.split(":", 2)
@@ -74,7 +74,7 @@ async def _require_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE, action:
             if g["id"] == selected_id:
                 return dict(g)
 
-    # Not yet selected — show network picker preserving the intended action
+    # Not yet selected show network picker preserving the intended action
     await _show_network_picker(update, ctx, action=action)
     return None
 
@@ -228,7 +228,7 @@ async def cb_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     renewals = await queries.get_upcoming_renewals(group["id"], limit=3)
 
     renewal_lines = "\n".join(
-        f"  • User {r['telegram_user_id']} — {r['next_renewal_date'] or 'N/A'}"
+        f"  • User {r['telegram_user_id']} {r['next_renewal_date'] or 'N/A'}"
         for r in renewals
     ) or "  (none)"
 
@@ -404,7 +404,7 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         await update.message.reply_text(
             "⚠️ <b>Testnet address detected</b>\n\n"
             "This looks like a <b>testnet</b> wallet address (starts with <code>kQ</code> or <code>0Q</code>).\n\n"
-            "The system is running on <b>mainnet</b> — payouts will not reach a testnet wallet.\n\n"
+            "The system is running on <b>mainnet</b> payouts will not reach a testnet wallet.\n\n"
             "Please send your <b>mainnet</b> wallet address (starts with <code>EQ</code> or <code>UQ</code>):",
             parse_mode="HTML",
             reply_markup=cancel_input_kb(),
@@ -425,7 +425,7 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return AWAIT_WALLET_PIN
 
-    # No passkey — schedule immediately
+    # No passkey schedule immediately
     return await _schedule_wallet_change(update, ctx, group, address)
 
 
@@ -536,7 +536,7 @@ async def cb_cancel_wallet_change(update: Update, ctx: ContextTypes.DEFAULT_TYPE
     """
     Admin taps [🛑 Cancel This Change] in the alert DM.
 
-    No passkey or extra verification — cancellation is always safe.
+    No passkey or extra verification cancellation is always safe.
     The worst case is the legitimate change needs to be resubmitted.
     """
     query = update.callback_query
@@ -882,7 +882,7 @@ def build_comp_handler() -> ConversationHandler:
         entry_points=[CallbackQueryHandler(cb_comp, pattern=r"^(menu:comp|grpsel:\d+:menu:comp)$")],
         states={
             AWAIT_COMP_USERNAME: [
-                # "Select from existing users" button — exit conversation and show member list
+                # "Select from existing users" button exit conversation and show member list
                 CallbackQueryHandler(
                     cb_comp_select_existing,
                     pattern=r"^grpsel:\d+:menu:members$",
@@ -1005,7 +1005,7 @@ async def msg_support(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
             except Exception as e:
                 log.warning("Failed to send support message to super admin %s: %s", sa_id, e)
     
-    # Send confirmation back to user — return to picker since we don't have a group in context
+    # Send confirmation back to user return to picker since we don't have a group in context
     await update.message.reply_text(
         "✅ Your message has been sent to our support team. We'll get back to you shortly!",
     )

@@ -13,11 +13,11 @@ load_dotenv()
 # ── Redis / RQ ────────────────────────────────────────────────────────────────
 REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
-# RQ queue name — workers and enqueuers must use the same name
+# RQ queue name workers and enqueuers must use the same name
 RQ_QUEUE_NAME: str = os.getenv("RQ_QUEUE_NAME", "renewise")
 
 # TONCENTER_API_KEYS_TESTNET and TONCENTER_API_KEYS (mainnet) are separate env vars
-# because the API portal issues per-network keys — a testnet key will be
+# because the API portal issues per-network keys a testnet key will be
 # rejected on api.toncenter.com and vice-versa.
 #
 # For backward compat, the legacy TONCENTER_API_KEY single-key env var is still
@@ -37,12 +37,12 @@ TONCENTER_API_KEYS_MAINNET: list[str] = [k.strip() for k in _mainnet_keys_str.sp
 TONCENTER_API_KEYS_TESTNET_LIST: list[str] = [k.strip() for k in _testnet_keys_str.split(",") if k.strip()]
 
 # If no testnet-specific keys are configured, reuse the mainnet keys.
-# Many TonCenter API keys work on both networks — this avoids requiring
+# Many TonCenter API keys work on both networks this avoids requiring
 # a separate TONCENTER_API_KEYS_TESTNET entry for the common case.
 if not TONCENTER_API_KEYS_TESTNET_LIST:
     TONCENTER_API_KEYS_TESTNET_LIST = TONCENTER_API_KEYS_MAINNET
 
-# The active key list — whichever network we're pointed at
+# The active key list whichever network we're pointed at
 TONCENTER_API_KEYS: list[str] = TONCENTER_API_KEYS_TESTNET_LIST if TONCENTER_TESTNET else TONCENTER_API_KEYS_MAINNET
 
 # Single-value compat alias (used by legacy import sites)

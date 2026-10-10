@@ -1,5 +1,5 @@
 """
-FIX — chat_type verification tests:
+FIX chat_type verification tests:
   1. upsert_group with chat_type='channel' writes and reads back correctly
   2. upsert_group on an existing row with new type updates it
   3. activate_paywall with chat_type persists correctly
@@ -67,7 +67,7 @@ async def run():
         "SELECT id, chat_title FROM groups WHERE chat_type IS NULL OR chat_type=''"
     ).fetchall()
     if nulls:
-        print(f"  FAIL — rows with missing chat_type: {nulls}")
+        print(f"  FAIL rows with missing chat_type: {nulls}")
         assert False
     print("  ✅ all rows have chat_type set")
 

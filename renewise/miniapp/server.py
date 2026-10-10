@@ -5,8 +5,8 @@ Authorization model
 -------------------
 Every request is authenticated via Telegram initData (HMAC-SHA256 over
 WebAppData).  On top of that, every endpoint that touches group-scoped data
-performs an ownership check — group["admin_telegram_id"] == requester's
-telegram_id — before any read or write is allowed.  This matches the
+performs an ownership check group["admin_telegram_id"] == requester's
+telegram_id before any read or write is allowed.  This matches the
 _verify_admin_access pattern already established in admin_menu.py.
 
 Rate limiting
@@ -27,7 +27,7 @@ belonging to the requesting user."
 # resolves Annotated[..., Depends(...)] annotations at function-definition time.
 # Postponed evaluation (PEP 563) turns those annotations into strings, which
 # FastAPI cannot resolve back to the real Depends() object from within the
-# wrapper's frame — causing it to treat `user` as a plain query parameter.
+# wrapper's frame causing it to treat `user` as a plain query parameter.
 
 import asyncio
 import json
@@ -53,7 +53,7 @@ from renewise.services.wallet import validate_ton_address
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Bot username cache — resolved once at startup via the Bot API.
+# Bot username cache resolved once at startup via the Bot API.
 # Used by the frontend to construct deep-links in the CONFIRMED correct format:
 #   https://t.me/{bot_username}?start=renew_{group_id}
 # ---------------------------------------------------------------------------
@@ -86,7 +86,7 @@ async def _resolve_bot_username() -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Rate limiter — keyed on the originating IP address.
+# Rate limiter keyed on the originating IP address.
 # Backend: Redis when REDIS_URL points to a real instance, in-memory otherwise.
 # Initialised lazily so a Redis connection timeout at import time never
 # crashes the Vercel cold-start (the limiter falls back to in-memory).
@@ -100,7 +100,7 @@ if _is_real_redis:
         limiter = Limiter(key_func=get_remote_address, storage_uri=_REDIS_URL)
         log.info("Rate limiter: Redis backend (%s)", _REDIS_URL.split("@")[-1])
     except Exception as _e:
-        log.warning("Rate limiter: Redis init failed (%s) — falling back to in-memory", _e)
+        log.warning("Rate limiter: Redis init failed (%s) falling back to in-memory", _e)
         limiter = Limiter(key_func=get_remote_address)
 else:
     limiter = Limiter(key_func=get_remote_address)
@@ -118,14 +118,14 @@ async def _lifespan(application: FastAPI):
         await init_db()
     except Exception as exc:
         log.error("lifespan: init_db failed: %s", exc, exc_info=True)
-        # Don't crash the whole app — DB may already be migrated
+        # Don't crash the whole app DB may already be migrated
 
     try:
         await _resolve_bot_username()
     except Exception as exc:
         log.warning("lifespan: could not resolve bot username: %s", exc)
 
-    # Stale pending cleanup — skip on Vercel serverless (no persistent process)
+    # Stale pending cleanup skip on Vercel serverless (no persistent process)
     # VERCEL env var is always set by Vercel's runtime; use it as the guard.
     _is_serverless = bool(_os.getenv("VERCEL") or _os.getenv("VERCEL_ENV"))
     cleanup_task = None
@@ -155,11 +155,11 @@ async def _stale_pending_cleanup_loop() -> None:
             deleted = await delete_stale_pending_subscriptions(older_than_hours=12)
             if deleted:
                 log.info("miniapp: deleted %d stale pending subscription(s)", deleted)
-        except Exception as exc:  # broad catch intentional — background loop must not crash
+        except Exception as exc:  # broad catch intentional background loop must not crash
             log.warning("miniapp: stale pending cleanup error: %s", type(exc).__name__)
 
 
-# NOTE: FastAPI's default Swagger UI lives at /docs — relocated to /api/docs
+# NOTE: FastAPI's default Swagger UI lives at /docs relocated to /api/docs
 # so the public Renewise documentation site can own the /docs path.
 app = FastAPI(
     title="Renewise Mini App API",
@@ -202,7 +202,7 @@ async def root() -> FileResponse:
 
 
 # ---------------------------------------------------------------------------
-# Public website routes — intentionally unauthenticated.
+# Public website routes intentionally unauthenticated.
 #
 # /home  → public Renewise landing page (browsers, crawlers, reviewers).
 # /docs  → public documentation area.
@@ -214,14 +214,14 @@ async def root() -> FileResponse:
 
 @app.get("/home")
 async def public_home() -> FileResponse:
-    """Public landing website — shown when the app is opened outside Telegram."""
+    """Public landing website shown when the app is opened outside Telegram."""
     return FileResponse(_STATIC_DIR / "landing.html")
 
 
 @app.get("/docs")
 @app.get("/docs/{rest:path}")
 async def public_docs(rest: str = "") -> FileResponse:
-    """Public documentation area — accessible without Telegram authentication."""
+    """Public documentation area accessible without Telegram authentication."""
     return FileResponse(_STATIC_DIR / "docs" / "index.html")
 
 
@@ -258,7 +258,7 @@ async def api_public_checkout(request: Request, charge_id: int) -> dict:
             if vault_address else None
         )
 
-        # Resolve buyer_fee_bps — use stored value or fall back to global default
+        # Resolve buyer_fee_bps use stored value or fall back to global default
         # so the checkout page always shows the correct fee breakdown.
         _stored_bps = row["buyer_fee_bps"]
         if _stored_bps is None:
@@ -284,7 +284,7 @@ async def api_public_checkout(request: Request, charge_id: int) -> dict:
 @limiter.limit("6/minute")
 async def api_public_checkout_recheck(request: Request, charge_id: int) -> dict:
     """
-    Public endpoint — called by the checkout page "I've Paid" button.
+    Public endpoint called by the checkout page "I've Paid" button.
     Scans TonCenter for unprocessed transactions on the charge vault and
     completes the charge if a sufficient payment is found.
 
@@ -301,7 +301,7 @@ async def api_public_checkout_recheck(request: Request, charge_id: int) -> dict:
     if not row:
         raise HTTPException(status_code=404, detail="Charge not found")
 
-    # Already done — just return current state
+    # Already done just return current state
     if row["status"] == "completed":
         return {"status": "completed", "tx_hash": None}
 
@@ -341,7 +341,7 @@ async def api_public_checkout_recheck(request: Request, charge_id: int) -> dict:
 
         claimed = await mark_tx_processed(tx_hash, charge["id"])
         if not claimed:
-            continue  # race — another worker got it first
+            continue  # race another worker got it first
 
         async with _conn() as db:
             await db.execute(
@@ -353,7 +353,7 @@ async def api_public_checkout_recheck(request: Request, charge_id: int) -> dict:
         asyncio.create_task(dispatch_webhook(charge["id"]))
         return {"status": "completed", "tx_hash": tx_hash}
 
-    # No sufficient unprocessed tx found — return current status
+    # No sufficient unprocessed tx found return current status
     async with _conn() as db:
         updated = await db.fetchval(
             "SELECT status FROM platform_charges WHERE id = $1", charge_id
@@ -374,7 +374,7 @@ async def favicon() -> FileResponse:
 @app.get("/healthz")
 async def healthz() -> dict:
     """
-    Health check endpoint — intentionally unauthenticated.
+    Health check endpoint intentionally unauthenticated.
 
     Returns 200 {"status": "ok"} when the process is alive and the DB
     is reachable.  Returns 503 {"status": "error", "detail": ...} if the DB
@@ -405,7 +405,7 @@ async def api_config() -> dict:
     Returns non-secret frontend configuration.
     The bot_username is used to construct the CONFIRMED correct deep-link format:
         https://t.me/{bot_username}?start=renew_{group_id}
-    Intentionally unauthenticated — bot username is public.
+    Intentionally unauthenticated bot username is public.
     """
     from renewise.utils.coingecko import get_ton_usd_price
     username = _bot_cache["username"] or await _resolve_bot_username()
@@ -462,7 +462,7 @@ async def verify_admin_or_403(telegram_user_id: int, group_id: int) -> dict:
     Confirm `telegram_user_id` is the registered admin of `group_id`.
 
     This is the exact _verify_admin_access logic from admin_menu.py, promoted
-    to a shared helper so every endpoint uses it identically — no drift.
+    to a shared helper so every endpoint uses it identically no drift.
 
     Returns the group row on success; raises HTTP 403 on failure.
     The group row is returned so callers do not need a second DB round-trip.
@@ -568,7 +568,7 @@ async def api_my_payment_history(
     """
     Paginated payment history for the authenticated member.
     Returns confirmed payments across all groups, newest first.
-    No fee-split data — members only see what they paid.
+    No fee-split data members only see what they paid.
     """
     limit = min(limit, 200)
     offset = max(offset, 0)
@@ -599,7 +599,7 @@ async def api_my_groups(
         refreshed_groups.append(await _refresh_group_meta_from_telegram(dict(g)))
     detail["groups"] = refreshed_groups
 
-    # ── Total GRAM (nanonano) — real stored on-chain required amount ──────────
+    # ── Total GRAM (nanonano) real stored on-chain required amount ──────────
     # Sum of required_nano_amount across all active/comped subscriptions owned
     # by this admin. For older subscriptions created before that column existed,
     # we fall back to extracting the exact GRAM amount from the audit log using
@@ -706,14 +706,14 @@ async def api_payment_detail(
     Full detail for a single payment / subscription row.
 
     Returns all fields the list view already has, plus:
-      - vault_address       — the smart contract address for this payment
-      - required_nano_amount — exact nanotokens required
-      - amount_paid_so_far  — running total for partial payments
-      - telegram_user_id    — subscriber's Telegram ID
-      - username            — subscriber's @handle (may be null)
-      - chat_title          — group/channel name
+      - vault_address       the smart contract address for this payment
+      - required_nano_amount exact nanotokens required
+      - amount_paid_so_far  running total for partial payments
+      - telegram_user_id    subscriber's Telegram ID
+      - username            subscriber's @handle (may be null)
+      - chat_title          group/channel name
       - billing_interval_days
-      - tonviewer_url       — direct deep-link to the tx on TonViewer
+      - tonviewer_url       direct deep-link to the tx on TonViewer
     """
     telegram_user_id = user["id"]
     # Ownership: sub must belong to a group owned by this admin
@@ -781,7 +781,7 @@ async def api_groups_detect(
     Queries recent_admin_grants for the authenticated user (last 15 minutes)
     and returns whichever chats the bot has been made admin of.
 
-    No group_id is accepted from the body — the only identifier is the
+    No group_id is accepted from the body the only identifier is the
     verified Telegram user from initData, so there is nothing to IDOR against.
 
     Also checks for admin bans/suspensions exactly as cmd_create_paywall does,
@@ -835,7 +835,7 @@ async def api_groups_detect(
 
 
 # ---------------------------------------------------------------------------
-# NEW — Group/Channel Onboarding: create/activate step
+# NEW Group/Channel Onboarding: create/activate step
 # POST /api/groups/create
 # ---------------------------------------------------------------------------
 
@@ -852,7 +852,7 @@ async def api_groups_create(
 
     Accepts the four wizard-collected values, validates the wallet address,
     then calls the SAME upsert_group / activate_paywall /
-    update_group_price_usd_cents functions the bot uses — no reimplementation.
+    update_group_price_usd_cents functions the bot uses no reimplementation.
 
     Authorization
     -------------
@@ -861,7 +861,7 @@ async def api_groups_create(
     equivalent of the bot's grant_id-embedded callback that prevents one
     user from activating a paywall on a chat they didn't make the bot admin
     of.  We also confirm can_invite_users + can_manage_chat (+ can_post_messages
-    for channels) are present — same as _grant_has_perms.
+    for channels) are present same as _grant_has_perms.
 
     Fee transparency
     ----------------
@@ -959,7 +959,7 @@ async def api_groups_create(
         "platform_keeps_usd":  round(buyer_fee + admin_fee, 4),
     }
 
-    # ── Activate — same three-call sequence as cb_final_confirm ──────────────
+    # ── Activate same three-call sequence as cb_final_confirm ──────────────
     chat_title = g["chat_title"]
 
     group_id = await queries.upsert_group(
@@ -976,7 +976,7 @@ async def api_groups_create(
     )
     await queries.update_group_price_usd_cents(group_id, body.price_usd_cents)
 
-    # ── Audit log — real actor's telegram_id, matching pattern everywhere ─────
+    # ── Audit log real actor's telegram_id, matching pattern everywhere ─────
     await queries.audit(
         group_id,
         "paywall_created_via_miniapp",
@@ -1160,7 +1160,7 @@ async def api_developer_charge_recheck(
 ) -> dict:
     """
     Manually trigger a recheck of a pending platform charge's vault for new transactions.
-    Actually processes any unprocessed transactions found — same logic as the watcher.
+    Actually processes any unprocessed transactions found same logic as the watcher.
     """
     telegram_user_id = user["id"]
     from renewise.db.connection import _db as _conn
@@ -1190,7 +1190,7 @@ async def api_developer_charge_recheck(
             "vault_address": vault_address,
             "status": row["status"],
             "processed": False,
-            "note": f"Charge is already {row['status']} — nothing to recheck.",
+            "note": f"Charge is already {row['status']} nothing to recheck.",
         }
 
     from renewise.watcher.toncenter import fetch_transactions, extract_tx_hash, extract_in_msg_value
@@ -1224,13 +1224,13 @@ async def api_developer_charge_recheck(
                 skipped_count += 1
                 continue
 
-            # Process the transaction — directly update DB without needing
+            # Process the transaction directly update DB without needing
             # the bot Application (platform charges don't send Telegram messages).
             try:
                 from renewise.watcher.db import mark_tx_processed
                 charge = await get_platform_charge_by_vault(vault_address)
                 if charge and charge["status"] in ("pending", "expired"):
-                    # Check amount FIRST — don't burn the idempotency hash on an
+                    # Check amount FIRST don't burn the idempotency hash on an
                     # insufficient payment (mirrors _process_platform_charge_inprocess).
                     if required_nano and amount_nano < required_nano:
                         log.warning(
@@ -1238,7 +1238,7 @@ async def api_developer_charge_recheck(
                             amount_nano, required_nano, charge_id
                         )
                         continue  # leave tx retryable, don't claim
-                    # Claim idempotency atomically — only after amount passes
+                    # Claim idempotency atomically only after amount passes
                     claimed = await mark_tx_processed(tx_hash, charge["id"])
                     if claimed:
                         # Update charge to completed
@@ -1411,7 +1411,7 @@ async def api_developer_update_wallet(
     #
     # • Test-only platform (no live keys yet): accept both mainnet and testnet
     #   wallet addresses. Test charges route to testnet regardless of address
-    #   type — the developer is told to pay with testnet GRAM, not real money.
+    #   type the developer is told to pay with testnet GRAM, not real money.
     #
     # • Live platform (live keys generated): enforce mainnet-only wallet when
     #   TONCENTER_TESTNET=false, because live charges settle real funds.
@@ -1445,12 +1445,12 @@ async def api_developer_update_wallet(
     addr_network = _addr_net or "unknown"
     # For test-only platforms, remind the dev to use testnet GRAM when paying
     testnet_notice = (
-        "This wallet is set for test charges. When testing, pay with testnet GRAM — "
+        "This wallet is set for test charges. When testing, pay with testnet GRAM "
         "not real money. Testnet GRAM is free from https://t.me/testgiver_ton_bot"
         if not has_live_keys else None
     )
     warning = (
-        "Raw address format — unable to verify network compatibility. "
+        "Raw address format unable to verify network compatibility. "
         "Ensure this address is reachable on the correct network."
         if addr_network == "raw" else testnet_notice
     )
@@ -1590,7 +1590,7 @@ async def api_developer_set_webhook(
     """
     Sets or updates the webhook URL.
     - First setup: returns a one-time webhook_secret that must be saved immediately.
-    - URL update: returns webhook_secret=null — the existing secret is preserved.
+    - URL update: returns webhook_secret=null the existing secret is preserved.
     """
     telegram_user_id = user["id"]
     await verify_platform_ownership(platform_id, telegram_user_id)
@@ -1672,7 +1672,7 @@ async def api_group_detail(
 ) -> dict:
     """
     Returns full stats for a single group including live chat title resolution
-    via the Telegram Bot API — this fixes the 'Unnamed' display for groups
+    via the Telegram Bot API this fixes the 'Unnamed' display for groups
     whose chat_title was NULL in the DB (created before the wizard was added).
     """
     telegram_user_id = user["id"]
@@ -1708,7 +1708,7 @@ async def api_group_detail(
             chat_title = chat_title or f"Chat {group['telegram_chat_id']}"
             chat_type  = chat_type  or "group"
 
-    # Revenue: sum of price_locked_in for active/comped subs — convert to cents
+    # Revenue: sum of price_locked_in for active/comped subs convert to cents
     from renewise.db.connection import _db as _conn
     async with _conn() as db:
         revenue_usd = await db.fetchval(
@@ -1814,7 +1814,7 @@ async def api_group_update_price(
 ) -> dict:
     """
     Update price_usd_cents. Existing subscribers keep their price_locked_in
-    until their next renewal — this rule is preserved because we only update
+    until their next renewal this rule is preserved because we only update
     the groups table, never the subscriptions.price_locked_in field.
     """
     telegram_user_id = user["id"]
@@ -1843,7 +1843,7 @@ async def api_group_update_wallet(
 
     Does NOT update groups.payout_wallet_address immediately. Creates a
     pending_wallet_changes row instead. Any existing pending change for this
-    group is automatically superseded — one pending change per group at a time.
+    group is automatically superseded one pending change per group at a time.
     """
     from datetime import datetime, timezone, timedelta
     from renewise.config import WALLET_CHANGE_DELAY_HOURS
@@ -1854,7 +1854,7 @@ async def api_group_update_wallet(
     if not await validate_ton_address(body.wallet_address):
         raise HTTPException(status_code=422, detail="Invalid wallet address format")
 
-    # On mainnet, reject testnet addresses outright — payouts will never arrive.
+    # On mainnet, reject testnet addresses outright payouts will never arrive.
     # On testnet, both address types are accepted.
     from renewise.services.wallet import detect_address_network
     from renewise.config import TONCENTER_TESTNET
@@ -1868,7 +1868,7 @@ async def api_group_update_wallet(
             ),
         )
 
-    # Passkey check — required when a passkey is already set on this group.
+    # Passkey check required when a passkey is already set on this group.
     # First-time wallet setup has no passkey, so it passes through freely.
     # Raises PasscodeLockedError (→429) after 5 consecutive wrong attempts.
     try:
@@ -1919,7 +1919,7 @@ async def api_group_update_wallet(
     addr_network = _addr_net or "unknown"
     # warn on raw addresses only (can't determine testnet/mainnet from raw form)
     warning = (
-        "Raw address format — unable to verify network compatibility. "
+        "Raw address format unable to verify network compatibility. "
         "Ensure this address is reachable on the correct network."
         if addr_network == "raw" else None
     )
@@ -2085,7 +2085,7 @@ async def api_group_delete(
     """
     Permanently delete a group and all its subscriber records.
 
-    Calls the SAME queries.delete_group function the bot uses — no
+    Calls the SAME queries.delete_group function the bot uses no
     reimplementation.  Sequence (mirrors the bot handler exactly):
 
       i.   Set groups.status = 'paused'  (stops new payment activity)
@@ -2094,7 +2094,7 @@ async def api_group_delete(
       iv.  Audit + cancel pending wallet changes + cascade delete (one tx)
 
     processed_tx_hashes and vault_registry are NOT deleted.
-    Requires verify_admin_or_403 — no exceptions.
+    Requires verify_admin_or_403 no exceptions.
     """
     telegram_user_id = user["id"]
     group = await verify_admin_or_403(telegram_user_id, group_id)
@@ -2102,7 +2102,7 @@ async def api_group_delete(
     chat_title = group.get("chat_title") or f"Chat {group['telegram_chat_id']}"
     telegram_chat_id = group["telegram_chat_id"]
 
-    # i. Suspend immediately — closes race window with watcher (join_request
+    # i. Suspend immediately closes race window with watcher (join_request
     #    declines requests for suspended groups, preventing a pending subscription
     #    from activating between this and the cascade delete).
     await queries.set_group_status(group_id, "suspended")
@@ -2168,7 +2168,7 @@ async def api_group_comp(
     """
     Comp a member by telegram_user_id.
     Reuses the exact upsert_user + comp_subscription path from admin_menu.py.
-    The Telegram join-request approval must happen via the bot — the Mini App
+    The Telegram join-request approval must happen via the bot the Mini App
     cannot call approve_chat_join_request directly.
     """
     telegram_user_id = user["id"]
@@ -2184,7 +2184,7 @@ async def api_group_comp(
 
 
 # ---------------------------------------------------------------------------
-# Terms of Service — status check and acceptance
+# Terms of Service status check and acceptance
 # Shared with the bot: both read/write the same users.terms_accepted_at column.
 # The Mini App calls GET /api/terms-status on load; if not accepted it shows
 # the ToS screen before rendering any other content.  POST /api/terms-accept
@@ -2244,7 +2244,7 @@ async def api_terms_accept(
     """
     Record that the authenticated user has accepted the Terms of Service.
 
-    Idempotent — calling it multiple times is safe; the original acceptance
+    Idempotent calling it multiple times is safe; the original acceptance
     timestamp is preserved (COALESCE in the query layer).
 
     Response:
@@ -2432,7 +2432,7 @@ async def api_sandbox_create_charge(
 ) -> dict:
     """
     Create a sandbox (test-mode) charge for the authenticated user's platform.
-    Authenticated via Telegram initData — no raw secret key needed in the browser.
+    Authenticated via Telegram initData no raw secret key needed in the browser.
     """
     telegram_user_id = user["id"]
 
@@ -2460,7 +2460,7 @@ async def api_sandbox_create_charge(
     import time as _t
     external_reference = body.get("external_reference") or f"sandbox_{int(_t.time())}"
 
-    # Create the charge directly — bypasses Bearer auth
+    # Create the charge directly bypasses Bearer auth
     from renewise.services.payment import generate_platform_payment_request
     from renewise.db.connection import _db as _conn2
 
@@ -2511,7 +2511,7 @@ async def api_sandbox_get_charge(
     user: Annotated[dict, Depends(get_telegram_user)],
 ) -> dict:
     """
-    Poll a sandbox charge status. Authenticated via initData — no raw key needed.
+    Poll a sandbox charge status. Authenticated via initData no raw key needed.
     """
     telegram_user_id = user["id"]
 
@@ -2552,8 +2552,8 @@ async def api_analytics(
     Unified analytics endpoint for both admin (creator) and developer views.
 
     Returns different aggregates based on `mode`:
-      creator   — subscription/revenue metrics for all groups the user admins
-      developer — charge/revenue metrics for all platforms the user owns
+      creator   subscription/revenue metrics for all groups the user admins
+      developer charge/revenue metrics for all platforms the user owns
 
     All revenue figures include:
       - usd_cents: USD value locked in at payment time (price_locked_in)
@@ -2790,7 +2790,7 @@ async def _analytics_developer(telegram_user_id: int) -> dict:
         total_rev_cents   = int(kpi_row["revenue"] or 0)
         success_rate      = (completed_charges / total_charges * 100) if total_charges else 0.0
 
-        # nano revenue (best effort — from required_nano_amount on completed charges)
+        # nano revenue (best effort from required_nano_amount on completed charges)
         nano_row = await db.fetchrow(
             f"SELECT COALESCE(SUM(required_nano_amount),0) AS nano "
             f"FROM platform_charges "

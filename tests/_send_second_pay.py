@@ -12,7 +12,7 @@ from pytoniq_core import Address, Cell
 from renewise.ton.vault import VaultParams, build_payment_link, _load_code_cell
 from renewise.config import PLATFORM_WALLET, LOG_ADDRESS, TRIGGER_WALLET, BUYER_FEE_BPS, ADMIN_FEE_BPS
 
-# Use the most recent vault — already deployed with latest build
+# Use the most recent vault already deployed with latest build
 VAULT = "EQDkk9uBDp6BqvAFOR-wchG7LOjozbBvWktM-QEaluwo3n6_"
 
 PRICE  = 100_000_000
@@ -51,7 +51,7 @@ async def main():
     print(f"Target vault  : {VAULT}")
     print(f"Match         : {link.vault_address == VAULT}")
     if link.vault_address != VAULT:
-        print("ERROR: vault address mismatch — check SUB_ID")
+        print("ERROR: vault address mismatch check SUB_ID")
         return
     print()
 
@@ -70,7 +70,7 @@ async def main():
     print(f"Platform before       : {platform_before/1e9:.6f} TON")
     print()
 
-    # Send Pay{} WITHOUT StateInit — contract already deployed
+    # Send Pay{} WITHOUT StateInit contract already deployed
     pay_body = Cell.one_from_boc(link.body_boc)
     old_seqno = await wallet.get_seqno()
     send_amount = link.required_nano
@@ -80,7 +80,7 @@ async def main():
         destination=Address(VAULT),
         amount=send_amount,
         body=pay_body,
-        # NO state_init — contract already exists
+        # NO state_init contract already exists
     )
 
     print("Waiting for confirmation...")
@@ -116,7 +116,7 @@ async def main():
     print(f"  Vault after       : {vault_after/1e9:.6f} TON")
     print(sep)
     ok = admin_recv > 1_000_000 and platform_recv > 1_000_000
-    print(f"  Split fired: {'YES — this is a deploy-on-first-message bug' if ok else 'NO — different issue'}")
+    print(f"  Split fired: {'YES this is a deploy-on-first-message bug' if ok else 'NO different issue'}")
     print(sep)
 
     await client.close_all()

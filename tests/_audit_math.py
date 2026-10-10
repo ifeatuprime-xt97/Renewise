@@ -78,7 +78,7 @@ print("\n=== Test spec audit ===")
 # An early return from receive() is a SUCCESS transaction in TON
 # (exit code 0), not a failure. The test assertion is WRONG.
 print("  ⚠️  SPEC BUG: 'should reject underpayment' asserts success: false")
-print("     The contract does NOT revert on underpayment — it accumulates")
+print("     The contract does NOT revert on underpayment it accumulates")
 print("     and returns early (exit code 0). The transaction succeeds but")
 print("     no split occurs. TON does not auto-bounce on early return.")
 print("     The test will FAIL if run against the current contract.")
@@ -91,7 +91,7 @@ print()
 print("  ⚠️  SPEC BUG: 'should handle overpayment as a tip to admin'")
 print("     The contract does NOT send the overage to admin.")
 print("     overage goes into overage_held for the Refund{} flow.")
-print("     expectedAdminAmount includes tipAmount — this will FAIL.")
+print("     expectedAdminAmount includes tipAmount this will FAIL.")
 print()
 print("  ✅  All other split/fee arithmetic tests are correct against current contract.")
 
@@ -102,8 +102,8 @@ PART2 = tact_required - PART1  # = ceil half
 after_part1 = PART1            # accumulated_paid after first tx
 after_part2 = PART1 + PART2    # = tact_required exactly
 
-print(f"  Part 1: {PART1:,} nanoTON — accumulated={after_part1:,} < required={tact_required:,} → early return ✅")
-print(f"  Part 2: {PART2:,} nanoTON — accumulated={after_part2:,} >= required={tact_required:,} → split fires ✅")
+print(f"  Part 1: {PART1:,} nanoTON accumulated={after_part1:,} < required={tact_required:,} → early return ✅")
+print(f"  Part 2: {PART2:,} nanoTON accumulated={after_part2:,} >= required={tact_required:,} → split fires ✅")
 overage_2part = after_part2 - tact_required
 print(f"  Overage on exact two-part payment: {overage_2part:,} (should be 0: {'✅' if overage_2part == 0 else '❌'})")
 

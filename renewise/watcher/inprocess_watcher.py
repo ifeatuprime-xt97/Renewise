@@ -1,7 +1,7 @@
 """
 renewise/watcher/inprocess_watcher.py
 
-In-process payment watcher — runs inside the same asyncio event loop as the
+In-process payment watcher runs inside the same asyncio event loop as the
 bot, with no Redis or RQ dependency.
 
 Use this for development / testnet where you want everything in one process:
@@ -29,7 +29,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from renewise.watcher.config import POLL_INTERVAL_SECONDS, TONCENTER_TESTNET, TONCENTER_BASE_URL
-# Reuse the existing TonCenter client — correct URL + key rotation already there
+# Reuse the existing TonCenter client correct URL + key rotation already there
 from renewise.watcher.toncenter import fetch_transactions, extract_tx_hash, extract_in_msg_value
 from renewise.watcher.db import (
     migrate,
@@ -145,7 +145,7 @@ async def _notify_overpayment(
         await app.bot.send_message(
             chat_id=tg_user_id,
             text=(
-                f"💸 <b>You overpaid — we owe you a refund!</b>\n\n"
+                f"💸 <b>You overpaid we owe you a refund!</b>\n\n"
                 f"You sent <b>{overpaid_ton:.4f} GRAM</b> more than required.\n"
                 f"Refund amount: <b>{refund_ton:.4f} GRAM</b> "
                 f"(≈ <b>${refund_usd:.2f} USD</b>) after network fees.\n\n"
@@ -173,7 +173,7 @@ async def _process_platform_charge_inprocess(
     log.info("inprocess_platform: tx=%s charge_id=%d amount=%d status=%s",
              tx_hash, charge["id"], amount_nano, charge.get("status"))
 
-    # Idempotency pre-check — skip txs already fully processed
+    # Idempotency pre-check skip txs already fully processed
     if await is_tx_processed(tx_hash):
         log.debug("inprocess_platform: already processed tx=%s", tx_hash)
         return
@@ -190,7 +190,7 @@ async def _process_platform_charge_inprocess(
         await mark_tx_processed(tx_hash, charge["id"], is_partial=True)
         return
 
-    # Claim idempotency atomically — point of no return
+    # Claim idempotency atomically point of no return
     claimed = await mark_tx_processed(tx_hash, charge["id"])
     if not claimed:
         log.info("inprocess_platform: lost race on idempotency claim tx=%s", tx_hash)
@@ -230,14 +230,14 @@ async def _process_payment_inprocess(
     """
     log.info("inprocess: tx=%s vault=%s amount=%d", tx_hash, vault_address, amount_nano)
 
-    # Step 1 — idempotency pre-check
+    # Step 1 idempotency pre-check
     if await is_tx_processed(tx_hash):
         log.debug("inprocess: already processed tx=%s", tx_hash)
         return
 
     log.info("inprocess: NEW transaction detected - tx=%s vault=%s amount=%d", tx_hash, vault_address, amount_nano)
 
-    # Step 2 — resolve vault → subscription context
+    # Step 2 resolve vault → subscription context
     reg = await get_vault_registration(vault_address)
     if not reg:
         from renewise.db.queries import get_platform_charge_by_vault
@@ -253,7 +253,7 @@ async def _process_payment_inprocess(
             all_pending = await db.fetch(
                 "SELECT id, vault_address, status FROM platform_charges WHERE status = 'pending' ORDER BY id DESC LIMIT 10"
             )
-            log.warning("inprocess: unknown vault %s — no registry entry and no platform charge. Recent pending charges:", vault_address)
+            log.warning("inprocess: unknown vault %s no registry entry and no platform charge. Recent pending charges:", vault_address)
             for pc in all_pending:
                 log.warning("  charge_id=%d vault=%s status=%s match=%s", 
                            pc["id"], pc["vault_address"], pc["status"],
@@ -271,16 +271,16 @@ async def _process_payment_inprocess(
 
     is_renewal = sub["status"] == "active"
 
-    # Step 3 — resolve the required payment amount
+    # Step 3 resolve the required payment amount
     #
     # SOURCE OF TRUTH: sub["required_nano_amount"] is stored at payment-link
     # generation time from the vault's own price + buyer_fee + gas_reserve
     # calculation. It is locked in at that moment and must NOT be re-derived
-    # from the live exchange rate — if Gram price moves between the first partial
+    # from the live exchange rate if Gram price moves between the first partial
     # payment and a top-up, re-deriving would shift the threshold and
     # incorrectly reject a payment that the vault itself accepted.
     #
-    # Fallback (required_nano_amount is NULL — old row before this was added):
+    # Fallback (required_nano_amount is NULL old row before this was added):
     # Read from the vault's required_payment() getter via a TonCenter get-method
     # call. This returns exactly what the contract computed, independent of the
     # current exchange rate. If that also fails, use 0 to skip the amount check
@@ -295,7 +295,7 @@ async def _process_payment_inprocess(
     # notification for a transaction that clearly covers the full price.
     if required is not None and amount_nano >= required:
         log.debug(
-            "inprocess: amount_nano=%d >= stored required=%d — ignoring stale required_nano_amount, "
+            "inprocess: amount_nano=%d >= stored required=%d ignoring stale required_nano_amount, "
             "will recompute from vault getter | vault=%s tx=%s",
             amount_nano, required, vault_address, tx_hash,
         )
@@ -316,24 +316,24 @@ async def _process_payment_inprocess(
                 )
         except Exception as exc:
             log.warning(
-                "inprocess: could not fetch required_payment from vault %s: %s — "
+                "inprocess: could not fetch required_payment from vault %s: %s "
                 "skipping amount check, relying on on-chain PaymentLog",
                 vault_address, exc,
             )
 
-    # Step 3.5 — global kill switch
+    # Step 3.5 global kill switch
     if await is_payments_paused():
         log.warning("inprocess: global payments kill switch active, skipping tx=%s", tx_hash)
         return
 
-    # Step 4 — partial payment accumulation check
+    # Step 4 partial payment accumulation check
     #
     # Only compare against required if we have a reliable locked-in value.
     # If required is None (vault getter also failed), we trust the on-chain
     # PaymentLog: any tx that reached the vault is processed optimistically.
     # A false activation is less harmful than a paying user stuck with no access.
     #
-    # We do NOT mark_tx_processed here yet — a partial payment must remain
+    # We do NOT mark_tx_processed here yet a partial payment must remain
     # retryable so that when the user sends a top-up we process that too.
     current_paid   = sub["amount_paid_so_far"] or 0
     new_total_paid = current_paid + amount_nano
@@ -341,7 +341,7 @@ async def _process_payment_inprocess(
     if required is not None and new_total_paid < required:
         # If the subscription is already active, this is a residual internal
         # contract message (gas change / split output) arriving after the real
-        # payment was processed. Silently mark it processed and skip — no
+        # payment was processed. Silently mark it processed and skip no
         # "partial payment" DM should ever fire for an already-active member.
         current_sub = await get_subscription(user_id, group_id)
         if current_sub and current_sub["status"] == "active":
@@ -364,7 +364,7 @@ async def _process_payment_inprocess(
         from renewise.db.queries import update_amount_paid_so_far
         await update_amount_paid_so_far(sub["id"], new_total_paid)
 
-        # Wait a few seconds before notifying — the full payment tx often
+        # Wait a few seconds before notifying the full payment tx often
         # arrives just behind the first small internal message. If the sub
         # becomes active in that window we skip the DM entirely.
         await asyncio.sleep(8)
@@ -397,25 +397,25 @@ async def _process_payment_inprocess(
             await _notify_insufficient_payment(app, user_id, group_id, new_total_paid, required)
         return
 
-    # Step 4.5 — atomic idempotency claim (only reached when amount is sufficient)
+    # Step 4.5 atomic idempotency claim (only reached when amount is sufficient)
     # This is the point of no return: once claimed, we WILL activate the subscription.
     claimed = await mark_tx_processed(tx_hash, sub_id)
     if not claimed:
         log.info("inprocess: lost race on idempotency claim tx=%s", tx_hash)
         return
 
-    # Reset accumulated amount — next renewal cycle starts from zero
+    # Reset accumulated amount next renewal cycle starts from zero
     from renewise.db.queries import update_amount_paid_so_far
     await update_amount_paid_so_far(sub["id"], 0)
 
-    # Step 5 — activate subscription in DB
+    # Step 5 activate subscription in DB
     new_renewal_date = await activate_subscription(user_id, group_id, tx_hash=tx_hash)
     log.info(
         "inprocess: activated | sub_id=%d user=%d group=%d tx=%s is_renewal=%s",
         sub_id, user_id, group_id, tx_hash, is_renewal,
     )
 
-    # Step 6 — audit
+    # Step 6 audit
     await audit(
         group_id=group_id,
         action="payment_confirmed",
@@ -423,7 +423,7 @@ async def _process_payment_inprocess(
         details={"tx_hash": tx_hash, "amount_nano": amount_nano, "total_paid_nano": new_total_paid, "is_renewal": is_renewal},
     )
 
-    # Step 6.5 — overpayment check
+    # Step 6.5 overpayment check
     # Only fire if we have a reliable required value to compare against.
     if required is not None and new_total_paid > required:
         overpaid_nano = new_total_paid - required
@@ -471,10 +471,10 @@ async def _process_payment_inprocess(
             )
             await _notify_overpayment(app, user_id, overpaid_nano, refund_nano, refund_usd, refund_id)
 
-    # Step 7 — trigger bot actions directly (no Redis pub/sub needed)
+    # Step 7 trigger bot actions directly (no Redis pub/sub needed)
     #
     # Also delete the "partial payment" warning if one was sent earlier for
-    # this (user_id, group_id) pair — it's no longer relevant now that the
+    # this (user_id, group_id) pair it's no longer relevant now that the
     # full payment has been confirmed.
     insuf_msg_id = app.bot_data.get("insufficient_msgs", {}).pop((user_id, group_id), None)
     if insuf_msg_id:
@@ -583,7 +583,7 @@ async def _retry_pending_send_refunds_inprocess(app: "Application") -> None:
         tg_user_id     = row.get("telegram_user_id")
 
         if not wallet_address:
-            log.warning("inprocess: refund_id=%d has no wallet address — skipping", refund_id)
+            log.warning("inprocess: refund_id=%d has no wallet address skipping", refund_id)
             continue
 
         from renewise.db.connection import _db as _conn
@@ -596,7 +596,7 @@ async def _retry_pending_send_refunds_inprocess(app: "Application") -> None:
                 refund_id,
             )
         if not vault_row or not vault_row["vault_address"]:
-            log.warning("inprocess: refund_id=%d — no vault_address, skipping", refund_id)
+            log.warning("inprocess: refund_id=%d no vault_address, skipping", refund_id)
             continue
 
         result = await send_refund_trigger(
@@ -623,7 +623,7 @@ async def _retry_pending_send_refunds_inprocess(app: "Application") -> None:
                 except Exception as dm_exc:
                     log.warning("inprocess: could not DM user %s after retry: %s", tg_user_id, dm_exc)
         else:
-            log.warning("inprocess: refund_id=%d retry FAILED — %s", refund_id, result.error)
+            log.warning("inprocess: refund_id=%d retry FAILED %s", refund_id, result.error)
 
 
 # ── Wallet change apply (in-process, dev mode) ───────────────────────────────
@@ -658,7 +658,7 @@ async def _apply_wallet_changes_inprocess(app: "Application") -> None:
         group_title  = row["chat_title"] or str(group_id)
         group_status = row["group_status"]
 
-        # Item 9 — skip if group is suspended or frozen
+        # Item 9 skip if group is suspended or frozen
         if group_status in ("suspended", "frozen"):
             await cancel_pending_wallet_change(change_id, cancelled_by=0)
             await audit(
@@ -668,7 +668,7 @@ async def _apply_wallet_changes_inprocess(app: "Application") -> None:
                 {"change_id": change_id, "group_status": group_status},
             )
             log.warning(
-                "inprocess: skipped wallet change_id=%d — group %d is %s",
+                "inprocess: skipped wallet change_id=%d group %d is %s",
                 change_id, group_id, group_status,
             )
             continue
@@ -708,7 +708,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
     Continuously poll all registered vault addresses for new transactions
     and process any confirmed payments.
 
-    Runs as a background asyncio task alongside the bot — cancel to stop.
+    Runs as a background asyncio task alongside the bot cancel to stop.
     """
     # Ensure watcher DB tables exist (idempotent)
     await migrate()
@@ -721,7 +721,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
 
     # Per-address seen-set: vault_address → set of tx hashes already handled.
     # On the very first poll for each vault we seed this set from existing txs
-    # WITHOUT processing them — avoids replaying history on startup.
+    # WITHOUT processing them avoids replaying history on startup.
     seen: dict[str, set[str]] = {}
 
     # Track hashes that failed the amount check so we don't re-notify on every poll.
@@ -745,8 +745,8 @@ async def poll_vaults_inprocess(app: "Application") -> None:
         _inflight.discard(t)
 
     # ── Vault poll-tier constants ─────────────────────────────────────────────
-    # Hot  — vault active within HOT_WINDOW_SECONDS → poll every POLL_INTERVAL_SECONDS
-    # Warm — older than HOT_WINDOW_SECONDS           → poll every WARM_POLL_SECONDS
+    # Hot  vault active within HOT_WINDOW_SECONDS → poll every POLL_INTERVAL_SECONDS
+    # Warm older than HOT_WINDOW_SECONDS           → poll every WARM_POLL_SECONDS
     HOT_WINDOW_SECONDS: float = 1800.0   # 30 minutes
     WARM_POLL_SECONDS:  float = 60.0     # 1 minute between warm polls
 
@@ -774,7 +774,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                     await _apply_wallet_changes_inprocess(app)
                     _last_wallet_apply = now
 
-                if now - _last_charge_expire >= 1800:  # every 30 min — reduced from 5 min to save DB compute
+                if now - _last_charge_expire >= 1800:  # every 30 min reduced from 5 min to save DB compute
                     await _expire_stale_charges_inprocess()
                     _last_charge_expire = now
 
@@ -817,7 +817,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
 
                     if is_hot:
                         # Hot: poll every POLL_INTERVAL_SECONDS (already enforced
-                        # by the outer sleep — just always poll hot vaults)
+                        # by the outer sleep just always poll hot vaults)
                         hot_count += 1
                     else:
                         # Warm: only poll when WARM_POLL_SECONDS have elapsed
@@ -832,7 +832,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                         _last_polled[canonical] = now
                         if not txs:
                             log.debug(
-                                "inprocess: no txs returned for vault %s (network=%s) — "
+                                "inprocess: no txs returned for vault %s (network=%s) "
                                 "vault may be undeployed, or API key invalid for this network",
                                 canonical, network,
                             )
@@ -841,13 +841,13 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                         if "429" in err_str:
                             poll_backoff = max(poll_backoff, 5)
                             log.warning(
-                                "inprocess: 429 on vault %s after key manager exhausted — "
+                                "inprocess: 429 on vault %s after key manager exhausted "
                                 "outer backoff %ds",
                                 canonical, poll_backoff,
                             )
                         elif "401" in err_str or "Unauthorized" in err_str or "Invalid api-key" in err_str:
                             log.error(
-                                "inprocess: API key rejected for vault %s (network=%s) — "
+                                "inprocess: API key rejected for vault %s (network=%s) "
                                 "check TONCENTER_API_KEYS_TESTNET is set for testnet vaults",
                                 canonical, network,
                             )
@@ -866,7 +866,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                                 seen[canonical].add(h)
                         log.info(
                             "inprocess: seeded %d already-processed tx(s) for vault %s "
-                            "(%d total on-chain) — will process %d unprocessed",
+                            "(%d total on-chain) will process %d unprocessed",
                             len(seen[canonical]), canonical, len(txs),
                             len(txs) - len(seen[canonical]),
                         )
@@ -881,7 +881,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
 
                         seen[canonical].add(tx_hash)
                         log.info(
-                            "inprocess: NEW tx detected — tx=%s vault=%s amount=%d tier=%s",
+                            "inprocess: NEW tx detected tx=%s vault=%s amount=%d tier=%s",
                             tx_hash, canonical, amount_nano,
                             "hot" if is_hot else "warm",
                         )
@@ -897,7 +897,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                         t.add_done_callback(_remove_done)
 
                 log.info(
-                    "inprocess watcher: %d vault(s) total — "
+                    "inprocess watcher: %d vault(s) total "
                     "hot=%d polled, warm=%d polled, warm=%d skipped",
                     len(vaults), hot_count, warm_count, skip_count,
                 )
@@ -913,7 +913,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
             await asyncio.sleep(POLL_INTERVAL_SECONDS + poll_backoff)
 
     except asyncio.CancelledError:
-        log.info("In-process watcher cancelled — waiting for %d in-flight payment(s).", len(_inflight))
+        log.info("In-process watcher cancelled waiting for %d in-flight payment(s).", len(_inflight))
         if _inflight:
             # Give in-flight payments a short grace period to finish naturally.
             done, pending = await asyncio.wait(_inflight, timeout=10)

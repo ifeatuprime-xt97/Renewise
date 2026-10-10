@@ -75,7 +75,7 @@ describe('PaymentVault', () => {
         expect(platformReceived).toBeGreaterThan(expectedPlatformAmount);
 
         // Gas reserve stays in vault to fund a future Refund{} message.
-        // Vault balance is NOT zero — the 0.05 TON reserve remains.
+        // Vault balance is NOT zero the 0.05 TON reserve remains.
         const vaultBalance = (await blockchain.getContract(vault.address)).balance;
         expect(vaultBalance).toBeGreaterThan(0n);
         expect(vaultBalance).toBeLessThanOrEqual(minGasReserve);
@@ -86,7 +86,7 @@ describe('PaymentVault', () => {
 
     // ── Partial payment (underpayment accumulation) ───────────────────────────
     // The contract accumulates multiple payments in accumulated_paid. It does NOT
-    // revert on underpayment — it returns early (exit 0) so funds stay in the vault.
+    // revert on underpayment it returns early (exit 0) so funds stay in the vault.
     // The split fires only once accumulated_paid >= required.
     it('should accumulate a partial payment without splitting, then split on completion', async () => {
         const buyerFee = (price * buyerFeeBps) / 10000n;
@@ -96,7 +96,7 @@ describe('PaymentVault', () => {
         const adminBalanceBefore = await admin.getBalance();
         const platformBalanceBefore = await platform.getBalance();
 
-        // First tx: partial — exits early, no split, transaction still succeeds
+        // First tx: partial exits early, no split, transaction still succeeds
         const part1Result = await vault.send(
             payer.getSender(),
             { value: underpayment },
@@ -112,7 +112,7 @@ describe('PaymentVault', () => {
         expect(await admin.getBalance()).toEqual(adminBalanceBefore);
         expect(await platform.getBalance()).toEqual(platformBalanceBefore);
 
-        // Top-up: send the shortfall — now total >= required, split fires
+        // Top-up: send the shortfall now total >= required, split fires
         const part2Result = await vault.send(
             payer.getSender(),
             { value: toNano('0.01') },

@@ -43,7 +43,7 @@ log = logging.getLogger(__name__)
 _TESTNET_CONFIG_URL = "https://ton.org/testnet-global.config.json"
 _MAINNET_CONFIG_URL = "https://ton.org/global-config.json"
 
-# Gas attached to the Refund{} trigger message — covers compute + outgoing send
+# Gas attached to the Refund{} trigger message covers compute + outgoing send
 REFUND_TRIGGER_GAS_NANO: int = 10_000_000  # 0.01 GRAM
 
 TX_CONFIRM_TIMEOUT_S: int = 90
@@ -85,7 +85,7 @@ async def send_refund_trigger(
         return RefundTriggerResult(
             success=False,
             tx_hash="",
-            error="TRIGGER_MNEMONIC is not configured — automatic refunds disabled.",
+            error="TRIGGER_MNEMONIC is not configured automatic refunds disabled.",
         )
 
     try:
@@ -169,7 +169,7 @@ async def send_refund_trigger(
 async def _fetch_latest_tx_hash(address: str) -> str:
     """
     Fetch the most recent outgoing transaction hash for an address.
-    Returns empty string if lookup fails — the refund still happened,
+    Returns empty string if lookup fails the refund still happened,
     the user just won't have a direct explorer link.
     """
     import aiohttp

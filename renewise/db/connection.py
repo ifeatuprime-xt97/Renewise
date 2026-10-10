@@ -6,7 +6,7 @@ Unified database connection layer.
 When DATABASE_URL is set the app uses asyncpg (Neon / PostgreSQL).
 When DATABASE_URL is blank the app falls back to aiosqlite (SQLite, local dev).
 
-Public API — used throughout the codebase:
+Public API used throughout the codebase:
 
     from renewise.db.connection import _db, Row
 
@@ -122,7 +122,7 @@ def _to_sqlite(sql: str) -> str:
     sql = _PH.sub("?", sql)
     sql = _NOW.sub("CURRENT_TIMESTAMP", sql)
     # ($N || ' days')::INTERVAL → just the string value; SQLite datetime() handles it inline
-    # The actual interval arithmetic is handled differently — see activate_subscription
+    # The actual interval arithmetic is handled differently see activate_subscription
     sql = _INTERVAL3.sub("", sql)
     sql = _TRUE.sub("1", sql)
     sql = _FALSE.sub("0", sql)
@@ -213,7 +213,7 @@ async def _get_pool() -> Any:
             import asyncpg
             _pg_pool = await asyncpg.create_pool(
                 DATABASE_URL,
-                min_size=0,            # Never hold idle connections — Neon bills per connection-second
+                min_size=0,            # Never hold idle connections Neon bills per connection-second
                 max_size=5,            # Free tier doesn't need more than 5 concurrent
                 command_timeout=30,
                 max_inactive_connection_lifetime=60,  # Release connections idle >60s back to Neon

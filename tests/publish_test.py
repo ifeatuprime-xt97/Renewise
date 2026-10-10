@@ -45,4 +45,4 @@ if recipients == 0:
     print("   Is 'python -m renewise.bot' running? bot_listener starts there.")
 else:
     print(f"\n✅ Message delivered to {recipients} subscriber(s).")
-    print("   Check your Telegram — you should have a DM from the superadmin bot.")
+    print("   Check your Telegram you should have a DM from the superadmin bot.")

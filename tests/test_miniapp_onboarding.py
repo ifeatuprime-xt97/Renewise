@@ -8,7 +8,7 @@ Real pytest tests for:
 Each test proves BOTH:
   (a) correct behaviour for an authorized user
   (b) explicit rejection of an unauthorized user attempting the same action
-      on a resource they don't own — attack-simulation parity with the
+      on a resource they don't own attack-simulation parity with the
       original IDOR test standard.
 
 Strategy
@@ -59,7 +59,7 @@ import renewise.db.schema as _schema
 import renewise.db.queries as _queries
 from renewise.db.schema import init_db
 
-# Module-level TEST_DB_PATH — set per test by the autouse fixture
+# Module-level TEST_DB_PATH set per test by the autouse fixture
 _TEST_DB_PATH: str = ""
 
 # ── initData helpers ───────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ class TestDetect:
     async def test_attacker_cannot_see_owners_grants(self, http):
         """
         (b) Attack simulation: OWNER has a grant; ATTACKER calls /detect.
-        Must receive an empty list — cannot enumerate other users' chats.
+        Must receive an empty list cannot enumerate other users' chats.
         """
         await _seed_grant(OWNER_ID)   # owner's grant only
 
@@ -362,7 +362,7 @@ class TestCreate:
         assert body["price_usd_cents"] == 999
         assert body["billing_interval_days"] == 30
 
-        # DB state — real DB was written
+        # DB state real DB was written
         group = await _queries.get_group_by_id(body["group_id"])
         assert group is not None
         assert group["admin_telegram_id"] == OWNER_ID
@@ -386,7 +386,7 @@ class TestCreate:
     async def test_attacker_cannot_create_with_owners_grant(self, http, patch_wallet_valid):
         """
         (b) Attack simulation: OWNER has the admin grant; ATTACKER submits
-        /create claiming the same chat_id. Must be 403 — no group written.
+        /create claiming the same chat_id. Must be 403 no group written.
         """
         await _seed_grant(OWNER_ID)   # owner's grant, NOT attacker's
 

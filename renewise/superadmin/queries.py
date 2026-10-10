@@ -274,7 +274,7 @@ async def get_trigger_wallet_balance(
     Fetch the live GRAM balance of the trigger wallet via TonCenter v2 API.
 
     Returns balance in GRAM (float), or None on any error / unconfigured state.
-    Does NOT raise — designed to fail gracefully in a UI context.
+    Does NOT raise designed to fail gracefully in a UI context.
     """
     if not address:
         return None
@@ -415,7 +415,7 @@ async def get_user_detail(telegram_user_id: int) -> dict | None:
 
 
 async def get_all_user_ids() -> list[int]:
-    """Return telegram_user_id for every user — used for broadcast."""
+    """Return telegram_user_id for every user used for broadcast."""
     async with _db() as db:
         rows = await db.fetch("SELECT telegram_user_id FROM users ORDER BY id ASC")
         return [r["telegram_user_id"] for r in rows]
@@ -447,14 +447,14 @@ async def get_platform_tx_feed(
     """
     from renewise.config import USE_POSTGRES
 
-    # SECURITY: status_filter is validated against an explicit allowlist — never
+    # SECURITY: status_filter is validated against an explicit allowlist never
     # interpolated into SQL.  Anything outside the set silently falls back to "all".
     _ALLOWED = {"all", "active", "expired", "cancelled", "pending", "comped"}
     if status_filter not in _ALLOWED:
         status_filter = "all"
 
     # Map the subscription-side status filter to the equivalent platform_charges status.
-    # "comped" has no developer equivalent — exclude developer charges when that tab is active.
+    # "comped" has no developer equivalent exclude developer charges when that tab is active.
     _DEV_STATUS_MAP = {
         "active":    "completed",
         "expired":   "expired",
@@ -503,11 +503,11 @@ async def get_platform_tx_feed(
         "END"
     )
 
-    # SQLite uses REAL; Postgres uses DOUBLE PRECISION — both accept plain division.
+    # SQLite uses REAL; Postgres uses DOUBLE PRECISION both accept plain division.
     _price_cast = "CAST(pc.amount_usd_cents AS REAL)" if not USE_POSTGRES else "CAST(pc.amount_usd_cents AS DOUBLE PRECISION)"
 
     # Postgres requires subquery aliases; SQLite does too in UNION contexts.
-    # SQLite does NOT support NULLS LAST — omit it (completed_at is always set
+    # SQLite does NOT support NULLS LAST omit it (completed_at is always set
     # when tx_hash IS NOT NULL, so NULL ordering is not an issue in practice).
     _order_by = "ORDER BY processed_at DESC NULLS LAST" if USE_POSTGRES else "ORDER BY processed_at DESC"
 
@@ -541,7 +541,7 @@ async def get_platform_tx_feed(
                 limit, offset,
             )
         elif status_filter == "comped":
-            # "comped" is subscription-only — no developer charge equivalent
+            # "comped" is subscription-only no developer charge equivalent
             rows = await db.fetch(
                 f"{_sub_select} WHERE s.status = $1 "
                 "ORDER BY p.processed_at DESC "
@@ -639,7 +639,7 @@ async def get_platform_revenue_breakdown() -> dict:
         )
         by_status = {r["status"]: {"count": int(r["cnt"]), "revenue": float(r["revenue"])} for r in rows}
 
-        # Monthly GMV — current vs previous
+        # Monthly GMV current vs previous
         if USE_POSTGRES:
             cur_gmv = float(await db.fetchval(
                 "SELECT COALESCE(SUM(s.price_locked_in), 0) "

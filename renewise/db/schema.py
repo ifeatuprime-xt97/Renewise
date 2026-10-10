@@ -529,7 +529,7 @@ async def init_db() -> None:
             # migrations are idempotent so a skipped run is fine).
             acquired = await db.fetchval("SELECT pg_try_advisory_lock(18273645)")
             if not acquired:
-                # Another instance is running migrations right now — skip.
+                # Another instance is running migrations right now skip.
                 return
             try:
                 for stmt in pg_stmts:
@@ -566,7 +566,7 @@ async def init_db() -> None:
                 EXCEPTION WHEN others THEN NULL; END; $$;
                 """,
                 # Rename secret_key_test_hash → secret_key_test (stores raw plaintext)
-                # Reverting the hashing change — test keys are plaintext again.
+                # Reverting the hashing change test keys are plaintext again.
                 """
                 DO $$ BEGIN
                     ALTER TABLE platforms RENAME COLUMN secret_key_test_hash TO secret_key_test;
@@ -574,9 +574,9 @@ async def init_db() -> None:
                          WHEN others THEN NULL; END; $$;
                 """,
                 # ── Column additions (skipped if column already exists) ────────
-                # platform_charges.payment_url — stores full ton:// deep-link with StateInit
+                # platform_charges.payment_url stores full ton:// deep-link with StateInit
                 "DO $$ BEGIN ALTER TABLE platform_charges ADD COLUMN payment_url TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # groups — fee overrides, passkey, chat_type, price_usd_cents
+                # groups fee overrides, passkey, chat_type, price_usd_cents
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN buyer_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN admin_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN price_usd_cents INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
@@ -584,31 +584,31 @@ async def init_db() -> None:
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN invite_link TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN chat_type TEXT NOT NULL DEFAULT 'group'; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN wallet_passcode_hash TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # groups — passcode hard lockout (consecutive failure counting)
+                # groups passcode hard lockout (consecutive failure counting)
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN passcode_failed_attempts INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE groups ADD COLUMN passcode_locked_until TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # platforms — wallet passkey, fee overrides
+                # platforms wallet passkey, fee overrides
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN wallet_address TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN wallet_passcode_hash TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # platforms — passcode hard lockout (consecutive failure counting)
+                # platforms passcode hard lockout (consecutive failure counting)
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN passcode_failed_attempts INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN passcode_locked_until TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN buyer_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE platforms ADD COLUMN admin_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # platform_config — global fee defaults
+                # platform_config global fee defaults
                 "DO $$ BEGIN ALTER TABLE platform_config ADD COLUMN global_buyer_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE platform_config ADD COLUMN global_admin_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # subscriptions — payment tracking columns
+                # subscriptions payment tracking columns
                 "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN required_nano_amount BIGINT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN amount_paid_so_far BIGINT DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW(); EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # platform_charges — expiration timestamp
+                # platform_charges expiration timestamp
                 "DO $$ BEGIN ALTER TABLE platform_charges ADD COLUMN expires_at TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # users — ToS acceptance
+                # users ToS acceptance
                 "DO $$ BEGIN ALTER TABLE users ADD COLUMN terms_accepted_at TIMESTAMPTZ; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # processed_tx_hashes — subscription link
+                # processed_tx_hashes subscription link
                 "DO $$ BEGIN ALTER TABLE processed_tx_hashes ADD COLUMN sub_id INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
-                # processed_tx_hashes — partial payment flag (BUG-01 fix)
+                # processed_tx_hashes partial payment flag (BUG-01 fix)
                 "DO $$ BEGIN ALTER TABLE processed_tx_hashes ADD COLUMN is_partial INTEGER NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 ]
                 for mig in pg_migrations:
@@ -617,7 +617,7 @@ async def init_db() -> None:
                 # ── One-time fix: regenerate test keys that were accidentally hashed ──
                 # A previous migration SHA-256 hashed the secret_key_test column.
                 # Hashed values are exactly 64 hex chars and start with nothing
-                # recognisable — raw keys always start with 'sk_test_'.
+                # recognisable raw keys always start with 'sk_test_'.
                 # We regenerate any hashed rows with fresh raw keys.
                 import os as _os, hashlib as _hl
                 hashed_rows = await db.fetch(
@@ -635,7 +635,7 @@ async def init_db() -> None:
                     import logging as _log
                     _log.getLogger(__name__).warning(
                         "init_db: regenerated hashed test key for platform id=%d "
-                        "(owner=%d) — developer must retrieve new key from dashboard",
+                        "(owner=%d) developer must retrieve new key from dashboard",
                         row["id"], row["owner_telegram_id"],
                     )
             finally:
@@ -656,7 +656,7 @@ async def init_db() -> None:
             # Wallet change protection table (delay-and-notify)
             CREATE_PENDING_WALLET_CHANGES,
             CREATE_PLATFORMS, CREATE_PLATFORM_CHARGES, CREATE_WEBHOOK_ENDPOINTS, CREATE_WEBHOOK_DELIVERIES, CREATE_PLATFORM_AUDIT_LOG,
-            # Watcher tables — must come after CREATE_SUBSCRIPTIONS (FK dependency)
+            # Watcher tables must come after CREATE_SUBSCRIPTIONS (FK dependency)
             CREATE_VAULT_REGISTRY, CREATE_REMINDER_LOG,
             CREATE_IDX_VAULT, CREATE_IDX_SUB_RENEWAL, CREATE_IDX_PENDING_WALLET, CREATE_IDX_PLATFORM_AUDIT,
         ):
@@ -666,7 +666,7 @@ async def init_db() -> None:
             "SELECT 1, 0 WHERE NOT EXISTS (SELECT 1 FROM platform_config WHERE id=1)"
         )
 
-        # Migrations — each wrapped individually so one failure doesn't block others
+        # Migrations each wrapped individually so one failure doesn't block others
         for migration in (
             "ALTER TABLE groups ADD COLUMN buyer_fee_bps INTEGER",
             "ALTER TABLE groups ADD COLUMN admin_fee_bps INTEGER",
@@ -684,7 +684,7 @@ async def init_db() -> None:
             "ALTER TABLE users ADD COLUMN terms_accepted_at DATETIME",
             # ── chat_type on groups (channel vs group/supergroup) ───────────────
             "ALTER TABLE groups ADD COLUMN chat_type TEXT NOT NULL DEFAULT 'group'",
-            # ── sub_id on processed_tx_hashes (Fix 1 — schema/watcher drift) ──
+            # ── sub_id on processed_tx_hashes (Fix 1 schema/watcher drift) ──
             "ALTER TABLE processed_tx_hashes ADD COLUMN sub_id INTEGER",
             # ── is_partial on processed_tx_hashes (BUG-01 fix) ────────────────
             "ALTER TABLE processed_tx_hashes ADD COLUMN is_partial INTEGER NOT NULL DEFAULT 0",
@@ -707,11 +707,11 @@ async def init_db() -> None:
             try:
                 await db.execute(migration)
             except aiosqlite.OperationalError:
-                pass  # column/table already exists — safe to ignore
+                pass  # column/table already exists safe to ignore
 
         # ── Platform tables (idempotent CREATE TABLE IF NOT EXISTS) ───────────
         # Run separately because these are full DDL statements, not ALTER TABLE.
-        # Safe to re-run — IF NOT EXISTS makes them no-ops on existing DBs.
+        # Safe to re-run IF NOT EXISTS makes them no-ops on existing DBs.
         for stmt in (
             CREATE_PLATFORMS,
             CREATE_PLATFORM_CHARGES,

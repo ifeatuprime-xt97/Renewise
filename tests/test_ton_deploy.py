@@ -20,11 +20,11 @@ Prerequisites
        pip install -r requirements.txt
 
 3. Configure .env (copy from .env.example):
-       DEPLOYER_MNEMONIC   — 24-word mnemonic for a testnet wallet
-       ADMIN_ADDRESS       — testnet TON address for admin share
-       PLATFORM_ADDRESS    — testnet TON address for platform fee
-       LOG_ADDRESS         — testnet address for PaymentLog messages
-       TONCENTER_API_KEYS  — optional, avoids rate limits (comma-separated for multi-key)
+       DEPLOYER_MNEMONIC   24-word mnemonic for a testnet wallet
+       ADMIN_ADDRESS       testnet TON address for admin share
+       PLATFORM_ADDRESS    testnet TON address for platform fee
+       LOG_ADDRESS         testnet address for PaymentLog messages
+       TONCENTER_API_KEYS  optional, avoids rate limits (comma-separated for multi-key)
 
 4. Fund the deployer wallet with testnet TON:
        https://t.me/testgiver_ton_bot
@@ -61,7 +61,7 @@ load_dotenv()
 
 TESTNET_CONFIG = "https://ton.org/testnet-global.config.json"
 
-PRICE         = 100_000_000   # 0.1 TON — small amount for testnet demo
+PRICE         = 100_000_000   # 0.1 TON small amount for testnet demo
 BUYER_FEE_BPS = 200
 ADMIN_FEE_BPS = 330
 SUB_ID        = 1
@@ -222,7 +222,7 @@ async def main() -> None:
 
     ok = (admin_received > 0 and platform_received > 0
           and 0 < vault_delta <= exp_vault_delta_max)
-    print(f"\n  {'✅ Split verified end-to-end!' if ok else '❌ Split verification FAILED — check balances above'}")
+    print(f"\n  {'✅ Split verified end-to-end!' if ok else '❌ Split verification FAILED check balances above'}")
 
     await client.close_all()
     if not ok:

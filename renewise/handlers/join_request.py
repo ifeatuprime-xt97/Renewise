@@ -223,7 +223,7 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     vault_addr  = pending.get("vault_addr")
     amount_ton  = pending.get("amount_ton")
 
-    # payment_url is required — if missing the session predates the deep-link
+    # payment_url is required if missing the session predates the deep-link
     # flow and the data is stale. Treat it the same as no pending data.
     if not payment_url or not vault_addr or not amount_ton:
         await query.edit_message_text(

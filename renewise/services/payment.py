@@ -1,5 +1,5 @@
 """
-Payment service — Phase 2 implementation.
+Payment service Phase 2 implementation.
 
 Replaces the Phase 1 stub. The bot layer calls only the two public functions
 defined here; all chain-specific logic lives in renewise/ton/vault.py.
@@ -39,7 +39,7 @@ from renewise.utils.coingecko import get_ton_usd_price
 
 log = logging.getLogger(__name__)
 
-# Cached code cell — loaded once on first call, reused for all subsequent calls.
+# Cached code cell loaded once on first call, reused for all subsequent calls.
 _code_cell = None
 
 
@@ -100,7 +100,7 @@ class PaymentStatus(str, Enum):
 class PaymentRequest:
     payment_url:   str    # ton:// deep-link for Tonkeeper / TonHub
     vault_address: str    # raw vault address (for chain-watcher indexing)
-    payload:       str    # opaque string — vault address used as unique key
+    payload:       str    # opaque string vault address used as unique key
     amount:        float  # human-readable GRAM (price + buyer_fee, no gas reserve)
     currency:      str
     required_nano: int    # exact nanogram the user must send (stored in DB for race-free verification)
@@ -184,7 +184,7 @@ async def generate_payment_request(
     # Register the vault address so the watcher can resolve it back to this subscription.
     # This is idempotent (INSERT OR IGNORE) so safe to call on every payment request.
     if db_user_id and subscription_id:
-        # Store the exact required amount immediately — this MUST succeed.
+        # Store the exact required amount immediately this MUST succeed.
         await queries.set_subscription_required_amount(subscription_id, link.required_nano)
         # Write vault_address into subscriptions so get_vaults_to_watch() finds it.
         # This is the column the polling loop reads; vault_registry is a secondary index.

@@ -1,5 +1,5 @@
 """
-Wallet address validation — format + checksum only.
+Wallet address validation format + checksum only.
 Accepts both mainnet (EQ.../UQ...) and testnet (kQ.../0Q...) address formats.
 """
 from __future__ import annotations
@@ -26,10 +26,10 @@ def detect_address_network(address: str) -> str | None:
     Detect whether a wallet address is for mainnet or testnet.
 
     Returns:
-        "mainnet"  — bounceable EQ... or non-bounceable UQ... prefix
-        "testnet"  — bounceable kQ... or non-bounceable 0Q... prefix
-        "raw"      — raw 0:<hex> form (network-agnostic)
-        None       — not a recognised address
+        "mainnet"  bounceable EQ... or non-bounceable UQ... prefix
+        "testnet"  bounceable kQ... or non-bounceable 0Q... prefix
+        "raw"      raw 0:<hex> form (network-agnostic)
+        None       not a recognised address
 
     The distinction lives in bit 7 (0x80) of the flag byte:
         flag & 0x80 == 0x80  →  testnet

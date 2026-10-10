@@ -5,9 +5,9 @@ APScheduler cron jobs.
 
 Jobs
 ────
-renewal_reminder_job  — runs hourly; finds subscriptions expiring within
+renewal_reminder_job  runs hourly; finds subscriptions expiring within
                         REMINDER_WINDOW_DAYS and enqueues reminder tasks.
-grace_enforcement_job — runs hourly; finds subscriptions past
+grace_enforcement_job runs hourly; finds subscriptions past
                         next_renewal_date + GRACE_PERIOD_DAYS and enqueues
                         expire_and_kick tasks.
 
@@ -149,7 +149,7 @@ async def apply_wallet_changes_job() -> None:
         group_title = row["chat_title"] or str(group_id)
         group_status = row["group_status"]
 
-        # Item 9 — skip and auto-cancel if the group is no longer in good standing.
+        # Item 9 skip and auto-cancel if the group is no longer in good standing.
         # A suspended or frozen group should not receive a wallet update; the
         # pending change is cancelled so it doesn't silently apply if the group
         # is later reinstated (admin must resubmit explicitly).
@@ -162,7 +162,7 @@ async def apply_wallet_changes_job() -> None:
                 {"change_id": change_id, "group_status": group_status},
             )
             log.warning(
-                "apply_wallet_changes_job: skipped change_id=%d — group %d is %s",
+                "apply_wallet_changes_job: skipped change_id=%d group %d is %s",
                 change_id, group_id, group_status,
             )
             continue
@@ -211,13 +211,13 @@ async def pending_send_refund_retry_job() -> None:
     We re-attempt every row older than 5 minutes so transient failures are
     healed automatically without requiring superadmin intervention.
 
-    Only runs when TRIGGER_MNEMONIC is configured — skips silently otherwise
+    Only runs when TRIGGER_MNEMONIC is configured skips silently otherwise
     (rows will sit until a superadmin uses /pendingrefunds or the mnemonic
     is added to the environment).
     """
     from renewise.config import TRIGGER_MNEMONIC, TRIGGER_WALLET
     if not TRIGGER_MNEMONIC or not TRIGGER_WALLET:
-        log.debug("pending_send_refund_retry_job: TRIGGER_MNEMONIC not set — skipping")
+        log.debug("pending_send_refund_retry_job: TRIGGER_MNEMONIC not set skipping")
         return
 
     from renewise.db.queries import get_pending_sends, mark_refund_sent
@@ -238,7 +238,7 @@ async def pending_send_refund_retry_job() -> None:
 
         if not wallet_address:
             log.warning(
-                "pending_send_refund_retry_job: refund_id=%d has no wallet address — skipping",
+                "pending_send_refund_retry_job: refund_id=%d has no wallet address skipping",
                 refund_id,
             )
             continue
@@ -255,7 +255,7 @@ async def pending_send_refund_retry_job() -> None:
             )
         if not vault_row or not vault_row["vault_address"]:
             log.warning(
-                "pending_send_refund_retry_job: refund_id=%d — no vault_address found, skipping",
+                "pending_send_refund_retry_job: refund_id=%d no vault_address found, skipping",
                 refund_id,
             )
             continue
@@ -296,7 +296,7 @@ async def pending_send_refund_retry_job() -> None:
                     )
         else:
             log.warning(
-                "pending_send_refund_retry_job: refund_id=%d FAILED — %s",
+                "pending_send_refund_retry_job: refund_id=%d FAILED %s",
                 refund_id, result.error,
             )
 
@@ -317,7 +317,7 @@ async def run_scheduler() -> None:
 
     scheduler = AsyncIOScheduler()
 
-    # Renewal reminders — every hour at :05 past the hour
+    # Renewal reminders every hour at :05 past the hour
     scheduler.add_job(
         renewal_reminder_job,
         trigger="cron",
@@ -327,7 +327,7 @@ async def run_scheduler() -> None:
         misfire_grace_time=300,
     )
 
-    # Grace enforcement — every hour at :15 past the hour
+    # Grace enforcement every hour at :15 past the hour
     scheduler.add_job(
         grace_enforcement_job,
         trigger="cron",
@@ -337,7 +337,7 @@ async def run_scheduler() -> None:
         misfire_grace_time=300,
     )
 
-    # Stale pending cleanup — every hour at :30 past the hour
+    # Stale pending cleanup every hour at :30 past the hour
     scheduler.add_job(
         stale_pending_cleanup_job,
         trigger="cron",
@@ -347,7 +347,7 @@ async def run_scheduler() -> None:
         misfire_grace_time=300,
     )
 
-    # Pending-send refund retry — every 10 minutes
+    # Pending-send refund retry every 10 minutes
     # Retries overpayment refunds stuck in 'pending_send' due to failed or
     # unconfigured trigger wallet at the time the user submitted their wallet.
     scheduler.add_job(
@@ -359,7 +359,7 @@ async def run_scheduler() -> None:
         misfire_grace_time=120,
     )
 
-    # Wallet change apply — every 15 minutes
+    # Wallet change apply every 15 minutes
     scheduler.add_job(
         apply_wallet_changes_job,
         trigger="cron",
@@ -375,14 +375,14 @@ async def run_scheduler() -> None:
     # Startup job runs intentionally skipped to avoid hammering Neon on every
     # cold start / Render restart. Each cron job will fire at its next scheduled
     # interval (renewal_reminder @:05, grace_enforcement @:15, etc.).
-    # On a free-tier Render + Neon stack restarts are frequent — running 5 DB
+    # On a free-tier Render + Neon stack restarts are frequent running 5 DB
     # jobs on every boot burned a significant chunk of compute hours for no
     # operational benefit.
-    log.info("Scheduler running — jobs will fire at their first cron interval.")
+    log.info("Scheduler running jobs will fire at their first cron interval.")
 
     # Keep running until interrupted.
     # Use asyncio.get_running_loop() (not the deprecated get_event_loop()) and
-    # register signal handlers only on non-Windows platforms — signal.signal()
+    # register signal handlers only on non-Windows platforms signal.signal()
     # with SIGTERM doesn't work reliably on Windows and raises ValueError when
     # called outside the main thread.
     loop = asyncio.get_running_loop()
@@ -399,7 +399,7 @@ async def run_scheduler() -> None:
         signal.signal(signal.SIGINT, _shutdown)
     else:
         # On Windows, rely on KeyboardInterrupt / CancelledError propagating
-        # naturally through asyncio.run() — no SIGTERM support needed.
+        # naturally through asyncio.run() no SIGTERM support needed.
         try:
             await stop
         except asyncio.CancelledError:

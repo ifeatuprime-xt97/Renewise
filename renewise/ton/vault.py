@@ -8,8 +8,8 @@ the Python codebase and requires no Node.js at runtime.
 
 Key design points
 ─────────────────
-• compute_vault_address()  — pure math, no network call, instant.
-• build_payment_link()     — returns a ton:// deep-link + exact amount.
+• compute_vault_address()  pure math, no network call, instant.
+• build_payment_link()     returns a ton:// deep-link + exact amount.
 • The cell layout mirrors Tact's generated init-data serialiser exactly:
   fields are stored in declaration order, each with its `as` annotation width.
 • MIN_GAS_RESERVE must stay in sync with the contract constant (0.02 GRAM).
@@ -29,12 +29,12 @@ from pytoniq_core.boc.address import AddressError
 # Must match PaymentVault.tact: const MIN_GAS_RESERVE: Int = ton("0.05")
 MIN_GAS_RESERVE_NANO: int = 50_000_000  # 0.05 GRAM in nanogram
 
-# Pay{} opcode — taken directly from the compiled ABI (PaymentVault_PaymentVault.abi):
+# Pay{} opcode taken directly from the compiled ABI (PaymentVault_PaymentVault.abi):
 # {"name":"Pay","header":3108783413,...}
 # 3108783413 == 0xB94C4535
 PAY_OPCODE: int = 0xB94C4535
 
-# Refund{} opcode — from compiled ABI (PaymentVault_PaymentVault.abi):
+# Refund{} opcode from compiled ABI (PaymentVault_PaymentVault.abi):
 # {"name":"Refund","header":2132218047,...}
 # 2132218047 == 0x7F1710BF
 REFUND_OPCODE: int = 0x7F1710BF
@@ -95,7 +95,7 @@ def _build_data_cell(p: VaultParams) -> Cell:
     IMPORTANT: This is the init-args layout used for address computation and
     StateInit. It differs from the runtime storage layout (storePaymentVault$Data)
     which uses storeCoins/storeUint. The leading 0-bit (Tact init flag) is
-    mandatory — omitting it shifts all address reads and produces wrong addresses.
+    mandatory omitting it shifts all address reads and produces wrong addresses.
     """
     b_2 = (
         begin_cell()
@@ -170,7 +170,7 @@ def compute_vault_address(p: VaultParams, code_cell: Cell | None = None) -> Addr
     """
     Compute the vault's deterministic address from its init params.
 
-    Pure off-chain math — no network call. The same params always produce the
+    Pure off-chain math no network call. The same params always produce the
     same address. Call this as soon as the user starts a join request to get
     the payment destination address before any on-chain transaction.
 
@@ -187,7 +187,7 @@ def compute_vault_address(p: VaultParams, code_cell: Cell | None = None) -> Addr
 
     # Address = hash of the serialised StateInit cell.
     # The StateInit cell MUST include the 5 flag bits, exactly as in the
-    # ton:// deep-link builder — without them the hash (and therefore the
+    # ton:// deep-link builder without them the hash (and therefore the
     # address) is wrong.
     state_init_cell = (
         begin_cell()
@@ -268,7 +268,7 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     body_b64  = base64.urlsafe_b64encode(body_boc).decode().rstrip("=")
     init_b64  = base64.urlsafe_b64encode(state_init_boc).decode().rstrip("=")
 
-    # ton:// — used for QR code (Tonkeeper scans it directly, full params including init)
+    # ton:// used for QR code (Tonkeeper scans it directly, full params including init)
     ton_link = (
         f"ton://transfer/{addr_str}"
         f"?amount={amount}"
@@ -276,11 +276,11 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
         f"&init={init_b64}"
     )
 
-    # ton:// for the Telegram inline button — includes &init= so the contract
+    # ton:// for the Telegram inline button includes &init= so the contract
     # is deployed atomically on the first send, regardless of which wallet the
     # user uses. Previously we used https://app.tonkeeper.com/transfer/... to
     # avoid Telegram's URL-length limit, but omitting &init= means undeployed
-    # vaults show a "not active" warning and — worse — manual address copies
+    # vaults show a "not active" warning and worse manual address copies
     # send plain transfers with no StateInit, trapping funds permanently.
     # ton:// is supported in Telegram bot buttons and has no length limit.
     #
@@ -295,7 +295,7 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
 
     return PaymentLink(
         vault_address=addr_str,
-        ton_deep_link=ton_button_link,  # ton:// with &init= — works for buttons and QR
+        ton_deep_link=ton_button_link,  # ton:// with &init= works for buttons and QR
         required_nano=amount,
         state_init_boc=state_init_boc,
         body_boc=body_boc,
@@ -305,7 +305,7 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
 # ── Fee arithmetic helpers (used by tests and the payment service) ────────────
 
 def expected_admin_amount(price: int, admin_fee_bps: int) -> int:
-    """Admin receives price minus their fee. No tip — overage is held in vault."""
+    """Admin receives price minus their fee. No tip overage is held in vault."""
     admin_fee = price * admin_fee_bps // 10000
     return price - admin_fee
 

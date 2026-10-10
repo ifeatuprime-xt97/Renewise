@@ -181,7 +181,7 @@ async def cmd_create_paywall(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
 
     # ── ToS gate for paywall creators ────────────────────────────────────────
     # Only admin/paywall-creator users see the Terms of Service.
-    # Members paying to join a channel are not gated — they go straight to payment.
+    # Members paying to join a channel are not gated they go straight to payment.
     from renewise.db.queries import has_accepted_terms, upsert_user as _upsert
     user = update.effective_user
     await _upsert(
@@ -295,7 +295,7 @@ async def _present_single_grant(query, ctx, grant) -> int:
             ctx.user_data["paywall_msg_id"] = query.message.message_id
         return STEP_INSTRUCTIONS
 
-    # All good — store in wizard state and ask user to confirm.
+    # All good store in wizard state and ask user to confirm.
     # The Yes button embeds the grant_id so it works as a self-contained entry point
     # even after a bot restart (no ConversationHandler state needed).
     _w(ctx)["grant_id"]   = grant_id
@@ -308,7 +308,7 @@ async def _present_single_grant(query, ctx, grant) -> int:
         [InlineKeyboardButton("\u274c No, redo the setup",   callback_data="pw:back_to_instructions")],
     ])
     icon = "\U0001f4e2" if grant["chat_type"] == "channel" else "\U0001f465"
-    # Edit the existing "Done Check Now" message in-place — no new message sent.
+    # Edit the existing "Done Check Now" message in-place no new message sent.
     # Success confirmation + the channel question are merged into one clean message.
     await query.edit_message_text(
         f"\u2705 I'm now admin in <b>{title}</b> with all required permissions!\n\n"
@@ -432,7 +432,7 @@ async def cb_confirm_chat(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int
     buyer_pct = buyer_bps / 100.0   # e.g. 200 bps → 2.00 (for display as "2.00%")
     admin_pct = admin_bps / 100.0
     
-    # Worked example at $20 — use bps/10000 for the actual arithmetic
+    # Worked example at $20 use bps/10000 for the actual arithmetic
     example_base = 20.0
     buyer_fee = example_base * buyer_bps / 10000
     admin_fee = example_base * admin_bps / 10000

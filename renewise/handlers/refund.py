@@ -105,7 +105,7 @@ async def handle_refund_wallet_message(
 
     tg_user_id = update.effective_user.id
 
-    # Check if this user has a pending refund — bot_data first (fast path),
+    # Check if this user has a pending refund bot_data first (fast path),
     # then DB (handles bot restarts).
     has_pending_in_memory = bool(
         ctx.bot_data.get("pending_refunds", {}).get(tg_user_id)
@@ -114,7 +114,7 @@ async def handle_refund_wallet_message(
     if not has_pending_in_memory:
         pending_refund = await get_pending_refund_for_user(tg_user_id)
         if not pending_refund:
-            return  # not our message — let other handlers deal with it
+            return  # not our message let other handlers deal with it
 
     text = (update.message.text or "").strip()
     await _process_wallet_submission(tg_user_id, text, ctx, update.message.reply_text)
@@ -133,7 +133,7 @@ async def _process_wallet_submission(
     wallet = raw_wallet.strip()
 
     # ── Step 1: validate address ──────────────────────────────────────────────
-    # Use the existing wallet.py validator — it checks both format and checksum,
+    # Use the existing wallet.py validator it checks both format and checksum,
     # and respects TONCENTER_TESTNET to catch testnet/mainnet address mismatches.
     is_valid = await validate_ton_address(wallet)
     if not is_valid:
@@ -148,7 +148,7 @@ async def _process_wallet_submission(
     # ── Step 2: resolve pending refund ────────────────────────────────────────
     pending = await get_pending_refund_for_user(tg_user_id)
     if not pending:
-        # Stale bot_data entry — already processed
+        # Stale bot_data entry already processed
         ctx.bot_data.get("pending_refunds", {}).pop(tg_user_id, None)
         await reply_fn(
             "ℹ️ Your refund has already been processed or there is nothing pending.",
@@ -164,10 +164,10 @@ async def _process_wallet_submission(
     # ── Step 3: atomically claim the refund row ───────────────────────────────
     # set_refund_wallet uses WHERE status='pending_wallet' as a compare-and-swap.
     # If two concurrent submissions race here, only the first UPDATE matches a row
-    # and returns True — the second finds nothing and returns False, stopping here.
+    # and returns True the second finds nothing and returns False, stopping here.
     claimed = await set_refund_wallet(refund_id, wallet)
     if not claimed:
-        # Lost the race — another submission already claimed this refund.
+        # Lost the race another submission already claimed this refund.
         # The contract's require(amount > 0) would stop the duplicate on-chain
         # anyway, but we stop here in Python to avoid firing two trigger messages.
         ctx.bot_data.get("pending_refunds", {}).pop(tg_user_id, None)
@@ -186,7 +186,7 @@ async def _process_wallet_submission(
     # The vault verifies sender == trigger_wallet and releases overage_held
     # to recipient. The trigger wallet only needs enough GRAM for gas (~0.01 GRAM).
     if not TRIGGER_MNEMONIC:
-        # Trigger wallet not configured — wallet is saved, notify superadmins.
+        # Trigger wallet not configured wallet is saved, notify superadmins.
         log.warning(
             "refund: TRIGGER_MNEMONIC not set refund_id=%d queued for manual send",
             refund_id,

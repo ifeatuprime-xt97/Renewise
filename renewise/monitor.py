@@ -4,17 +4,17 @@ renewise/monitor.py
 In-process health monitor.
 
 Runs as a background asyncio task inside run.py alongside the main bot,
-superadmin bot, and payment watcher. No external dependencies — uses only
+superadmin bot, and payment watcher. No external dependencies uses only
 what's already in the project.
 
 Checks (every 5 minutes unless noted):
-  1. Database          — SELECT 1 roundtrip against Neon
-  2. TonCenter API     — GET /getMasterchainInfo; alerts after 3 consecutive failures
-  3. Telegram Bot API  — GET /getMe on BOT_TOKEN
-  4. Watcher heartbeat — timestamp updated by the polling loop; alert if stale >3 min
-  5. Trigger wallet    — balance check every 30 minutes (not every 5)
-  6. Pending refunds   — alert if pending_send count exceeds REFUND_ALERT_THRESHOLD
-  7. CoinGecko feed    — alert if last successful price fetch is >30 minutes old
+  1. Database          SELECT 1 roundtrip against Neon
+  2. TonCenter API     GET /getMasterchainInfo; alerts after 3 consecutive failures
+  3. Telegram Bot API  GET /getMe on BOT_TOKEN
+  4. Watcher heartbeat timestamp updated by the polling loop; alert if stale >3 min
+  5. Trigger wallet    balance check every 30 minutes (not every 5)
+  6. Pending refunds   alert if pending_send count exceeds REFUND_ALERT_THRESHOLD
+  7. CoinGecko feed    alert if last successful price fetch is >30 minutes old
 
 Unhandled exceptions:
   install_global_exception_handler() installs a custom asyncio exception handler
@@ -52,7 +52,7 @@ log = logging.getLogger(__name__)
 # ── Tunables ──────────────────────────────────────────────────────────────────
 
 # How often the main monitor loop runs
-MONITOR_INTERVAL_SECONDS: int = 900          # 15 minutes — reduced from 5 to save Neon compute on free tier
+MONITOR_INTERVAL_SECONDS: int = 900          # 15 minutes reduced from 5 to save Neon compute on free tier
 
 # TonCenter: alert after this many consecutive failures
 TONCENTER_FAILURE_THRESHOLD: int = 3
@@ -66,7 +66,7 @@ TRIGGER_WALLET_CHECK_EVERY_N: int = 6
 # CoinGecko: alert if last success is older than this
 # Must be significantly longer than CACHE_TTL (30 min) to avoid false
 # alarms at cache expiry boundaries. 2 hours means the feed is genuinely
-# broken — not just mid-refresh.
+# broken not just mid-refresh.
 PRICE_FEED_STALE_SECONDS: int = 7200         # 2 hours
 
 # Pending refund alert threshold
@@ -121,7 +121,7 @@ async def _dm_superadmins(bot: "Bot", text: str) -> None:
     """
     DM every superadmin via the SUPERADMIN bot (not the main user-facing bot).
     Truncates to Telegram's 4096-char limit.
-    Never raises — a broken DM must not crash the monitor itself.
+    Never raises a broken DM must not crash the monitor itself.
     """
     from renewise.config import ALLOWED_SUPERADMIN_IDS, SUPERADMIN_BOT_TOKEN
     if not ALLOWED_SUPERADMIN_IDS:
@@ -153,7 +153,7 @@ async def _alert(bot: "Bot", state: _CheckState, name: str, detail: str) -> None
     state.firing = True
     state.last_alert_time = time.monotonic()
     msg = f"🔴 <b>ALERT: {name}</b>\n\n{detail}"
-    log.error("monitor ALERT — %s: %s", name, detail)
+    log.error("monitor ALERT %s: %s", name, detail)
     await _dm_superadmins(bot, msg)
 
 
@@ -171,7 +171,7 @@ async def _resolve(bot: "Bot", state: _CheckState, name: str, detail: str = "") 
         f"Downtime: {duration_str}"
         + (f"\n{detail}" if detail else "")
     )
-    log.info("monitor RESOLVED — %s (was down %s)", name, duration_str)
+    log.info("monitor RESOLVED %s (was down %s)", name, duration_str)
     await _dm_superadmins(bot, msg)
 
 
@@ -259,19 +259,19 @@ async def _check_trigger_wallet(bot: "Bot") -> None:
             TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
         )
         if balance is None:
-            return  # TonCenter error — don't double-alert with toncenter check
+            return  # TonCenter error don't double-alert with toncenter check
 
         if balance < 0.02:
             await _alert(
                 bot, _state.trigger_wallet, "Trigger Wallet Balance",
-                f"Balance: <b>{balance:.6f} GRAM</b> (critical — need ≥ 0.10 GRAM)\n"
+                f"Balance: <b>{balance:.6f} GRAM</b> (critical need ≥ 0.10 GRAM)\n"
                 f"Automatic refunds will fail until the wallet is topped up.\n\n"
                 f"Top-up address: <code>{TRIGGER_WALLET}</code>"
             )
         elif balance < 0.10:
             await _alert(
                 bot, _state.trigger_wallet, "Trigger Wallet Balance",
-                f"Balance: <b>{balance:.6f} GRAM</b> (low — recommended ≥ 0.10 GRAM)\n"
+                f"Balance: <b>{balance:.6f} GRAM</b> (low recommended ≥ 0.10 GRAM)\n"
                 f"Top-up soon to avoid refund delays.\n\n"
                 f"Address: <code>{TRIGGER_WALLET}</code>"
             )
@@ -296,7 +296,7 @@ async def _check_price_feed(bot: "Bot") -> None:
         else:
             await _resolve(bot, _state.price_feed, "CoinGecko Price Feed")
     except Exception:
-        pass  # non-critical check — never crash the monitor
+        pass  # non-critical check never crash the monitor
 
 
 async def _check_pending_refunds(bot: "Bot") -> None:
@@ -358,7 +358,7 @@ async def start_monitor(bot: "Bot") -> None:
             log.info("monitor: cancelled, shutting down.")
             return
         except Exception as exc:
-            # The monitor itself must never crash — log and keep going.
+            # The monitor itself must never crash log and keep going.
             log.error("monitor: unexpected error in check loop: %s", exc, exc_info=True)
 
 

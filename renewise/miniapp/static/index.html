@@ -18,7 +18,7 @@
     // ── Environment detection ──────────────────────────────────────────────
     // This page is the Telegram Mini App. When opened in a normal browser
     // there is no signed initData, so every authenticated API call would 401
-    // and surface as "Session expired" — which is wrong for a public visitor.
+    // and surface as "Session expired" which is wrong for a public visitor.
     //
     // Rules:
     //   • Telegram with initData  → boot the Mini App normally (no redirect)
@@ -42,7 +42,7 @@
     })();
   </script>
   <style>
-    /* ── Design tokens — MyTonWallet-inspired palette ── */
+    /* ── Design tokens MyTonWallet-inspired palette ── */
     :root {
       --bg: #090D16;
       --surface: #131821;
@@ -134,7 +134,7 @@
     }
 
     /* ══════════════════════════════════════════════════
-       BOTTOM NAV — wallet-style
+       BOTTOM NAV wallet-style
     ══════════════════════════════════════════════════ */
     .bottom-nav {
       position: fixed;
@@ -1892,7 +1892,7 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════
-     TERMS OF SERVICE GATE — shown before any other UI
+     TERMS OF SERVICE GATE shown before any other UI
      Hidden by default; displayed when terms not yet accepted.
 ════════════════════════════════════════════════════ -->
   <div id="tos-gate"
@@ -2041,7 +2041,7 @@
   </header>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Dashboard (My Networks)
+     PAGE Dashboard (My Networks)
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-dashboard">
     <!-- Admin Dashboard Card -->
@@ -2088,7 +2088,7 @@
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Developer Dashboard
+     PAGE Developer Dashboard
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-dev-dashboard">
     <div class="section-hdr" style="margin-bottom:16px">
@@ -2099,7 +2099,7 @@
       </button>
     </div>
 
-    <!-- Compact stats banner — shown only when platforms exist -->
+    <!-- Compact stats banner shown only when platforms exist -->
     <div id="dev-stats-bar" style="display:none;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:var(--r-sm);padding:14px 18px;margin-bottom:20px;display:none">
       <div style="display:flex;gap:0">
         <div style="flex:1;text-align:center">
@@ -2124,7 +2124,7 @@
       <div id="dev-total-revenue" style="display:none"></div>
       <div id="dev-total-transactions" style="display:none"></div>
     </div>
-    <!-- Analytics CTA — shown alongside stats bar when platforms exist -->
+    <!-- Analytics CTA shown alongside stats bar when platforms exist -->
     <div id="dev-analytics-cta" style="display:none;margin-bottom:16px">
       <button onclick="openAnalytics('developer')" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:var(--r-sm);background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -2139,7 +2139,7 @@
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Per-App Management (slide-in sub-page)
+     PAGE Per-App Management (slide-in sub-page)
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-dev-app">
     <div class="back-row">
@@ -2202,7 +2202,7 @@
     </div>
     <div id="dev-search-result" style="margin-bottom:10px"></div>
 
-    <!-- Status filter tabs — no emojis, coloured dots instead -->
+    <!-- Status filter tabs no emojis, coloured dots instead -->
     <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;
                 padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
       <button id="dev-tab-all"       class="dev-tab active" onclick="setDevChargesTab('all')">All</button>
@@ -2522,8 +2522,8 @@
           </tr>
         </table><br>
         <b>Per-platform rate limits:</b><br>
-        <code>POST /charges</code> — 60/min &nbsp;|&nbsp; <code>GET /charges/:id</code> — 60/min<br>
-        <code>POST /keys/regenerate</code> — 5/min &nbsp;|&nbsp; <code>POST /webhook</code> — 10/min
+        <code>POST /charges</code> 60/min &nbsp;|&nbsp; <code>GET /charges/:id</code> 60/min<br>
+        <code>POST /keys/regenerate</code> 5/min &nbsp;|&nbsp; <code>POST /webhook</code> 10/min
       </div>
 
       <!-- Code Examples -->
@@ -2714,7 +2714,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Developer Sandbox
+     PAGE Developer Sandbox
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-dev-sandbox">
     <div class="back-row">
@@ -2791,7 +2791,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Subscriptions
+     PAGE Subscriptions
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-subs">
     <div class="section-hdr" style="margin-bottom:8px">
@@ -2817,7 +2817,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Settings
+     PAGE Settings
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-settings">
     <h1 class="page-title" style="margin-bottom:20px">Settings</h1>
@@ -3058,7 +3058,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Payment History
+     PAGE Payment History
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-history">
     <div class="back-row">
@@ -3110,7 +3110,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Add Network Wizard (5 steps)
+     PAGE Add Network Wizard (5 steps)
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-wizard">
     <div class="back-row">
@@ -3223,7 +3223,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Manage Network (slide-in sub-page)
+     PAGE Manage Network (slide-in sub-page)
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-manage">
     <div class="back-row">
@@ -3283,7 +3283,7 @@ http_response_code(200);</pre>
         <span id="mgmt-pause-label">Pause</span>
       </button>
     </div>
-    <!-- Delete Network — full-width, destructive, below the grid -->
+    <!-- Delete Network full-width, destructive, below the grid -->
     <button class="btn" id="mgmt-delete"
       style="margin-top:14px;background:rgba(224,92,92,.12);border:1px solid rgba(224,92,92,.25);color:var(--danger)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -3299,7 +3299,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Delete Network (two-step confirmation)
+     PAGE Delete Network (two-step confirmation)
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-delete">
     <div class="back-row">
@@ -3382,7 +3382,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — View Members
+     PAGE View Members
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-members">
     <div class="back-row">
@@ -3410,7 +3410,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Update Price
+     PAGE Update Price
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-price">
     <div class="back-row">
@@ -3448,7 +3448,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Update Wallet
+     PAGE Update Wallet
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-wallet">
     <div class="back-row">
@@ -3492,7 +3492,7 @@ http_response_code(200);</pre>
     </div>
     <div id="wallet-result" style="margin-top:14px"></div>
 
-    <!-- Passkey section — always visible so admin can set/change it -->
+    <!-- Passkey section always visible so admin can set/change it -->
     <div class="glass" style="padding:16px;margin-top:14px;border-radius:var(--r-sm)">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
@@ -3511,7 +3511,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Comp a Member
+     PAGE Comp a Member
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-comp">
     <div class="back-row">
@@ -3542,7 +3542,7 @@ http_response_code(200);</pre>
   </section>
 
   <!-- ════════════════════════════════════════════════════
-     PAGE — Analytics
+     PAGE Analytics
 ════════════════════════════════════════════════════ -->
   <section class="page" id="page-analytics">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
@@ -3644,7 +3644,7 @@ http_response_code(200);</pre>
      CONFIRM OVERLAY
 ════════════════════════════════════════════════════ -->
   <!-- ════════════════════════════════════════════════════
-     PAYMENT DETAIL SHEET — slide-up overlay
+     PAYMENT DETAIL SHEET slide-up overlay
 ════════════════════════════════════════════════════ -->
   <div class="overlay" id="pmt-detail-overlay" onclick="_pmtDetailOverlayClick(event)">
     <div class="overlay-sheet" id="pmt-detail-sheet" style="padding:20px 18px calc(28px + env(safe-area-inset-bottom))">
@@ -3674,7 +3674,7 @@ http_response_code(200);</pre>
 
   <script>
     // ════════════════════════════════════════════════════
-    // SVG ICON HELPER — Lucide-compatible inline SVGs
+    // SVG ICON HELPER Lucide-compatible inline SVGs
     // ════════════════════════════════════════════════════
     const ICONS = {
       'dollar': '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
@@ -3721,7 +3721,7 @@ http_response_code(200);</pre>
     let TON_USD_PRICE = null; // populated from /api/config on startup
 
     // ════════════════════════════════════════════════════
-    // Global fetch wrapper — intercepts 401 session expiry
+    // Global fetch wrapper intercepts 401 session expiry
     // ════════════════════════════════════════════════════
     let _sessionExpired = false;  // show the overlay only once per session
 
@@ -3772,7 +3772,7 @@ http_response_code(200);</pre>
       return resp;
     }
 
-    // Safe JSON error extractor — never throws even if the response body is
+    // Safe JSON error extractor never throws even if the response body is
     // plain text (e.g. a 500 "Internal Server Error" from the server before
     // the JSON exception handler fires, or a proxy error).
     async function _errDetail(resp) {
@@ -3794,7 +3794,7 @@ http_response_code(200);</pre>
     }
 
     // ════════════════════════════════════════════════════
-    // Settings — inject SVG icons
+    // Settings inject SVG icons
     // ════════════════════════════════════════════════════
     document.getElementById('sr-ico-bell').innerHTML = ico('bell', 16);
     document.getElementById('sr-ico-msg').innerHTML = ico('message', 16);
@@ -4099,7 +4099,7 @@ http_response_code(200);</pre>
     }
 
     // ════════════════════════════════════════════════════
-    // ChargeDetail — slide-up sheet for platform charges
+    // ChargeDetail slide-up sheet for platform charges
     // Reuses the same pmt-detail-overlay as PmtDetail.
     // ════════════════════════════════════════════════════
     const ChargeDetail = {
@@ -4214,7 +4214,7 @@ http_response_code(200);</pre>
             ${ico('refresh', 14)} Check for Payment
           </button>` : ''}
         `;
-        // Wire via addEventListener — CSP blocks inline onclick in Telegram WebView
+        // Wire via addEventListener CSP blocks inline onclick in Telegram WebView
         const cdTxCode = document.getElementById('cd-tx-code');
         if (cdTxCode) cdTxCode.addEventListener('click', function() {
           _openUrl(_regUrl(cdTxCode.getAttribute('data-url')));
@@ -4302,13 +4302,13 @@ http_response_code(200);</pre>
       return key;
     }
 
-    // Called from injected onclick="_openUrl('_u0')" — always a real global fn
+    // Called from injected onclick="_openUrl('_u0')" always a real global fn
     function _openUrl(key) {
       const url = _urlRegistry[key];
       if (!url) return;
       if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
         // openLink handles ton:// deep-links natively on both Android and iOS
-        // Telegram WebView — same mechanism the bot's InlineKeyboardButton uses.
+        // Telegram WebView same mechanism the bot's InlineKeyboardButton uses.
         window.Telegram.WebApp.openLink(url);
       } else {
         // Outside Telegram (browser / desktop): location.href correctly hands
@@ -4328,7 +4328,7 @@ http_response_code(200);</pre>
     // ── Animated success toast ────────────────────────────────────────────────
     // Light-weight floating pill that animates in from the bottom, holds for
     // ~1.4 s, then fades out and removes itself. Supports an optional icon
-    // prefix — pass a checkmark, emoji, or leave blank.
+    // prefix pass a checkmark, emoji, or leave blank.
     function showSuccessToast(msg = '✓ Done', { color = 'var(--accent)', duration = 1400 } = {}) {
       // Remove any existing toast so rapid calls don't stack
       document.querySelectorAll('.__success-toast').forEach(el => el.remove());
@@ -4391,11 +4391,11 @@ http_response_code(200);</pre>
     }
 
     // ════════════════════════════════════════════════════
-    // Entity type helper — strict DB-driven, never defaults to "group"
+    // Entity type helper strict DB-driven, never defaults to "group"
     // Rule: channel → CHANNEL badge; group/supergroup → GROUP badge
     // ════════════════════════════════════════════════════
     function entityTypeBadge(rawType) {
-      if (!rawType) return ''; // no data yet — render nothing
+      if (!rawType) return ''; // no data yet render nothing
       const t = String(rawType).toLowerCase().trim();
       if (t === 'channel') {
         return `<span class="type-badge channel">${ico('broadcast', 11)} Channel</span>`;
@@ -4403,7 +4403,7 @@ http_response_code(200);</pre>
       if (t === 'group' || t === 'supergroup') {
         return `<span class="type-badge group">${ico('users', 11)} Group</span>`;
       }
-      // Unknown type in DB — show raw value, don't assume
+      // Unknown type in DB show raw value, don't assume
       return `<span class="type-badge group" style="color:rgba(255,255,255,.7)">${esc(rawType)}</span>`;
     }
 
@@ -4430,14 +4430,14 @@ http_response_code(200);</pre>
 
   <script>
     // ════════════════════════════════════════════════════
-    // SKELETON HELPER — renders N placeholder shimmer cards
+    // SKELETON HELPER renders N placeholder shimmer cards
     // ════════════════════════════════════════════════════
     function skeletonCards(n = 2) {
       return Array.from({ length: n }, () => `<div class="skeleton-card"></div>`).join('');
     }
 
     // ════════════════════════════════════════════════════
-    // COUNT-UP — hero stat animation (runs only once per load)
+    // COUNT-UP hero stat animation (runs only once per load)
     // ════════════════════════════════════════════════════
     function countUp(el, target, duration = 600, isDecimal = false) {
       const start = performance.now();
@@ -4454,7 +4454,7 @@ http_response_code(200);</pre>
     let _heroAnimated = false; // run count-up only on first load
 
     // ════════════════════════════════════════════════════
-    // REVENUE UNIT TOGGLE — GRAM | USD
+    // REVENUE UNIT TOGGLE GRAM | USD
     // Persists the admin's choice via Telegram CloudStorage.
     // ════════════════════════════════════════════════════
     const _REV_UNIT_KEY = 'rw_rev_unit'; // CloudStorage key
@@ -4517,14 +4517,14 @@ http_response_code(200);</pre>
       // Update subtitle
       const sub = document.getElementById('rev-unit-sub');
       if (sub) sub.textContent = unit === 'GRAM' ? 'Showing in GRAM' : 'Showing in USD';
-      // Persist to CloudStorage — fire-and-forget, non-blocking
+      // Persist to CloudStorage fire-and-forget, non-blocking
       try {
         WebApp.CloudStorage.setItem(_REV_UNIT_KEY, unit, () => { });
-      } catch (e) { /* CloudStorage not available in older Bot API — silent */ }
+      } catch (e) { /* CloudStorage not available in older Bot API silent */ }
     }
 
     // ════════════════════════════════════════════════════
-    // NETWORKS — admin dashboard
+    // NETWORKS admin dashboard
     // ════════════════════════════════════════════════════
     async function loadNetworks() {
       const el = document.getElementById('networks-list');
@@ -4554,7 +4554,7 @@ http_response_code(200);</pre>
           const channelsEl = document.getElementById('admin-total-channels');
           const toggleEl = document.getElementById('rev-unit-row');
 
-          // Cache net (after-fee) amounts for the hero — this is what lands in
+          // Cache net (after-fee) amounts for the hero this is what lands in
           // the admin's wallet, matching what they see on-chain.
           _revDataUsdCents = net_revenue || 0;
           _revDataNano = net_revenue_nano || 0;
@@ -4747,7 +4747,7 @@ http_response_code(200);</pre>
         document.getElementById('ms-members').textContent = g.active_members ?? '—';
         // Earnings banner: respect the same GRAM/USD toggle preference.
         // revenue_usd_cents is the sum of price_locked_in for active/comped subs (USD cents).
-        // revenue_nano is 0 (deprecated field from /groups/{id}/detail) — not available here;
+        // revenue_nano is 0 (deprecated field from /groups/{id}/detail) not available here;
         // for the per-group manage view we only have USD, so we show USD always.
         // The toggle only affects the dashboard hero; per-group stats stay in USD.
         const revUsd = (g.revenue_usd_cents != null && g.revenue_usd_cents > 0)
@@ -5342,7 +5342,7 @@ http_response_code(200);</pre>
     }
 
     // ════════════════════════════════════════════════════
-    // DELETE NETWORK — two-step confirmation
+    // DELETE NETWORK two-step confirmation
     // ════════════════════════════════════════════════════
     let _deleteGroupId = null;
     let _deleteGroupTitle = '';
@@ -5436,7 +5436,7 @@ http_response_code(200);</pre>
     }
 
     // ════════════════════════════════════════════════════
-    // SUBSCRIPTIONS — member view
+    // SUBSCRIPTIONS member view
     // ════════════════════════════════════════════════════
     async function loadSubs() {
       const el = document.getElementById('subs-list');
@@ -5766,11 +5766,11 @@ http_response_code(200);</pre>
     }
 
     async function filterCharges(status) {
-      // legacy no-op — charges now rendered inline in _renderDevApp
+      // legacy no-op charges now rendered inline in _renderDevApp
     }
 
     async function changeChargesPage(delta) {
-      // legacy no-op — replaced by load-more pattern
+      // legacy no-op replaced by load-more pattern
     }
 
     async function regenerateKey(mode) {
@@ -5835,9 +5835,9 @@ http_response_code(200);</pre>
         WebApp.HapticFeedback.notificationOccurred('success');
 
         if (data.is_new && data.webhook_secret) {
-          // Only show the secret on first-time setup — in the copyable modal,
+          // Only show the secret on first-time setup in the copyable modal,
           // never in an alert() where the text cannot be selected/copied.
-          await showSecretKeyModal('🔗 Webhook Signing Secret — Save This Now', data.webhook_secret,
+          await showSecretKeyModal('🔗 Webhook Signing Secret Save This Now', data.webhook_secret,
             'Webhook configured! This is the only time the signing secret will be shown. Copy it before closing.');
         } else {
           WebApp.showAlert('Webhook URL updated. Your existing signing secret is unchanged.');
@@ -5861,8 +5861,8 @@ http_response_code(200);</pre>
         const data = await r.json();
 
         WebApp.HapticFeedback.notificationOccurred('success');
-        await showSecretKeyModal('🔗 New Webhook Signing Secret — Save This Now', data.webhook_secret,
-          'Secret rotated. The old secret is now invalid — copy the new one before closing.');
+        await showSecretKeyModal('🔗 New Webhook Signing Secret Save This Now', data.webhook_secret,
+          'Secret rotated. The old secret is now invalid copy the new one before closing.');
 
         await _renderDevApp(currentPlatformId);
       } catch (e) {
@@ -5946,9 +5946,9 @@ http_response_code(200);</pre>
     }
 
     // ════════════════════════════════════════════════════
-    // DEVELOPER — API Charges feed
+    // DEVELOPER API Charges feed
     // ════════════════════════════════════════════════════
-    // DEVELOPER — API Charges feed
+    // DEVELOPER API Charges feed
     // ════════════════════════════════════════════════════
     let _devChargesFilter = 'all';
     const _DC_PAGE_SIZE   = 20;      // rows per page
@@ -5968,7 +5968,7 @@ http_response_code(200);</pre>
       loadDevCharges(true);
     }
 
-    // _renderChargeStats — fills the summary strip above the list
+    // _renderChargeStats fills the summary strip above the list
     function _renderChargeStats(stats) {
       const el = document.getElementById('dev-charges-stats');
       if (!el || !stats) return;
@@ -6140,7 +6140,7 @@ http_response_code(200);</pre>
     }
 
     // ════════════════════════════════════════════════════
-    // DEVELOPER — API Sandbox
+    // DEVELOPER API Sandbox
     // ════════════════════════════════════════════════════
     let _sandboxEnv = 'test';     // 'test' | 'live'
     let _sandboxPlatforms = [];   // cached platform list
@@ -6288,7 +6288,7 @@ http_response_code(200);</pre>
       }
 
       // All wallet buttons open the same ton:// link (same pattern as the bot).
-      // NO onclick attributes in innerHTML — CSP blocks inline handlers in Telegram.
+      // NO onclick attributes in innerHTML CSP blocks inline handlers in Telegram.
       // Use data-pay-url + addEventListener after injection instead.
 
       resEl.style.display = 'block';
@@ -6376,7 +6376,7 @@ http_response_code(200);</pre>
         </div>
       `;
 
-      // Wire up wallet buttons via addEventListener (CSP-safe — no inline handlers)
+      // Wire up wallet buttons via addEventListener (CSP-safe no inline handlers)
       // Generate QR code after injecting HTML
       if (payUrl && window.QRCode) {
         try {
@@ -6496,7 +6496,7 @@ http_response_code(200);</pre>
             headers: { 'Authorization': `Bearer ${sk}` }
           });
           if (r.status === 401) {
-            // Key rotated or revoked — stop polling, show error
+            // Key rotated or revoked stop polling, show error
             clearInterval(_sandboxPollTimer);
             _sandboxPollTimer = null;
             _renderSandboxError('Polling stopped: secret key was revoked or rotated. Regenerate and try again.');
@@ -6943,7 +6943,7 @@ http_response_code(200);</pre>
       if (platformId) {
         // Brief delay so the user can read the alert first
         await new Promise(r => setTimeout(r, 500));
-        await promptPlatformWallet(platformId, false, false); // new platform — no live keys yet
+        await promptPlatformWallet(platformId, false, false); // new platform no live keys yet
       }
     }
 
@@ -6963,7 +6963,7 @@ http_response_code(200);</pre>
         const data = await r.json();
 
         WebApp.HapticFeedback.notificationOccurred('success');
-        // Show the live secret key ONCE — this is the only time it's ever visible
+        // Show the live secret key ONCE this is the only time it's ever visible
         await showSecretKeyModal('🔑 Live Secret Key Save This Now', data.raw_secret_key_live,
           'This is the only time your live secret key will be shown. Copy it before closing.');
         loadPlatforms();
@@ -6972,7 +6972,7 @@ http_response_code(200);</pre>
       }
     }
 
-    // ── Secret key reveal modal — shows a key with a copy button ─────────────
+    // ── Secret key reveal modal shows a key with a copy button ─────────────
     // showSecretKeyModal(title, key, subtitle) → Promise<void>
     // Resolves when the user clicks "Done". The key is never auto-dismissed.
     function showSecretKeyModal(title, key, subtitle) {
@@ -7145,7 +7145,7 @@ http_response_code(200);</pre>
         if (saveData.warning) {
           const isTestNotice = saveData.warning.includes('testnet GRAM');
           if (isTestNotice) {
-            // Show as a toast — informational, not blocking
+            // Show as a toast informational, not blocking
             showSuccessToast('🧪 Test mode: pay with testnet GRAM', { color: '#8b5cf6', duration: 3500 });
           } else {
             setTimeout(() => WebApp.showAlert('⚠️ ' + saveData.warning), 400);
@@ -7153,7 +7153,7 @@ http_response_code(200);</pre>
         }
 
         // If no passkey is set yet, guide the dev straight into setting one.
-        // A passkey protects future wallet changes — skip the delay so it feels
+        // A passkey protects future wallet changes skip the delay so it feels
         // like a single coherent onboarding step.
         const hasPasscode = cached ? !!cached.wallet_passcode_hash : false;
         if (!hasExistingWallet && !hasPasscode) {
@@ -7212,7 +7212,7 @@ http_response_code(200);</pre>
 
   <script>
     // ════════════════════════════════════════════════════
-    // WIZARD — Add Network
+    // WIZARD Add Network
     // ════════════════════════════════════════════════════
     const Wiz = (() => {
       let _step = 0;
@@ -7388,7 +7388,7 @@ http_response_code(200);</pre>
           showTosGate();
           return false;
         }
-        return true; // already accepted — skip gate
+        return true; // already accepted skip gate
       } catch (_) {
         // Network error: show gate so user can retry via agree button
         showTosGate();
@@ -7410,7 +7410,7 @@ http_response_code(200);</pre>
     // Pending navigation target after ToS acceptance (e.g. 'wizard')
     let _pendingNav = null;
 
-    // Call instead of App.nav('wizard') — ensures ToS is accepted first.
+    // Call instead of App.nav('wizard') ensures ToS is accepted first.
     async function startWizard() {
       const accepted = await checkAndShowTos();
       if (accepted) {
@@ -7464,7 +7464,7 @@ http_response_code(200);</pre>
     }
 
     // ════════════════════════════════════════════════════
-    // MAIN APP INIT — called only after ToS is confirmed
+    // MAIN APP INIT called only after ToS is confirmed
     // ════════════════════════════════════════════════════
     async function appInit() {
       // 1. Fetch bot username for deep-links
@@ -7480,7 +7480,7 @@ http_response_code(200);</pre>
       // 2. Initialise icons
       document.getElementById('sr-ico-bell').innerHTML = ico('bell', 18);
       document.getElementById('sr-ico-msg').innerHTML = ico('message', 18);
-      // Terms icon is already inline SVG — no injection needed
+      // Terms icon is already inline SVG no injection needed
 
       // 2b. Populate the accepted-on badge in the Terms accordion
       try {

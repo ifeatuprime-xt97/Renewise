@@ -14,7 +14,7 @@ VAULT   = "EQDkk9uBDp6BqvAFOR-wchG7LOjozbBvWktM-QEaluwo3n6_"
 async def main():
     headers = {"X-API-Key": API_KEY} if API_KEY else {}
     async with aiohttp.ClientSession() as s:
-        # config() getter returns a tuple — use the raw stack
+        # config() getter returns a tuple use the raw stack
         async with s.post(f"{BASE_V2}/runGetMethod",
                           json={"address": VAULT, "method": "config", "stack": []},
                           headers=headers,
@@ -37,7 +37,7 @@ async def main():
         typ   = item[0] if isinstance(item, (list,tuple)) and len(item)>0 else "?"
         val   = item[1] if isinstance(item, (list,tuple)) and len(item)>1 else item
         if typ == "cell":
-            # Address stored as cell — decode it
+            # Address stored as cell decode it
             try:
                 cell_bytes = base64.b64decode(str(val) + "==")
                 cell = Cell.one_from_boc(cell_bytes)

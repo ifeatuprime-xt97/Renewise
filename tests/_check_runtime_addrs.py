@@ -34,7 +34,7 @@ async def main():
     # Runtime layout from FunC:
     # b_0: admin_wallet | platform_wallet | log_address | ref(b_1)
     # b_1: trigger_wallet | price(varuint16) | buyer_fee_bps(16) | admin_fee_bps(16) | subscription_id(64) | overage_held(varuint16) | accumulated_paid(varuint16)
-    # But root only has 7 bits — meaning Tact added a 1-bit "initialized" flag at the start
+    # But root only has 7 bits meaning Tact added a 1-bit "initialized" flag at the start
     # plus 2 bits for addr_none for admin (addr_none = 2 bits "00") x3 = 6 bits + 1 = 7 bits?
     # Actually: addr_none = 0b00 = 2 bits. Three addr_none = 6 bits + 1 init bit = 7 bits!
 

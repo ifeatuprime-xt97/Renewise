@@ -5,11 +5,11 @@ Test suite for PaymentVault.
 
 Structure
 ─────────
-• Group A — Pure Python tests (no Node required):
+• Group A Pure Python tests (no Node required):
     Fee arithmetic, address determinism, deep-link format, cell layout.
     These run instantly and need only pytoniq-core.
 
-• Group B — TVM execution tests (require Node + compiled contract):
+• Group B TVM execution tests (require Node + compiled contract):
     Correct splits, underpayment rejection, overpayment tip, no stranded funds,
     gas cost measurement.
     These call contracts/sandbox_runner.js via subprocess and assert on the JSON result.
@@ -111,7 +111,7 @@ tvm = pytest.mark.skipif(
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Group A — Pure Python tests
+# Group A Pure Python tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class TestFeeArithmetic:
@@ -149,7 +149,7 @@ class TestFeeArithmetic:
         assert required_payment_nano(p) == ONE_TON + buyer_fee + MIN_GAS_RESERVE_NANO
 
     def test_overpayment_held_in_vault(self):
-        # Overpayment no longer goes to admin as a tip — it is held in
+        # Overpayment no longer goes to admin as a tip it is held in
         # overage_held for trustless refund via Refund{recipient}.
         price = ONE_TON
         # Admin receives exactly price - admin_fee, regardless of overpayment
@@ -252,7 +252,7 @@ class TestAddressDeterminism:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Group B — TVM execution tests (require Node + compiled contract)
+# Group B TVM execution tests (require Node + compiled contract)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @tvm
@@ -421,7 +421,7 @@ class TestTvmNoStrandedFunds:
         assert r["success"]
         vault_bal = int(r["vault_balance"])
         assert vault_bal < 10_000_000, (
-            f"Vault has {vault_bal} nanoTON stranded — expected ~0"
+            f"Vault has {vault_bal} nanoTON stranded expected ~0"
         )
 
     def test_vault_empty_after_large_payment(self):

@@ -4,9 +4,9 @@ renewise/watcher/toncenter.py
 TonCenter API client.
 
 Two modes of operation (both enqueue the same RQ job):
-  1. Webhook push  — TonCenter calls our /webhook endpoint on each confirmed tx.
+  1. Webhook push  TonCenter calls our /webhook endpoint on each confirmed tx.
                      Preferred: zero latency, no polling overhead.
-  2. Polling loop  — Falls back to polling /getTransactions every POLL_INTERVAL_SECONDS.
+  2. Polling loop  Falls back to polling /getTransactions every POLL_INTERVAL_SECONDS.
                      Used when webhooks are unavailable (local dev, testnet limits).
 
 The client is intentionally stateless: it only fetches raw tx data and hands it
@@ -39,15 +39,15 @@ class TonCenterKeyManager:
     Design
     ──────
     Each key tracks two timestamps:
-      • last_used_at   — monotonic time of the most recent successful request
-      • cooldown_until — monotonic time after which the key is usable again
+      • last_used_at   monotonic time of the most recent successful request
+      • cooldown_until monotonic time after which the key is usable again
 
     On every request:
       1. Build the set of available keys (cooldown expired).
       2. Pick the one with the oldest last_used_at (LRU) so load is spread
          evenly across keys rather than hammering the first one.
       3. If ALL keys are cooling down, wait for the shortest remaining
-         cooldown before retrying — no wasted requests.
+         cooldown before retrying no wasted requests.
 
     On 429:
       • Stamp the offending key with cooldown_until = now + COOLDOWN_SECONDS.
@@ -72,9 +72,9 @@ class TonCenterKeyManager:
         """
         Return (best_key, wait_seconds).
 
-        best_key    — the LRU key whose cooldown has expired, or None if all
+        best_key    the LRU key whose cooldown has expired, or None if all
                       keys are still cooling down.
-        wait_seconds — seconds to sleep before the next key becomes available
+        wait_seconds seconds to sleep before the next key becomes available
                        (0.0 when best_key is not None).
         """
         if not self.keys:
@@ -89,7 +89,7 @@ class TonCenterKeyManager:
             best = min(available, key=lambda k: self._last_used[k])
             return best, 0.0
 
-        # All keys are cooling — return the shortest remaining wait
+        # All keys are cooling return the shortest remaining wait
         wait = min(self._cooldown_until[k] - now for k in self.keys)
         return None, max(wait, 0.0)
 
@@ -103,7 +103,7 @@ class TonCenterKeyManager:
         self._cooldown_until[key] = now + self.COOLDOWN_SECONDS
         remaining = len([k for k in self.keys if self._cooldown_until[k] <= now])
         log.warning(
-            "TonCenter 429 — key ...%s cooling for %.0fs. "
+            "TonCenter 429 key ...%s cooling for %.0fs. "
             "%d/%d key(s) still available.",
             key[-6:], self.COOLDOWN_SECONDS, remaining, len(self.keys),
         )
@@ -131,7 +131,7 @@ class TonCenterKeyManager:
             key, wait = self._best_key()
 
             if key is None:
-                # All keys cooling — wait for the shortest cooldown
+                # All keys cooling wait for the shortest cooldown
                 log.info(
                     "TonCenter: all %d key(s) cooling, waiting %.1fs (attempt %d/%d)",
                     len(self.keys), wait, attempt + 1, max_attempts,
@@ -174,13 +174,13 @@ class TonCenterKeyManager:
 
 _key_manager = TonCenterKeyManager(TONCENTER_API_KEYS)
 
-# Per-network key managers — always available regardless of TONCENTER_TESTNET setting.
+# Per-network key managers always available regardless of TONCENTER_TESTNET setting.
 # Used when the watcher needs to query both networks in the same process.
 _key_manager_mainnet = TonCenterKeyManager(TONCENTER_API_KEYS_MAINNET)
 _key_manager_testnet = TonCenterKeyManager(TONCENTER_API_KEYS_TESTNET_LIST)
 
 log.info(
-    "TonCenter key manager init — mainnet keys: %d, testnet keys: %d, active keys: %d (testnet=%s)",
+    "TonCenter key manager init mainnet keys: %d, testnet keys: %d, active keys: %d (testnet=%s)",
     len(TONCENTER_API_KEYS_MAINNET),
     len(TONCENTER_API_KEYS_TESTNET_LIST),
     len(TONCENTER_API_KEYS),
@@ -319,7 +319,7 @@ class VaultPoller:
     """
 
     def __init__(self, enqueue_fn) -> None:
-        # enqueue_fn(vault_address, tx) — called for each new confirmed tx
+        # enqueue_fn(vault_address, tx) called for each new confirmed tx
         self._enqueue = enqueue_fn
         # vault_address → last seen logical time (int)
         self._cursors: dict[str, int] = {}
