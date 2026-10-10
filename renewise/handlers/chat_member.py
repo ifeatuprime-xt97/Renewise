@@ -191,15 +191,20 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
         return
 
     # ── Bot lost admin or was removed ─────────────────────────────────────────
-    was_admin = isinstance(old_status, ChatMemberAdministrator)
-    is_gone   = isinstance(new_status, (ChatMemberMember, ChatMemberLeft, ChatMemberBanned))
+    was_admin  = isinstance(old_status, ChatMemberAdministrator)
+    was_member = isinstance(old_status, ChatMemberMember)
+    is_gone    = isinstance(new_status, (ChatMemberMember, ChatMemberLeft, ChatMemberBanned))
 
-    if was_admin and is_gone:
+    # Freeze on any removal: covers both demotion-from-admin AND the channel/group
+    # being deleted while the bot was a plain member. Telegram sends a ChatMemberLeft
+    # or ChatMemberBanned event in both cases — we freeze regardless of prior role so
+    # the group never stays 'active' in the DB after the bot is no longer in the chat.
+    if (was_admin or was_member) and is_gone:
         group = await queries.get_group_by_chat_id(chat.id)
 
-        # If the group is already paused, this removal was triggered by the
-        # intentional delete flow (pause → leave_chat). Skip freeze and the
-        # warning DM the admin already knows what's happening.
+        # If the group is already paused/suspended, this removal was triggered by the
+        # intentional delete flow (suspend → leave_chat). Skip freeze and the
+        # warning DM — the admin already knows what's happening.
         if group and group["status"] in ("paused", "suspended"):
             return
 
@@ -212,9 +217,9 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
             warn = (
                 f"⚠️ I've been removed from <b>{chat.title}</b>.\n\n"
                 "Here's what this means:\n"
-                "  • All new join requests are <b>paused</b> no one can join until I'm back\n"
+                "  • All new join requests are <b>paused</b> — no one can join until I'm back\n"
                 "  • Existing subscribers keep their access for now\n"
-                "  • Nothing is deleted your paywall settings are safe\n\n"
+                "  • Nothing is deleted — your paywall settings are safe\n\n"
                 "To resume, simply re-add me as admin with the same permissions and I'll pick up where I left off."
             )
             try:
