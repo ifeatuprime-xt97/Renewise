@@ -60,7 +60,8 @@ class VaultParams:
 @dataclass(frozen=True)
 class PaymentLink:
     vault_address:    str    # user-friendly bounceable address string
-    ton_deep_link:    str    # ton://transfer/... for Tonkeeper / TonHub QR
+    ton_deep_link:    str    # ton://transfer/... with &init= for Tonkeeper / TonHub / QR
+    ton_link_no_init: str    # ton://transfer/... WITHOUT &init= for Telegram Wallet
     required_nano:    int    # exact nanogram the buyer must send (incl. gas reserve)
     state_init_boc:   bytes  # raw BOC bytes of the StateInit cell
     body_boc:         bytes  # raw BOC bytes of the Pay{} body cell
@@ -268,7 +269,8 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     body_b64  = base64.urlsafe_b64encode(body_boc).decode().rstrip("=")
     init_b64  = base64.urlsafe_b64encode(state_init_boc).decode().rstrip("=")
 
-    # ton:// used for QR code (Tonkeeper scans it directly, full params including init)
+    # ton:// WITH &init= — for Tonkeeper, MyTonWallet, TonHub, and QR codes.
+    # These wallets deploy the vault contract on first payment atomically.
     ton_link = (
         f"ton://transfer/{addr_str}"
         f"?amount={amount}"
@@ -276,26 +278,23 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
         f"&init={init_b64}"
     )
 
-    # ton:// for the Telegram inline button includes &init= so the contract
-    # is deployed atomically on the first send, regardless of which wallet the
-    # user uses. Previously we used https://app.tonkeeper.com/transfer/... to
-    # avoid Telegram's URL-length limit, but omitting &init= means undeployed
-    # vaults show a "not active" warning and worse manual address copies
-    # send plain transfers with no StateInit, trapping funds permanently.
-    # ton:// is supported in Telegram bot buttons and has no length limit.
-    #
-    # The network ignores a duplicate StateInit on renewals (contract already deployed),
-    # so sending &init= every time is safe and harmless.
-    ton_button_link = (
+    # ton:// WITHOUT &init= — for Telegram Wallet (@wallet built-in).
+    # Telegram Wallet does not support the &init= parameter and shows
+    # "Money is currently unavailable" when it encounters it.
+    # On first payment this means the vault won't be deployed via Telegram Wallet;
+    # that's acceptable — the warning in the message already says to use another
+    # wallet if Telegram Wallet shows an error. On renewals (vault already deployed)
+    # this link works perfectly because no StateInit is needed.
+    ton_link_no_init = (
         f"ton://transfer/{addr_str}"
         f"?amount={amount}"
         f"&bin={body_b64}"
-        f"&init={init_b64}"
     )
 
     return PaymentLink(
         vault_address=addr_str,
-        ton_deep_link=ton_button_link,  # ton:// with &init= works for buttons and QR
+        ton_deep_link=ton_link,          # with &init=  → Tonkeeper / MyTonWallet / TonHub / QR
+        ton_link_no_init=ton_link_no_init,  # without &init= → Telegram Wallet
         required_nano=amount,
         state_init_boc=state_init_boc,
         body_boc=body_boc,

@@ -315,8 +315,9 @@ async def _send_renewal_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE, 
             pass
         ctx.bot_data.setdefault("pending_joins", {})[user_telegram_id] = {
             **pending,
-            "group_id":   group_id,
+            "group_id":    group_id,
             "payment_url": payment.payment_url,
+            "tg_wallet_url": payment.tg_wallet_url,
             "vault_addr":  payment.vault_address,
             "amount_ton":  payment.amount,
         }
@@ -358,7 +359,7 @@ async def _send_renewal_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE, 
             f"<i>Your subscription extends automatically after payment confirms.</i>"
         )
 
-        kb = payment_details_kb(payment.payment_url, _support_url())
+        kb = payment_details_kb(payment.payment_url, _support_url(), tg_wallet_url=payment.tg_wallet_url)
 
         # Delete any prior renewal message to avoid duplicates
         prev_msg_id = ctx.bot_data.get("pending_joins", {}).get(user_telegram_id, {}).get("payment_msg_id")

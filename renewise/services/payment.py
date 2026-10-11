@@ -98,12 +98,13 @@ class PaymentStatus(str, Enum):
 
 @dataclass
 class PaymentRequest:
-    payment_url:   str    # ton:// deep-link for Tonkeeper / TonHub
-    vault_address: str    # raw vault address (for chain-watcher indexing)
-    payload:       str    # opaque string vault address used as unique key
-    amount:        float  # human-readable GRAM (price + buyer_fee, no gas reserve)
-    currency:      str
-    required_nano: int    # exact nanogram the user must send (stored in DB for race-free verification)
+    payment_url:    str    # ton:// with &init= — for Tonkeeper/MyTonWallet/TonHub/QR
+    tg_wallet_url:  str    # ton:// WITHOUT &init= — for Telegram Wallet button
+    vault_address:  str    # raw vault address (for chain-watcher indexing)
+    payload:        str    # opaque string vault address used as unique key
+    amount:         float  # human-readable GRAM (price + buyer_fee, no gas reserve)
+    currency:       str
+    required_nano:  int    # exact nanogram the user must send (stored in DB for race-free verification)
 
 
 # ── Public interface ──────────────────────────────────────────────────────────
@@ -217,8 +218,9 @@ async def generate_payment_request(
 
     return PaymentRequest(
         payment_url=link.ton_deep_link,
+        tg_wallet_url=link.ton_link_no_init,
         vault_address=link.vault_address,
-        payload=link.vault_address,   # vault address is the unique payment identifier
+        payload=link.vault_address,
         amount=total_gram,
         currency="GRAM",
         required_nano=link.required_nano,
@@ -295,6 +297,7 @@ async def generate_platform_payment_request(
 
     return PaymentRequest(
         payment_url=link.ton_deep_link,
+        tg_wallet_url=link.ton_link_no_init,
         vault_address=link.vault_address,
         payload=link.vault_address,
         amount=total_gram,

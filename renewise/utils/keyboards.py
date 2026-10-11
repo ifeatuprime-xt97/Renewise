@@ -73,26 +73,29 @@ def pay_now_kb() -> InlineKeyboardMarkup:
     ])
 
 
-def payment_details_kb(payment_url: str, support_url: str = "") -> InlineKeyboardMarkup:
+def payment_details_kb(payment_url: str, support_url: str = "", tg_wallet_url: str = "") -> InlineKeyboardMarkup:
     """
     Payment keyboard shown alongside the QR code.
 
-    Four wallet options arranged compactly, then I've Paid / Contact Support / Cancel.
+    payment_url     — ton:// WITH &init= — used for Tonkeeper, MyTonWallet, TonHub, QR
+    tg_wallet_url   — ton:// WITHOUT &init= — used for Telegram Wallet only.
+                      Telegram Wallet shows "Money is currently unavailable" when
+                      it receives a ton:// link with &init= (StateInit), because it
+                      doesn't support contract deployment. The other wallets need
+                      &init= to deploy the vault on first payment.
 
-    All wallet buttons use the same ton:// link the OS routes it to whichever
-    GRAM wallet the user has installed as their default handler for the ton:// scheme.
-    We label them individually so users recognise their wallet name, but the URL
-    is identical for all four (ton:// is the universal deep-link standard).
-
-    Row 1: Telegram Wallet | Tonkeeper
-    Row 2: MyTonWallet     | TonHub
+    Row 1: Telegram Wallet (no-init link) | Tonkeeper (full link)
+    Row 2: MyTonWallet (full link)        | TonHub (full link)
     Row 3: ✅ I've Paid
-    Row 4: 💬 Contact Support  (only shown when support_url is set)
+    Row 4: 💬 Contact Support  (only when support_url is set)
     Row 5: ❌ Cancel
     """
+    # Fall back to payment_url if tg_wallet_url wasn't provided (e.g. old call sites)
+    _tg_url = tg_wallet_url or payment_url
+
     rows = [
         [
-            InlineKeyboardButton("📲 Telegram Wallet", url=payment_url),
+            InlineKeyboardButton("📲 Telegram Wallet", url=_tg_url),
             InlineKeyboardButton("💎 Tonkeeper",        url=payment_url),
         ],
         [
