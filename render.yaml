@@ -76,5 +76,7 @@ services:
         sync: false
       - key: SUPPORT_USERNAME
         sync: false
+      - key: TONCENTER_TESTNET
+        sync: false
       - key: KEEP_ALIVE
         value: "true"
