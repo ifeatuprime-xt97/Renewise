@@ -747,7 +747,7 @@ async def cb_final_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
         )
 
         if already_has_passkey:
-            # Passkey already set from a previous paywall — skip the step
+            # Passkey already set from a previous paywall skip the step
             await query.edit_message_text(
                 "🎉 <b>You're live!</b>\n\n"
                 "Your paywall has been successfully set up and is now active.\n\n"
@@ -761,12 +761,12 @@ async def cb_final_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
             ctx.user_data.pop(_W, None)
             return ConversationHandler.END
 
-        # First paywall — prompt passkey creation
+        # First paywall prompt passkey creation
         await query.edit_message_text(
             "🎉 <b>Paywall activated!</b>\n\n"
             + link_section
             + "━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "🔒 <b>One last step — set a wallet passkey</b>\n\n"
+            "🔒 <b>One last step set a wallet passkey</b>\n\n"
             "Create a <b>4-digit PIN</b> to protect your payout wallet. "
             "Anyone who tries to change your wallet address will need this passkey first.\n\n"
             "Send your 4-digit passkey now:",
@@ -793,7 +793,7 @@ async def cb_final_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
 # ── Step 9 & 10: Passkey setup (mandatory on first paywall) ──────────────────
 
 async def msg_passkey_set(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    """User typed their new 4-digit passkey — store it and ask them to confirm."""
+    """User typed their new 4-digit passkey store it and ask them to confirm."""
     pin = update.message.text.strip()
     if not (pin.isdigit() and len(pin) == 4):
         await update.message.reply_text(
@@ -807,7 +807,7 @@ async def msg_passkey_set(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int
 
     _w(ctx)["wizard_passkey"] = pin
     await update.message.reply_text(
-        "✅ Got it. <b>Confirm your passkey</b> — type it again to make sure:",
+        "✅ Got it. <b>Confirm your passkey</b> type it again to make sure:",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("⏭ Skip for now", callback_data="pw:skip_passkey")],
@@ -817,7 +817,7 @@ async def msg_passkey_set(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int
 
 
 async def msg_passkey_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    """User typed the confirmation — if it matches, save and finish."""
+    """User typed the confirmation if it matches, save and finish."""
     pin     = update.message.text.strip()
     stored  = _w(ctx).get("wizard_passkey", "")
     group_id = _w(ctx).get("activated_group_id")
@@ -857,7 +857,7 @@ async def msg_passkey_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def cb_skip_passkey(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    """Admin tapped 'Skip for now' — end the wizard without setting a passkey."""
+    """Admin tapped 'Skip for now' end the wizard without setting a passkey."""
     query = update.callback_query
     await query.answer()
     link_section = _w(ctx).get("invite_link_section", "")

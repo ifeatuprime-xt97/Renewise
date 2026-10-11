@@ -60,8 +60,8 @@ class VaultParams:
 @dataclass(frozen=True)
 class PaymentLink:
     vault_address:      str    # user-friendly bounceable address string
-    ton_deep_link:      str    # ton://transfer/... with &init= — all wallet buttons + QR
-    ton_link_no_init:   str    # ton://transfer/... WITHOUT &init= — Telegram Wallet only
+    ton_deep_link:      str    # ton://transfer/... with &init= all wallet buttons + QR
+    ton_link_no_init:   str    # ton://transfer/... WITHOUT &init= Telegram Wallet only
     tonkeeper_url:      str    # ton:// with &init= (same as ton_deep_link, named for clarity)
     mytonwallet_url:    str    # ton:// with &init= (same as ton_deep_link, named for clarity)
     tonhub_url:         str    # ton:// with &init= (same as ton_deep_link, named for clarity)
@@ -277,7 +277,7 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     body_b64  = base64.urlsafe_b64encode(body_boc).decode().rstrip("=")
     init_b64  = base64.urlsafe_b64encode(state_init_boc).decode().rstrip("=")
 
-    # ── ton:// WITH &init= — the standard format for TON wallets ────────────────
+    # ── ton:// WITH &init= the standard format for TON wallets ────────────────
     ton_link = (
         f"ton://transfer/{addr_str}"
         f"?amount={amount}"
@@ -285,7 +285,7 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
         f"&init={init_b64}"
     )
 
-    # ton:// WITHOUT &init= — Telegram Wallet (@wallet built-in) button only.
+    # ton:// WITHOUT &init= Telegram Wallet (@wallet built-in) button only.
     # Telegram Wallet shows "Money is currently unavailable" when it receives
     # &init= (StateInit for contract deployment).
     ton_link_no_init = (
@@ -309,12 +309,12 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
         f"&bin={body_b64}"
         f"&init={init_b64}"
     )
-    tonhub_url      = ton_link  # ton:// — TonHub handles standard ton:// format
+    tonhub_url      = ton_link  # ton:// TonHub handles standard ton:// format
 
     return PaymentLink(
         vault_address=addr_str,
-        ton_deep_link=ton_link,             # ton:// with &init= — buttons + QR
-        ton_link_no_init=ton_link_no_init,  # ton:// no &init=  — Telegram Wallet
+        ton_deep_link=ton_link,             # ton:// with &init= buttons + QR
+        ton_link_no_init=ton_link_no_init,  # ton:// no &init=  Telegram Wallet
         tonkeeper_url=tonkeeper_url,
         mytonwallet_url=mytonwallet_url,
         tonhub_url=tonhub_url,

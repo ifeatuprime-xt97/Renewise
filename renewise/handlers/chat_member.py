@@ -201,14 +201,14 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
 
     # Freeze on any removal: covers both demotion-from-admin AND the channel/group
     # being deleted while the bot was a plain member. Telegram sends a ChatMemberLeft
-    # or ChatMemberBanned event in both cases — we freeze regardless of prior role so
+    # or ChatMemberBanned event in both cases we freeze regardless of prior role so
     # the group never stays 'active' in the DB after the bot is no longer in the chat.
     if (was_admin or was_member) and is_gone:
         group = await queries.get_group_by_chat_id(chat.id)
 
         # If the group is already paused/suspended, this removal was triggered by the
         # intentional delete flow (suspend → leave_chat). Skip freeze and the
-        # warning DM — the admin already knows what's happening.
+        # warning DM the admin already knows what's happening.
         if group and group["status"] in ("paused", "suspended"):
             return
 
@@ -221,9 +221,9 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
             warn = (
                 f"⚠️ I've been removed from <b>{chat.title}</b>.\n\n"
                 "Here's what this means:\n"
-                "  • All new join requests are <b>paused</b> — no one can join until I'm back\n"
+                "  • All new join requests are <b>paused</b> no one can join until I'm back\n"
                 "  • Existing subscribers keep their access for now\n"
-                "  • Nothing is deleted — your paywall settings are safe\n\n"
+                "  • Nothing is deleted your paywall settings are safe\n\n"
                 "To resume, simply re-add me as admin with the same permissions and I'll pick up where I left off."
             )
             try:
@@ -242,7 +242,7 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
 
 async def handle_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Fires on chat_member updates — i.e. changes to OTHER members' status, not
+    Fires on chat_member updates i.e. changes to OTHER members' status, not
     the bot's own status (that is handled by handle_my_chat_member above).
 
     When a subscriber voluntarily leaves or is banned from a paywalled group,
@@ -251,8 +251,8 @@ async def handle_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
       - They do not receive renewal reminders for a group they have left
       - /start correctly stops showing them as a current member
 
-    We only cancel — we do NOT refund. Refunds are a separate flow.
-    We do NOT cancel 'comped' subscriptions — those are intentional free grants.
+    We only cancel we do NOT refund. Refunds are a separate flow.
+    We do NOT cancel 'comped' subscriptions those are intentional free grants.
     """
     change = update.chat_member
     if not change:
@@ -270,7 +270,7 @@ async def handle_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
     if not (was_member and now_gone):
         return
 
-    # Ignore bot events — those are handled by handle_my_chat_member
+    # Ignore bot events those are handled by handle_my_chat_member
     if affected.is_bot:
         return
 
@@ -286,7 +286,7 @@ async def handle_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
     if not sub:
         return   # no subscription row at all
 
-    # Only cancel paid/pending subscriptions — leave 'comped' alone
+    # Only cancel paid/pending subscriptions leave 'comped' alone
     if sub["status"] in ("active", "pending", "frozen"):
         await queries.cancel_subscription(user_db["id"], group["id"])
         await queries.audit(
@@ -300,6 +300,6 @@ async def handle_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
             },
         )
         log.info(
-            "Subscription cancelled — member left/banned | user=%d group=%d chat=%d",
+            "Subscription cancelled member left/banned | user=%d group=%d chat=%d",
             affected.id, group["id"], chat.id,
         )

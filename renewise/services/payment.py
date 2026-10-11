@@ -98,11 +98,11 @@ class PaymentStatus(str, Enum):
 
 @dataclass
 class PaymentRequest:
-    payment_url:      str    # ton:// with &init= — QR code only
-    tg_wallet_url:    str    # ton:// WITHOUT &init= — Telegram Wallet button
-    tonkeeper_url:    str    # https://app.tonkeeper.com/... — HTTPS, not intercepted
-    mytonwallet_url:  str    # https://app.mytonwallet.org/... — HTTPS
-    tonhub_url:       str    # https://tonhub.com/... — HTTPS
+    payment_url:      str    # ton:// with &init= QR code only
+    tg_wallet_url:    str    # ton:// WITHOUT &init= Telegram Wallet button
+    tonkeeper_url:    str    # https://app.tonkeeper.com/... HTTPS, not intercepted
+    mytonwallet_url:  str    # https://app.mytonwallet.org/... HTTPS
+    tonhub_url:       str    # https://tonhub.com/... HTTPS
     vault_address:    str    # raw vault address (for chain-watcher indexing)
     payload:          str    # opaque string vault address used as unique key
     amount:           float  # human-readable GRAM (price + buyer_fee, no gas reserve)

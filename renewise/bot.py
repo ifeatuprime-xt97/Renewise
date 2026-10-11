@@ -285,7 +285,7 @@ async def post_init(app: Application) -> None:
                     f"<b>{len(_bad)} network(s) have testnet payout wallets "
                     f"on a mainnet deployment:</b>\n\n"
                     + "\n".join(
-                        f"• <b>{g['chat_title'] or 'Group ' + str(g['id'])}</b> — "
+                        f"• <b>{g['chat_title'] or 'Group ' + str(g['id'])}</b> "
                         f"<code>{(g['payout_wallet_address'] or '')[:20]}…</code>"
                         for g in _bad
                     )
@@ -314,7 +314,7 @@ async def post_init(app: Application) -> None:
                             chat_id=_admin_id,
                             parse_mode="HTML",
                             text=(
-                                "🚨 <b>Action Required — Testnet Wallet Detected</b>\n\n"
+                                "🚨 <b>Action Required Testnet Wallet Detected</b>\n\n"
                                 f"Your network <b>{html.escape(_title)}</b> has a "
                                 f"testnet payout wallet stored:\n"
                                 f"<code>{_wallet[:24]}…</code>\n\n"

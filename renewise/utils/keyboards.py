@@ -96,7 +96,7 @@ def payment_details_kb(
     contract deploys atomically on first payment via the OS wallet app.
 
     HTTPS URLs (https://app.tonkeeper.com/...) open the in-app browser inside
-    Telegram — do NOT use them for wallet buttons in bot inline keyboards.
+    Telegram do NOT use them for wallet buttons in bot inline keyboards.
 
     Falls back to payment_url for any URL not explicitly provided.
     """

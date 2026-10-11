@@ -2285,7 +2285,15 @@ async def sa_callback_handler(update: Update, context):
             return
         amount_nano = extract_in_msg_value(tx)
         from renewise.watcher.inprocess_watcher import _process_payment_inprocess
-        await _process_payment_inprocess(context.application, vault_address, tx_hash, amount_nano)
+        target_app = context.application
+        if BOT_TOKEN:
+            from telegram import Bot as _TgBot
+            class _MainAppProxy:
+                def __init__(self, bot, bot_data):
+                    self.bot = bot
+                    self.bot_data = bot_data
+            target_app = _MainAppProxy(_TgBot(BOT_TOKEN), context.application.bot_data)
+        await _process_payment_inprocess(target_app, vault_address, tx_hash, amount_nano)
         status = await get_tx_processed_status(tx_hash)
         if status and status.get("sub_id"):
             await query.message.reply_text(f"✅ Recheck <code>{html.escape(tx_hash[:16])}…</code>: <b>verified</b> sub activated.", parse_mode="HTML")

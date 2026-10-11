@@ -218,7 +218,9 @@
     }
 
     @keyframes spin360 {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .page-hdr {
@@ -1649,9 +1651,9 @@
       flex-shrink: 0;
       padding: 7px 14px;
       border-radius: 40px;
-      border: 1px solid rgba(255,255,255,.1);
-      background: rgba(255,255,255,.05);
-      color: rgba(255,255,255,.6);
+      border: 1px solid rgba(255, 255, 255, .1);
+      background: rgba(255, 255, 255, .05);
+      color: rgba(255, 255, 255, .6);
       font-family: inherit;
       font-size: 12.5px;
       font-weight: 700;
@@ -1662,15 +1664,15 @@
     }
 
     .dev-tab.active {
-      background: rgba(0,152,234,.18);
-      border-color: rgba(0,152,234,.4);
+      background: rgba(0, 152, 234, .18);
+      border-color: rgba(0, 152, 234, .4);
       color: var(--accent);
     }
 
     /* Compact platform card */
     .plat-card {
       background: var(--surface);
-      border: 1px solid rgba(255,255,255,.07);
+      border: 1px solid rgba(255, 255, 255, .07);
       border-radius: var(--r);
       margin-bottom: 14px;
       overflow: hidden;
@@ -1689,8 +1691,8 @@
       width: 44px;
       height: 44px;
       border-radius: 14px;
-      background: rgba(0,152,234,.15);
-      border: 1px solid rgba(0,152,234,.25);
+      background: rgba(0, 152, 234, .15);
+      border: 1px solid rgba(0, 152, 234, .25);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1713,7 +1715,7 @@
 
     .plat-meta {
       font-size: 12px;
-      color: rgba(255,255,255,.45);
+      color: rgba(255, 255, 255, .45);
       margin-top: 2px;
     }
 
@@ -1727,7 +1729,7 @@
 
     .plat-rev-label {
       font-size: 10.5px;
-      color: rgba(255,255,255,.35);
+      color: rgba(255, 255, 255, .35);
       font-weight: 600;
       text-align: right;
       letter-spacing: .3px;
@@ -1749,7 +1751,7 @@
       gap: 8px;
       padding: 16px 10px;
       background: var(--surface);
-      border: 1px solid rgba(255,255,255,.07);
+      border: 1px solid rgba(255, 255, 255, .07);
       border-radius: var(--r-sm);
       color: #fff;
       font-family: inherit;
@@ -1761,7 +1763,9 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    .dev-app-btn:active { background: rgba(255,255,255,.1); }
+    .dev-app-btn:active {
+      background: rgba(255, 255, 255, .1);
+    }
 
     .dev-app-btn-ico {
       width: 40px;
@@ -1782,14 +1786,18 @@
       align-items: center;
       gap: 12px;
       padding: 12px 0;
-      border-bottom: 1px solid rgba(255,255,255,.06);
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
 
-    .charge-row:last-child { border-bottom: none; }
+    .charge-row:last-child {
+      border-bottom: none;
+    }
 
-    .charge-row:active { opacity: .75; }
+    .charge-row:active {
+      opacity: .75;
+    }
 
     .charge-status-dot {
       width: 9px;
@@ -1798,7 +1806,10 @@
       flex-shrink: 0;
     }
 
-    .charge-body { flex: 1; min-width: 0; }
+    .charge-body {
+      flex: 1;
+      min-width: 0;
+    }
 
     .charge-ref {
       font-size: 13.5px;
@@ -1811,7 +1822,7 @@
 
     .charge-meta {
       font-size: 11.5px;
-      color: rgba(255,255,255,.45);
+      color: rgba(255, 255, 255, .45);
       margin-top: 2px;
     }
 
@@ -1835,12 +1846,12 @@
     }
 
     .charge-mode-badge.test {
-      background: rgba(251,191,36,.15);
+      background: rgba(251, 191, 36, .15);
       color: #fbbf24;
     }
 
     .charge-mode-badge.live {
-      background: rgba(74,222,128,.15);
+      background: rgba(74, 222, 128, .15);
       color: #4ade80;
     }
 
@@ -1848,9 +1859,9 @@
     .code-lang-btn {
       padding: 5px 13px;
       border-radius: 40px;
-      border: 1px solid rgba(255,255,255,.1);
-      background: rgba(255,255,255,.05);
-      color: rgba(255,255,255,.55);
+      border: 1px solid rgba(255, 255, 255, .1);
+      background: rgba(255, 255, 255, .05);
+      color: rgba(255, 255, 255, .55);
       font-family: inherit;
       font-size: 12px;
       font-weight: 700;
@@ -1860,20 +1871,20 @@
     }
 
     .code-lang-btn.active {
-      background: rgba(0,152,234,.18);
-      border-color: rgba(0,152,234,.4);
+      background: rgba(0, 152, 234, .18);
+      border-color: rgba(0, 152, 234, .4);
       color: var(--accent);
     }
 
     .code-block {
-      background: rgba(0,0,0,.35);
-      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(0, 0, 0, .35);
+      border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 10px;
       padding: 12px 14px;
       margin: 8px 0 16px;
       font-size: 11px;
       line-height: 1.7;
-      color: rgba(255,255,255,.82);
+      color: rgba(255, 255, 255, .82);
       white-space: pre;
       overflow-x: auto;
       font-family: 'Courier New', 'Menlo', 'Monaco', monospace;
@@ -2071,10 +2082,15 @@
           </div>
         </div>
       </div>
-      <button onclick="openAnalytics('creator')" style="width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:var(--r-sm);background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);color:#ffffff;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <button onclick="openAnalytics('creator')"
+        style="width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:var(--r-sm);background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);color:#ffffff;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
         Analytics
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
       </button>
     </div>
 
@@ -2093,28 +2109,39 @@
   <section class="page" id="page-dev-dashboard">
     <div class="section-hdr" style="margin-bottom:16px">
       <h1 class="page-title">My Apps</h1>
-      <button class="btn-link" onclick="openCreatePlatform()" style="font-weight:800;font-size:14px;display:flex;align-items:center;gap:4px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <button class="btn-link" onclick="openCreatePlatform()"
+        style="font-weight:800;font-size:14px;display:flex;align-items:center;gap:4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
         New App
       </button>
     </div>
 
     <!-- Compact stats banner shown only when platforms exist -->
-    <div id="dev-stats-bar" style="display:none;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:var(--r-sm);padding:14px 18px;margin-bottom:20px;display:none">
+    <div id="dev-stats-bar"
+      style="display:none;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:var(--r-sm);padding:14px 18px;margin-bottom:20px;display:none">
       <div style="display:flex;gap:0">
         <div style="flex:1;text-align:center">
           <div style="font-size:22px;font-weight:800;color:var(--accent)" id="dev-total-revenue-v2">$0.00</div>
-          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">API Revenue</div>
+          <div
+            style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">
+            API Revenue</div>
         </div>
         <div style="width:1px;background:rgba(255,255,255,.07);margin:2px 0"></div>
         <div style="flex:1;text-align:center">
           <div style="font-size:22px;font-weight:800;color:#fff" id="dev-total-transactions-v2">0</div>
-          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Charges</div>
+          <div
+            style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">
+            Charges</div>
         </div>
         <div style="width:1px;background:rgba(255,255,255,.07);margin:2px 0"></div>
         <div style="flex:1;text-align:center">
           <div style="font-size:22px;font-weight:800;color:#fff" id="dev-apps-count">0</div>
-          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Apps</div>
+          <div
+            style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.4px;margin-top:2px">
+            Apps</div>
         </div>
       </div>
     </div>
@@ -2126,10 +2153,15 @@
     </div>
     <!-- Analytics CTA shown alongside stats bar when platforms exist -->
     <div id="dev-analytics-cta" style="display:none;margin-bottom:16px">
-      <button onclick="openAnalytics('developer')" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:var(--r-sm);background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <button onclick="openAnalytics('developer')"
+        style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:var(--r-sm);background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
         Analytics
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
       </button>
     </div>
 
@@ -2144,7 +2176,9 @@
   <section class="page" id="page-dev-app">
     <div class="back-row">
       <button class="back-btn" onclick="App.nav('dev-dashboard')">
-        <svg viewBox="0 0 24 24" fill="none"><polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2.5" />
+        </svg>
         My Apps
       </button>
     </div>
@@ -2159,42 +2193,38 @@
     <!-- Header row: title + refresh -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <h1 class="page-title" style="margin:0">API Charges</h1>
-      <button id="dev-charges-refresh-btn" onclick="loadDevCharges(true)"
-        style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+      <button id="dev-charges-refresh-btn" onclick="loadDevCharges(true)" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
                color:rgba(255,255,255,.7);border-radius:50%;width:36px;height:36px;
                display:flex;align-items:center;justify-content:center;cursor:pointer;
-               flex-shrink:0;transition:background .15s;-webkit-tap-highlight-color:transparent"
-        title="Refresh">
-        <svg id="dev-charges-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-             width="16" height="16">
-          <polyline points="23 4 23 10 17 10"/>
-          <polyline points="1 20 1 14 7 14"/>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+               flex-shrink:0;transition:background .15s;-webkit-tap-highlight-color:transparent" title="Refresh">
+        <svg id="dev-charges-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <polyline points="23 4 23 10 17 10" />
+          <polyline points="1 20 1 14 7 14" />
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
         </svg>
       </button>
     </div>
 
     <!-- Summary stats strip -->
-    <div id="dev-charges-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px"></div>
+    <div id="dev-charges-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+    </div>
 
     <!-- Search bar -->
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <div style="flex:1;position:relative">
-        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"
-          width="15" height="15"
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2" width="15" height="15"
           style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input id="dev-search-input" type="search" placeholder="Reference or TX hash…"
-          style="width:100%;padding:10px 12px 10px 36px;background:var(--surface2);
+        <input id="dev-search-input" type="search" placeholder="Reference or TX hash…" style="width:100%;padding:10px 12px 10px 36px;background:var(--surface2);
                  border:1px solid var(--glass-border);border-radius:var(--r-xs);
                  color:#fff;font-size:13px;outline:none;-webkit-appearance:none;appearance:none"
           oninput="if(!this.value)document.getElementById('dev-search-result').innerHTML=''"
           onkeydown="if(event.key==='Enter')searchDevCharges()">
       </div>
-      <button onclick="searchDevCharges()"
-        style="flex-shrink:0;padding:10px 16px;background:var(--accent);color:#fff;
+      <button onclick="searchDevCharges()" style="flex-shrink:0;padding:10px 16px;background:var(--accent);color:#fff;
                border:none;border-radius:var(--r-xs);font-size:13px;font-weight:700;
                cursor:pointer;-webkit-tap-highlight-color:transparent">
         Search
@@ -2205,20 +2235,20 @@
     <!-- Status filter tabs no emojis, coloured dots instead -->
     <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;
                 padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
-      <button id="dev-tab-all"       class="dev-tab active" onclick="setDevChargesTab('all')">All</button>
-      <button id="dev-tab-completed" class="dev-tab"        onclick="setDevChargesTab('completed')">
+      <button id="dev-tab-all" class="dev-tab active" onclick="setDevChargesTab('all')">All</button>
+      <button id="dev-tab-completed" class="dev-tab" onclick="setDevChargesTab('completed')">
         <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
                      background:var(--success);margin-right:5px;vertical-align:middle"></span>Completed
       </button>
-      <button id="dev-tab-pending"   class="dev-tab"        onclick="setDevChargesTab('pending')">
+      <button id="dev-tab-pending" class="dev-tab" onclick="setDevChargesTab('pending')">
         <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
                      background:#fbbf24;margin-right:5px;vertical-align:middle"></span>Pending
       </button>
-      <button id="dev-tab-expired"   class="dev-tab"        onclick="setDevChargesTab('expired')">
+      <button id="dev-tab-expired" class="dev-tab" onclick="setDevChargesTab('expired')">
         <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
                      background:rgba(255,255,255,.35);margin-right:5px;vertical-align:middle"></span>Expired
       </button>
-      <button id="dev-tab-failed"    class="dev-tab"        onclick="setDevChargesTab('failed')">
+      <button id="dev-tab-failed" class="dev-tab" onclick="setDevChargesTab('failed')">
         <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
                      background:var(--danger);margin-right:5px;vertical-align:middle"></span>Failed
       </button>
@@ -2229,8 +2259,7 @@
       <div class="loading">Loading…</div>
     </div>
     <div id="dev-subs-more" style="display:none;margin-top:12px">
-      <button onclick="loadDevChargesMore()"
-        style="width:100%;padding:12px;background:rgba(255,255,255,.06);
+      <button onclick="loadDevChargesMore()" style="width:100%;padding:12px;background:rgba(255,255,255,.06);
                border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xs);
                color:rgba(255,255,255,.75);font-size:13px;font-weight:700;
                cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s">
@@ -2249,12 +2278,20 @@
     <div style="display:flex;gap:8px;margin-bottom:20px">
       <button class="btn" onclick="openSandbox('dev-settings')"
         style="flex:1;background:rgba(0,152,234,.12);border:1px solid rgba(0,152,234,.25);color:var(--accent);font-size:13px;padding:10px 8px;border-radius:var(--r-sm)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex-shrink:0"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"
+          style="flex-shrink:0">
+          <path
+            d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
+        </svg>
         Open Sandbox
       </button>
       <button class="btn" onclick="switchAppMode('creator')"
         style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:13px;padding:10px 8px;border-radius:var(--r-sm)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex-shrink:0"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"
+          style="flex-shrink:0">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
         Creator Mode
       </button>
     </div>
@@ -2530,7 +2567,8 @@
       <div class="settings-row accordion-trigger no-border" style="cursor:pointer" onclick="toggleAcc(this)">
         <div class="sr-left">
           <div class="sr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
             </svg></div>
           <div>
             <div class="sr-label">Code Examples</div>
@@ -2538,7 +2576,7 @@
           </div>
         </div>
         <div class="sr-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="6 9 12 15 18 9"/>
+            <polyline points="6 9 12 15 18 9" />
           </svg></div>
       </div>
       <div class="accordion-content no-border" style="padding-left:16px">
@@ -2546,14 +2584,15 @@
         <!-- Language tab strip -->
         <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
           <button class="code-lang-btn active" id="lang-btn-python" onclick="switchCodeLang('python')">Python</button>
-          <button class="code-lang-btn" id="lang-btn-node"   onclick="switchCodeLang('node')">Node.js</button>
-          <button class="code-lang-btn" id="lang-btn-curl"   onclick="switchCodeLang('curl')">curl</button>
-          <button class="code-lang-btn" id="lang-btn-php"    onclick="switchCodeLang('php')">PHP</button>
+          <button class="code-lang-btn" id="lang-btn-node" onclick="switchCodeLang('node')">Node.js</button>
+          <button class="code-lang-btn" id="lang-btn-curl" onclick="switchCodeLang('curl')">curl</button>
+          <button class="code-lang-btn" id="lang-btn-php" onclick="switchCodeLang('php')">PHP</button>
         </div>
 
         <!-- ── Python ── -->
         <div id="code-python">
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a charge</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a
+            charge</b>
           <pre class="code-block">import httpx
 
 SECRET = "sk_test_…"
@@ -2570,7 +2609,8 @@ resp = httpx.post(
 charge = resp.json()
 payment_url = charge["checkout_url"]  # show this to the user</pre>
 
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Poll for completion</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Poll for
+            completion</b>
           <pre class="code-block">charge_id = charge["id"]
 
 status_resp = httpx.get(
@@ -2579,7 +2619,8 @@ status_resp = httpx.get(
 )
 print(status_resp.json()["status"])  # pending | completed | expired | failed</pre>
 
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Verify a webhook</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Verify a
+            webhook</b>
           <pre class="code-block">import hmac, hashlib
 
 def verify_webhook(secret: str, body: bytes, header_sig: str) -> bool:
@@ -2591,7 +2632,8 @@ def verify_webhook(secret: str, body: bytes, header_sig: str) -> bool:
 
         <!-- ── Node.js ── -->
         <div id="code-node" style="display:none">
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a charge</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a
+            charge</b>
           <pre class="code-block">const SECRET = "sk_test_…";
 const BASE   = "https://&lt;your-renewise-host&gt;";
 
@@ -2609,7 +2651,8 @@ const res = await fetch(`${BASE}/api/platform/charges`, {
 const charge = await res.json();
 const paymentUrl = charge.checkout_url; // show this to the user</pre>
 
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Poll for completion</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Poll for
+            completion</b>
           <pre class="code-block">const statusRes = await fetch(
   `${BASE}/api/platform/charges/${charge.id}`,
   { headers: { Authorization: `Bearer ${SECRET}` } }
@@ -2617,7 +2660,8 @@ const paymentUrl = charge.checkout_url; // show this to the user</pre>
 const { status } = await statusRes.json();
 console.log(status); // pending | completed | expired | failed</pre>
 
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Verify a webhook (Express)</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Verify a
+            webhook (Express)</b>
           <pre class="code-block">import crypto from "node:crypto";
 
 function verifyWebhook(secret, rawBody, headerSig) {
@@ -2647,17 +2691,20 @@ app.post("/webhook", express.raw({ type: "*/*" }), (req, res) => {
 
         <!-- ── curl ── -->
         <div id="code-curl" style="display:none">
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a charge</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a
+            charge</b>
           <pre class="code-block">curl -X POST https://&lt;host&gt;/api/platform/charges \
   -H "Authorization: Bearer sk_test_…" \
   -H "Content-Type: application/json" \
   -d '{"amount_usd_cents":999,"external_reference":"order_001"}'</pre>
 
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Get charge status</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Get charge
+            status</b>
           <pre class="code-block">curl https://&lt;host&gt;/api/platform/charges/&lt;charge_id&gt; \
   -H "Authorization: Bearer sk_test_…"</pre>
 
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Rotate your secret key</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Rotate your
+            secret key</b>
           <pre class="code-block">curl -X POST https://&lt;host&gt;/api/developer/platforms/&lt;id&gt;/keys/regenerate \
   -H "Authorization: tma &lt;initData&gt;" \
   -H "Content-Type: application/json" \
@@ -2666,7 +2713,8 @@ app.post("/webhook", express.raw({ type: "*/*" }), (req, res) => {
 
         <!-- ── PHP ── -->
         <div id="code-php" style="display:none">
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a charge</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Create a
+            charge</b>
           <pre class="code-block">&lt;?php
 $secret = 'sk_test_…';
 $base   = 'https://&lt;your-renewise-host&gt;';
@@ -2687,7 +2735,8 @@ curl_setopt_array($ch, [
 $charge     = json_decode(curl_exec($ch), true);
 $paymentUrl = $charge['checkout_url']; // show this to the user</pre>
 
-          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Verify a webhook</b>
+          <b style="font-size:12px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.4px">Verify a
+            webhook</b>
           <pre class="code-block">function verifyWebhook(string $secret, string $body, string $headerSig): bool {
     $expected = hash_hmac('sha256', $body, $secret);
     return hash_equals($expected, $headerSig);
@@ -2749,12 +2798,18 @@ http_response_code(200);</pre>
       <div style="display:flex;gap:8px">
         <button id="sandbox-env-test" onclick="setSandboxEnv('test')"
           style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;background:var(--accent);color:#000;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <path
+              d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
+          </svg>
           Testnet
         </button>
         <button id="sandbox-env-live" onclick="setSandboxEnv('live')"
           style="flex:1;padding:9px 0;border-radius:40px;border:none;font-size:13px;font-weight:700;background:var(--surface2);color:rgba(255,255,255,.6);cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
           Mainnet
         </button>
       </div>
@@ -3074,19 +3129,16 @@ http_response_code(200);</pre>
     <!-- TX hash search -->
     <div style="display:flex;gap:8px;margin-bottom:16px">
       <div style="flex:1;position:relative">
-        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"
-          width="16" height="16"
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2" width="16" height="16"
           style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input id="history-search-input" type="text" placeholder="Search by TX hash…"
-          style="width:100%;padding:10px 12px 10px 36px;background:var(--surface2);
+        <input id="history-search-input" type="text" placeholder="Search by TX hash…" style="width:100%;padding:10px 12px 10px 36px;background:var(--surface2);
                  border:1px solid var(--glass-border);border-radius:var(--r-xs);
-                 color:#fff;font-size:13.5px;outline:none"
-          onkeydown="if(event.key==='Enter')searchTx()">
+                 color:#fff;font-size:13.5px;outline:none" onkeydown="if(event.key==='Enter')searchTx()">
       </div>
-      <button onclick="searchTx()"
-        style="flex-shrink:0;padding:10px 16px;background:var(--accent);color:#fff;
+      <button onclick="searchTx()" style="flex-shrink:0;padding:10px 16px;background:var(--accent);color:#fff;
                border:none;border-radius:var(--r-xs);font-size:13px;font-weight:700;cursor:pointer">
         Search
       </button>
@@ -3099,8 +3151,7 @@ http_response_code(200);</pre>
       </div>
     </div>
     <div id="history-more" style="display:none;margin-top:12px">
-      <button onclick="loadHistoryMore()"
-        style="width:100%;padding:12px;background:rgba(255,255,255,.06);
+      <button onclick="loadHistoryMore()" style="width:100%;padding:12px;background:rgba(255,255,255,.06);
                border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xs);
                color:rgba(255,255,255,.75);font-size:13px;font-weight:700;
                cursor:pointer;-webkit-tap-highlight-color:transparent">
@@ -3342,7 +3393,12 @@ http_response_code(200);</pre>
       </div>
       <button class="btn" style="background:rgba(224,92,92,.15);border:1px solid rgba(224,92,92,.3);color:var(--danger)"
         onclick="deleteStep2()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          style="width:16px;height:16px;flex-shrink:0">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
         Continue to Confirmation
       </button>
       <button class="btn btn-ghost" onclick="App.nav('manage')">Cancel</button>
@@ -3373,7 +3429,14 @@ http_response_code(200);</pre>
         <button class="btn" id="delete-confirm-btn"
           style="background:rgba(224,92,92,.2);border:1px solid rgba(224,92,92,.35);color:var(--danger)"
           onclick="submitDelete()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            style="width:16px;height:16px;flex-shrink:0">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+          </svg>
           Delete This Network
         </button>
       </div>
@@ -3399,8 +3462,7 @@ http_response_code(200);</pre>
       <div class="loading">Loading…</div>
     </div>
     <div id="members-more" style="display:none;margin-top:12px">
-      <button onclick="loadMembersMore()"
-        style="width:100%;padding:12px;background:rgba(255,255,255,.06);
+      <button onclick="loadMembersMore()" style="width:100%;padding:12px;background:rgba(255,255,255,.06);
                border:1px solid rgba(255,255,255,.1);border-radius:var(--r-xs);
                color:rgba(255,255,255,.75);font-size:13px;font-weight:700;
                cursor:pointer;-webkit-tap-highlight-color:transparent">
@@ -3463,16 +3525,28 @@ http_response_code(200);</pre>
     <p id="wallet-current-label" style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px"></p>
 
     <!-- Shown when a pending wallet change is active -->
-    <div id="wallet-pending-banner" style="display:none;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);border-radius:16px;padding:16px;margin-bottom:18px">
+    <div id="wallet-pending-banner"
+      style="display:none;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);border-radius:16px;padding:16px;margin-bottom:18px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(251,191,36,.9)" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="rgba(251,191,36,.9)" stroke-width="2" width="18" height="18">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
         <span style="font-size:13px;font-weight:700;color:rgba(251,191,36,.9)">Wallet Change Pending</span>
       </div>
       <p style="font-size:12.5px;color:rgba(255,255,255,.65);margin:0 0 4px">Changing to:</p>
-      <p id="wallet-pending-addr" style="font-size:12px;font-family:monospace;color:#fff;word-break:break-all;margin:0 0 10px"></p>
+      <p id="wallet-pending-addr"
+        style="font-size:12px;font-family:monospace;color:#fff;word-break:break-all;margin:0 0 10px"></p>
       <p id="wallet-pending-eta" style="font-size:12px;color:rgba(255,255,255,.5);margin:0 0 12px"></p>
-      <button id="wallet-cancel-btn" class="btn" style="width:100%;padding:10px;font-size:13px;background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.25);color:var(--danger);border-radius:12px" onclick="cancelPendingWallet()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      <button id="wallet-cancel-btn" class="btn"
+        style="width:100%;padding:10px;font-size:13px;background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.25);color:var(--danger);border-radius:12px"
+        onclick="cancelPendingWallet()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="15" y1="9" x2="9" y2="15" />
+          <line x1="9" y1="9" x2="15" y2="15" />
+        </svg>
         Cancel This Change
       </button>
     </div>
@@ -3497,11 +3571,10 @@ http_response_code(200);</pre>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:13px;font-weight:700">Wallet Passkey</div>
-          <div id="wallet-passkey-sub" style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Not set anyone can change wallet</div>
+          <div id="wallet-passkey-sub" style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Not set anyone
+            can change wallet</div>
         </div>
-        <button id="wallet-passkey-btn"
-          onclick="submitGroupPasscode()"
-          style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#fff;
+        <button id="wallet-passkey-btn" onclick="submitGroupPasscode()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#fff;
                  border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;
                  padding:6px 14px;cursor:pointer;flex-shrink:0;margin-left:12px">
           Set
@@ -3547,7 +3620,8 @@ http_response_code(200);</pre>
   <section class="page" id="page-analytics">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <h1 class="page-title">Analytics</h1>
-      <span id="analytics-period-badge" style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px"></span>
+      <span id="analytics-period-badge"
+        style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px"></span>
     </div>
 
     <!-- KPI strip -->
@@ -3559,24 +3633,38 @@ http_response_code(200);</pre>
     </div>
 
     <!-- Revenue chart -->
-    <div style="background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:18px;margin-bottom:14px">
-      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px">Revenue Last 30 Days</div>
+    <div
+      style="background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:18px;margin-bottom:14px">
+      <div
+        style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px">
+        Revenue Last 30 Days</div>
       <div id="analytics-chart-wrap" style="position:relative;height:100px">
         <canvas id="analytics-chart" style="width:100%;height:100%"></canvas>
-        <div id="analytics-chart-empty" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:13px">No data yet</div>
+        <div id="analytics-chart-empty"
+          style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);font-size:13px">
+          No data yet</div>
       </div>
     </div>
 
     <!-- Breakdown table -->
-    <div style="background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:18px;margin-bottom:14px">
-      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px" id="analytics-breakdown-title">Breakdown</div>
-      <div id="analytics-breakdown-list"><div class="loading" style="padding:20px 0">Loading…</div></div>
+    <div
+      style="background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:18px;margin-bottom:14px">
+      <div
+        style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px"
+        id="analytics-breakdown-title">Breakdown</div>
+      <div id="analytics-breakdown-list">
+        <div class="loading" style="padding:20px 0">Loading…</div>
+      </div>
     </div>
 
     <!-- Recent transactions -->
     <div style="background:var(--surface);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:18px">
-      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px">Recent Payments</div>
-      <div id="analytics-tx-list"><div class="loading" style="padding:20px 0">Loading…</div></div>
+      <div
+        style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px">
+        Recent Payments</div>
+      <div id="analytics-tx-list">
+        <div class="loading" style="padding:20px 0">Loading…</div>
+      </div>
     </div>
   </section>
 
@@ -3849,17 +3937,17 @@ http_response_code(200);</pre>
 
       // Maps each sub-page to where its back button should go
       _backTargets: {
-        'history':    () => App.nav('manage'),
-        'analytics':  () => App.nav(_analyticsReturnPage || 'dashboard'),
-        'wizard':     () => Wiz.back(),
-        'manage':     () => App.nav('dashboard'),
-        'members':    () => App.nav('manage'),
-        'price':      () => App.nav('manage'),
-        'wallet':     () => App.nav('manage'),
-        'comp':       () => App.nav('manage'),
-        'delete':     () => App.nav('manage'),
-        'dev-app':    () => App.nav('dev-dashboard'),
-        'dev-sandbox':() => App.nav(_sandboxReturnPage || 'dev-settings'),
+        'history': () => App.nav('manage'),
+        'analytics': () => App.nav(_analyticsReturnPage || 'dashboard'),
+        'wizard': () => Wiz.back(),
+        'manage': () => App.nav('dashboard'),
+        'members': () => App.nav('manage'),
+        'price': () => App.nav('manage'),
+        'wallet': () => App.nav('manage'),
+        'comp': () => App.nav('manage'),
+        'delete': () => App.nav('manage'),
+        'dev-app': () => App.nav('dev-dashboard'),
+        'dev-sandbox': () => App.nav(_sandboxReturnPage || 'dev-settings'),
       },
 
       nav(page) {
@@ -4034,11 +4122,11 @@ http_response_code(200);</pre>
           </button>` : ''}
         `;
         const txCode = document.getElementById('pd-tx-code');
-        if (txCode) txCode.addEventListener('click', function() {
+        if (txCode) txCode.addEventListener('click', function () {
           _openUrl(_regUrl(txCode.getAttribute('data-url')));
         });
         const tvBtn = document.getElementById('pd-tonviewer-btn');
-        if (tvBtn) tvBtn.addEventListener('click', function() {
+        if (tvBtn) tvBtn.addEventListener('click', function () {
           _openUrl(_regUrl(tvBtn.getAttribute('data-url')));
         });
       },
@@ -4075,7 +4163,7 @@ http_response_code(200);</pre>
           </button>` : ''}
         `;
         const tvBtn2 = document.getElementById('pdf-tonviewer-btn');
-        if (tvBtn2) tvBtn2.addEventListener('click', function() {
+        if (tvBtn2) tvBtn2.addEventListener('click', function () {
           _openUrl(_regUrl(tvBtn2.getAttribute('data-url')));
         });
       },
@@ -4084,7 +4172,7 @@ http_response_code(200);</pre>
     function _closeDetailOverlay() {
       // Determine which detail is currently open and close it correctly
       const titleEl = document.getElementById('pmt-detail-overlay')?.querySelector('h2');
-      const title   = titleEl ? titleEl.textContent : '';
+      const title = titleEl ? titleEl.textContent : '';
       if (title === 'Charge Details') {
         ChargeDetail.hide();
       } else {
@@ -4109,10 +4197,10 @@ http_response_code(200);</pre>
 
       show(c) {
         const overlay = document.getElementById('pmt-detail-overlay');
-        const body    = document.getElementById('pmt-detail-body');
+        const body = document.getElementById('pmt-detail-body');
         const titleEl = overlay.querySelector('h2');
         // Save current state so we can restore it on hide
-        this._prevTitle   = titleEl ? titleEl.textContent : 'Payment Details';
+        this._prevTitle = titleEl ? titleEl.textContent : 'Payment Details';
         this._prevContent = body.innerHTML;
 
         if (titleEl) titleEl.textContent = 'Charge Details';
@@ -4123,7 +4211,7 @@ http_response_code(200);</pre>
 
       hide() {
         const overlay = document.getElementById('pmt-detail-overlay');
-        const body    = document.getElementById('pmt-detail-body');
+        const body = document.getElementById('pmt-detail-body');
         const titleEl = overlay.querySelector('h2');
         // Restore previous title and content (e.g. dashboard or payment details)
         if (titleEl) titleEl.textContent = this._prevTitle;
@@ -4156,34 +4244,34 @@ http_response_code(200);</pre>
 
       _render(body, d) {
         const statusColors = { completed: 'var(--success)', pending: '#fbbf24', expired: 'rgba(255,255,255,.5)', failed: 'var(--danger)' };
-        const statusColor  = statusColors[d.status] || 'rgba(255,255,255,.5)';
-        const amtUsd  = fmtUsd(d.amount_usd_cents);
-        const tonReq  = d.required_ton != null ? `${d.required_ton} GRAM` : '—';
-        const vault   = d.vault_address || null;
-        const vaultS  = vault ? `${vault.slice(0, 10)}…${vault.slice(-6)}` : '—';
-        const tx      = d.tx_hash || null;
-        const txS     = tx ? `${tx.slice(0, 16)}…` : '—';
+        const statusColor = statusColors[d.status] || 'rgba(255,255,255,.5)';
+        const amtUsd = fmtUsd(d.amount_usd_cents);
+        const tonReq = d.required_ton != null ? `${d.required_ton} GRAM` : '—';
+        const vault = d.vault_address || null;
+        const vaultS = vault ? `${vault.slice(0, 10)}…${vault.slice(-6)}` : '—';
+        const tx = d.tx_hash || null;
+        const txS = tx ? `${tx.slice(0, 16)}…` : '—';
         const created = (d.created_at || '').slice(0, 16).replace('T', ' ');
         const completed = d.completed_at ? d.completed_at.slice(0, 16).replace('T', ' ') : null;
         const modeBadge = `<span class="charge-mode-badge ${d.mode}" style="display:inline-block">${d.mode}</span>`;
 
         const rows = [
-          ['Reference',    `<code style="font-size:12px">${esc(d.external_reference)}</code>`],
-          ['App',          esc(d.platform_name || '—')],
-          ['Amount',       `<b>${amtUsd}</b>`],
-          ['Mode',         modeBadge],
-          ['Status',       `<span style="color:${statusColor};font-weight:700">${d.status.toUpperCase()}</span>`],
+          ['Reference', `<code style="font-size:12px">${esc(d.external_reference)}</code>`],
+          ['App', esc(d.platform_name || '—')],
+          ['Amount', `<b>${amtUsd}</b>`],
+          ['Mode', modeBadge],
+          ['Status', `<span style="color:${statusColor};font-weight:700">${d.status.toUpperCase()}</span>`],
           ['GRAM Required', tonReq],
           ...(d.buyer_fee_pct != null ? [
-            ['Buyer Fee',    `${d.buyer_fee_pct.toFixed(2)}%`],
+            ['Buyer Fee', `${d.buyer_fee_pct.toFixed(2)}%`],
             ['Platform Fee', `${d.platform_fee_pct.toFixed(2)}%`],
           ] : []),
-          ['Created',      created],
+          ['Created', created],
           ...(completed ? [['Completed', completed]] : []),
-          ['Vault',        vault
+          ['Vault', vault
             ? `<code style="font-size:11px">${vaultS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
-          ['TX Hash',      tx
+          ['TX Hash', tx
             ? `<code id="cd-tx-code" data-url="${esc(d.explorer_url)}"
                 style="font-size:11px;color:var(--accent);cursor:pointer">${txS}</code>`
             : '<span style="color:rgba(255,255,255,.4)">—</span>'],
@@ -4217,22 +4305,22 @@ http_response_code(200);</pre>
         `;
         // Wire via addEventListener CSP blocks inline onclick in Telegram WebView
         const cdTxCode = document.getElementById('cd-tx-code');
-        if (cdTxCode) cdTxCode.addEventListener('click', function() {
+        if (cdTxCode) cdTxCode.addEventListener('click', function () {
           _openUrl(_regUrl(cdTxCode.getAttribute('data-url')));
         });
         const tonscanBtn = document.getElementById('cd-tonscan-btn');
-        if (tonscanBtn) tonscanBtn.addEventListener('click', function() {
+        if (tonscanBtn) tonscanBtn.addEventListener('click', function () {
           _openUrl(_regUrl(tonscanBtn.getAttribute('data-url')));
         });
         const recheckBtn = document.getElementById('cd-recheck-btn');
-        if (recheckBtn) recheckBtn.addEventListener('click', async function() {
+        if (recheckBtn) recheckBtn.addEventListener('click', async function () {
           recheckBtn.disabled = true;
           recheckBtn.innerHTML = `${ico('refresh', 14)} Checking...`;
           console.log('[recheck] Starting recheck for charge', d.id);
           try {
             const resp = await fetch(`/api/developer/charges/${d.id}/recheck`, {
               method: 'POST',
-              headers: {'X-Init-Data': WebApp.initData}
+              headers: { 'X-Init-Data': WebApp.initData }
             });
             console.log('[recheck] Response status:', resp.status);
             const data = await resp.json();
@@ -4257,21 +4345,21 @@ http_response_code(200);</pre>
 
       _renderFallback(body, c) {
         const statusColors = { completed: 'var(--success)', pending: '#fbbf24', expired: 'rgba(255,255,255,.5)', failed: 'var(--danger)' };
-        const statusColor  = statusColors[c.status] || 'rgba(255,255,255,.5)';
+        const statusColor = statusColors[c.status] || 'rgba(255,255,255,.5)';
         const created = c.created_at ? new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
         body.innerHTML = `
           <div style="display:flex;flex-direction:column;gap:0">
             ${[
-              ['Reference', `<code style="font-size:12px">${esc(c.external_reference)}</code>`],
-              ['App',       esc(c.platform_name || '—')],
-              ['Amount',    `<b>${fmtUsd(c.amount_usd_cents)}</b>`],
-              ['Mode',      `<span class="charge-mode-badge ${c.mode}" style="display:inline-block">${c.mode}</span>`],
-              ['Status',    `<span style="color:${statusColor};font-weight:700">${c.status.toUpperCase()}</span>`],
-              ['Created',   created],
-              ['TX Hash',   c.tx_hash
-                ? `<code style="font-size:11px;color:var(--accent)">${c.tx_hash.slice(0, 16)}…</code>`
-                : '<span style="color:rgba(255,255,255,.4)">—</span>'],
-            ].map(([l, v]) => `
+            ['Reference', `<code style="font-size:12px">${esc(c.external_reference)}</code>`],
+            ['App', esc(c.platform_name || '—')],
+            ['Amount', `<b>${fmtUsd(c.amount_usd_cents)}</b>`],
+            ['Mode', `<span class="charge-mode-badge ${c.mode}" style="display:inline-block">${c.mode}</span>`],
+            ['Status', `<span style="color:${statusColor};font-weight:700">${c.status.toUpperCase()}</span>`],
+            ['Created', created],
+            ['TX Hash', c.tx_hash
+              ? `<code style="font-size:11px;color:var(--accent)">${c.tx_hash.slice(0, 16)}…</code>`
+              : '<span style="color:rgba(255,255,255,.4)">—</span>'],
+          ].map(([l, v]) => `
               <div style="display:flex;justify-content:space-between;align-items:center;
                           padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
                 <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.5);
@@ -4294,7 +4382,7 @@ http_response_code(200);</pre>
     // call WebApp.openLink inside Telegram's WebView (CSP + scope issues).
     // Instead, store URLs in this registry and reference them by key from onclick.
     const _urlRegistry = {};
-    let   _urlRegKey   = 0;
+    let _urlRegKey = 0;
 
     // Register a URL and return an onclick-safe attribute string
     function _regUrl(url) {
@@ -4422,9 +4510,9 @@ http_response_code(200);</pre>
     function switchCodeLang(lang) {
       ['python', 'node', 'curl', 'php'].forEach(l => {
         const panel = document.getElementById('code-' + l);
-        const btn   = document.getElementById('lang-btn-' + l);
+        const btn = document.getElementById('lang-btn-' + l);
         if (panel) panel.style.display = l === lang ? 'block' : 'none';
-        if (btn)   btn.classList.toggle('active', l === lang);
+        if (btn) btn.classList.toggle('active', l === lang);
       });
     }
   </script>
@@ -4681,15 +4769,15 @@ http_response_code(200);</pre>
         </div>
         ${g.wallet_network_warning ? `
         <div class="alert alert-error" style="margin-top:10px;font-size:12px;padding:10px 12px">
-          ${ico('alert',13)} <strong>Wallet Mismatch</strong> — ${esc(g.wallet_network_warning)}
+          ${ico('alert', 13)} <strong>Wallet Mismatch</strong> ${esc(g.wallet_network_warning)}
           <br><button class="btn-link" style="margin-top:6px;font-size:12px" onclick="openManage(${g.id})">Tap Manage → Update Wallet</button>
         </div>` : (!IS_TESTNET && walletRaw && (walletRaw.startsWith('kQ') || walletRaw.startsWith('0Q'))) ? `
         <div class="alert alert-error" style="margin-top:10px;font-size:12px;padding:10px 12px">
-          ${ico('alert',13)} <strong>Testnet wallet on mainnet</strong> — payments failing.
+          ${ico('alert', 13)} <strong>Testnet wallet on mainnet</strong> payments failing.
           Tap Manage → Update Wallet.
         </div>` : (IS_TESTNET && walletRaw && (walletRaw.startsWith('EQ') || walletRaw.startsWith('UQ'))) ? `
         <div class="alert alert-error" style="margin-top:10px;font-size:12px;padding:10px 12px">
-          ${ico('alert',13)} <strong>Mainnet wallet on testnet</strong> — test payments will fail.
+          ${ico('alert', 13)} <strong>Mainnet wallet on testnet</strong> test payments will fail.
           Tap Manage → Update Wallet.
         </div>` : ''}
       `;
@@ -4771,24 +4859,24 @@ http_response_code(200);</pre>
         document.getElementById('ms-price').textContent = g.price_usd_cents ? fmtUsd(g.price_usd_cents) : '—';
 
         // ── Wallet network warning banner ────────────────────────────────────────
-    if (g.wallet_network_warning) {
-      document.getElementById('manage-detail-card').insertAdjacentHTML(
-        'beforebegin',
-        `<div class="alert alert-error" style="margin-bottom:12px">
-          ${ico('alert',16)}
+        if (g.wallet_network_warning) {
+          document.getElementById('manage-detail-card').insertAdjacentHTML(
+            'beforebegin',
+            `<div class="alert alert-error" style="margin-bottom:12px">
+          ${ico('alert', 16)}
           <div>
-            <strong>Wallet Mismatch — Payments Failing</strong><br>
+            <strong>Wallet Mismatch Payments Failing</strong><br>
             <span style="font-size:13px">${esc(g.wallet_network_warning)}</span><br>
             <button class="btn-link" style="margin-top:6px;font-size:13px"
-              onclick="openWalletPage(${groupId},'${esc(g.payout_wallet_address||'')}',null,${g.has_wallet_passcode})">
+              onclick="openWalletPage(${groupId},'${esc(g.payout_wallet_address || '')}',null,${g.has_wallet_passcode})">
               Update Wallet Now →
             </button>
           </div>
         </div>`
-      );
-    }
+          );
+        }
 
-    // ── Detail card ──
+        // ── Detail card ──
         const status = (g.status || 'active').toLowerCase();
         const typeBadge = entityTypeBadge(g.chat_type);
         const walletRaw = g.payout_wallet_address || '';
@@ -4835,7 +4923,7 @@ http_response_code(200);</pre>
           try {
             const pr = await apiFetch(`${API}/groups/${groupId}/wallet-change-pending`, { headers: H() });
             if (pr.ok) { const pd = await pr.json(); pending = pd.pending; }
-          } catch (_) {}
+          } catch (_) { }
           openWalletPage(groupId, g.payout_wallet_address, pending, g.has_wallet_passcode);
         };
         document.getElementById('mgmt-comp').onclick = () => openCompPage(groupId);
@@ -4854,13 +4942,13 @@ http_response_code(200);</pre>
     document.getElementById('history-back-btn').onclick = () => App.nav('manage');
 
     const _HIST_PAGE = 25;
-    let _historyGroupId  = null;
-    let _historyOffset   = 0;
-    let _historyAllDone  = false;
+    let _historyGroupId = null;
+    let _historyOffset = 0;
+    let _historyAllDone = false;
 
     async function loadHistory(groupId, groupTitle) {
       _historyGroupId = groupId;
-      _historyOffset  = 0;
+      _historyOffset = 0;
       _historyAllDone = false;
       document.getElementById('history-title').textContent = groupTitle || 'Payment History';
       document.getElementById('history-search-input').value = '';
@@ -4878,7 +4966,7 @@ http_response_code(200);</pre>
     }
 
     async function _fetchHistory(reset) {
-      const el    = document.getElementById('history-list');
+      const el = document.getElementById('history-list');
       const moreEl = document.getElementById('history-more');
       try {
         const r = await apiFetch(
@@ -4921,7 +5009,7 @@ http_response_code(200);</pre>
           // TX hash click → TonViewer (stop row click propagating)
           const hashSpan = item.querySelector('.hist-hash');
           if (hashSpan && tx.last_payment_tx_hash) {
-            hashSpan.addEventListener('click', function(e) {
+            hashSpan.addEventListener('click', function (e) {
               e.stopPropagation();
               _openUrl(_regUrl(hashSpan.getAttribute('data-tx-url')));
             });
@@ -4929,8 +5017,8 @@ http_response_code(200);</pre>
           el.appendChild(item);
         });
 
-        _historyOffset  += rows.length;
-        _historyAllDone  = rows.length < _HIST_PAGE;
+        _historyOffset += rows.length;
+        _historyAllDone = rows.length < _HIST_PAGE;
         if (moreEl) moreEl.style.display = _historyAllDone ? 'none' : 'block';
       } catch (e) {
         if (reset) el.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load payments.</p></div>`;
@@ -4997,13 +5085,13 @@ http_response_code(200);</pre>
     // VIEW MEMBERS PAGE
     // ════════════════════════════════════════════════════
     const _MEMBERS_PAGE = 30;
-    let _membersGroupId  = null;
-    let _membersOffset   = 0;
-    let _membersAllDone  = false;
+    let _membersGroupId = null;
+    let _membersOffset = 0;
+    let _membersAllDone = false;
 
     async function openMembers(groupId) {
       _membersGroupId = groupId;
-      _membersOffset  = 0;
+      _membersOffset = 0;
       _membersAllDone = false;
       App.nav('members');
       document.getElementById('members-title').textContent = (_manageGroupData && _manageGroupData.chat_title) || 'Members';
@@ -5019,7 +5107,7 @@ http_response_code(200);</pre>
     }
 
     async function _fetchMembers(reset) {
-      const el    = document.getElementById('members-list');
+      const el = document.getElementById('members-list');
       const moreEl = document.getElementById('members-more');
       try {
         const r = await apiFetch(
@@ -5056,8 +5144,8 @@ http_response_code(200);</pre>
           el.appendChild(row);
         });
 
-        _membersOffset  += members.length;
-        _membersAllDone  = members.length < _MEMBERS_PAGE;
+        _membersOffset += members.length;
+        _membersAllDone = members.length < _MEMBERS_PAGE;
         if (moreEl) moreEl.style.display = _membersAllDone ? 'none' : 'block';
       } catch (e) {
         if (reset) el.innerHTML =
@@ -5155,9 +5243,9 @@ http_response_code(200);</pre>
       if (pendingChange && pendingChange.change_id) {
         _walletPendingChangeId = pendingChange.change_id;
         const addr = pendingChange.new_wallet || pendingChange.new_wallet_address || '';
-        const eta  = pendingChange.activates_at || '';
+        const eta = pendingChange.activates_at || '';
         document.getElementById('wallet-pending-addr').textContent = addr;
-        document.getElementById('wallet-pending-eta').textContent  = eta ? `Activates: ${eta.slice(0, 16).replace('T', ' ')} UTC` : '';
+        document.getElementById('wallet-pending-eta').textContent = eta ? `Activates: ${eta.slice(0, 16).replace('T', ' ')} UTC` : '';
         banner.style.display = 'block';
       } else {
         banner.style.display = 'none';
@@ -5319,7 +5407,7 @@ http_response_code(200);</pre>
       errEl.textContent = '';
 
       if (!/^\d{4}$/.test(pin1)) { errEl.textContent = 'PIN must be exactly 4 digits'; return; }
-      if (pin1 !== pin2)          { errEl.textContent = "PINs don't match — try again"; return; }
+      if (pin1 !== pin2) { errEl.textContent = "PINs don't match try again"; return; }
 
       const btn = document.getElementById('post-wallet-pin-btn');
       btn.disabled = true; btn.textContent = 'Saving…';
@@ -5346,9 +5434,9 @@ http_response_code(200);</pre>
       if (!_walletGroupId) return;
       const fields = _walletHasPasscode
         ? [
-            { id: 'current', label: 'Current Passkey', placeholder: '••••' },
-            { id: 'new',     label: 'New Passkey',     placeholder: '••••' },
-          ]
+          { id: 'current', label: 'Current Passkey', placeholder: '••••' },
+          { id: 'new', label: 'New Passkey', placeholder: '••••' },
+        ]
         : [{ id: 'new', label: 'New 4-digit Passkey', placeholder: '••••' }];
 
       const result = await showPinModal({
@@ -5364,7 +5452,7 @@ http_response_code(200);</pre>
           method: 'POST',
           headers: H(),
           body: JSON.stringify({
-            new_passcode:     result.new,
+            new_passcode: result.new,
             current_passcode: result.current || null,
           }),
         });
@@ -5603,7 +5691,7 @@ http_response_code(200);</pre>
     let chargesPage = 0;
     const CHARGES_PER_PAGE = 20;
     let _cachedPlatforms = [];  // module-level cache populated by loadPlatforms()
-    let _appChargesOffset  = 0;
+    let _appChargesOffset = 0;
     let _appChargesAllDone = false;
     const _APP_CHARGES_PAGE = 20;
 
@@ -5613,7 +5701,7 @@ http_response_code(200);</pre>
     }
 
     async function reloadAppCharges() {
-      _appChargesOffset  = 0;
+      _appChargesOffset = 0;
       _appChargesAllDone = false;
       await _fetchAppCharges(true);
     }
@@ -5652,7 +5740,7 @@ http_response_code(200);</pre>
         if (reset) listEl.innerHTML = '';
 
         const statusDotColor = { completed: 'var(--success)', pending: '#fbbf24', expired: 'rgba(255,255,255,.28)', failed: 'var(--danger)' };
-        const statusLabel    = { completed: 'Paid', pending: 'Pending', expired: 'Expired', failed: 'Failed' };
+        const statusLabel = { completed: 'Paid', pending: 'Pending', expired: 'Expired', failed: 'Failed' };
 
         charges.forEach(c => {
           const date = new Date(c.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -5686,8 +5774,8 @@ http_response_code(200);</pre>
           listEl.appendChild(wrapper);
         });
 
-        _appChargesOffset  += charges.length;
-        _appChargesAllDone  = charges.length < _APP_CHARGES_PAGE;
+        _appChargesOffset += charges.length;
+        _appChargesAllDone = charges.length < _APP_CHARGES_PAGE;
         if (moreEl) moreEl.style.display = _appChargesAllDone ? 'none' : 'block';
       } catch (e) {
         if (reset) listEl.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--danger);font-size:13px">Failed to load charges.</div>`;
@@ -6054,13 +6142,13 @@ http_response_code(200);</pre>
     // DEVELOPER API Charges feed
     // ════════════════════════════════════════════════════
     let _devChargesFilter = 'all';
-    const _DC_PAGE_SIZE   = 20;      // rows per page
-    let   _dcOffset       = 0;       // current offset for load-more
-    let   _dcAllLoaded    = false;   // true when API returned < PAGE_SIZE
+    const _DC_PAGE_SIZE = 20;      // rows per page
+    let _dcOffset = 0;       // current offset for load-more
+    let _dcAllLoaded = false;   // true when API returned < PAGE_SIZE
 
     function setDevChargesTab(tab) {
       _devChargesFilter = tab;
-      ['all','completed','pending','expired','failed'].forEach(t => {
+      ['all', 'completed', 'pending', 'expired', 'failed'].forEach(t => {
         const btn = document.getElementById(`dev-tab-${t}`);
         if (btn) btn.classList.toggle('active', t === tab);
       });
@@ -6167,9 +6255,9 @@ http_response_code(200);</pre>
     function _renderChargeCard(c) {
       const statusDotColor = {
         completed: 'var(--success)',
-        pending:   '#fbbf24',
-        expired:   'rgba(255,255,255,.28)',
-        failed:    'var(--danger)',
+        pending: '#fbbf24',
+        expired: 'rgba(255,255,255,.28)',
+        failed: 'var(--danger)',
       };
       const statusLabel = { completed: 'Paid', pending: 'Pending', expired: 'Expired', failed: 'Failed' };
       const date = new Date(c.created_at).toLocaleString(undefined, {
@@ -6343,16 +6431,16 @@ http_response_code(200);</pre>
             raw.includes('contract not compiled') || raw.includes('FileNotFoundError')
               ? 'Payment contract not built on this server. Ask the operator to run: cd contracts && npm run build'
               : raw.includes('Payment link generation failed')
-              ? 'Could not generate payment link check that the contract is compiled and the wallet address is valid.'
-              : raw.includes('wallet_address') || raw.includes('no payout wallet')
-              ? 'This app has no Payout Wallet set. Add one in Developer Apps first.'
-              : raw.includes('non-JSON response') || raw.includes('latest code')
-              ? 'The backend service needs to be redeployed. Redeploy Render and try again.'
-              : raw.includes('Could not reach') || raw.includes('unreachable')
-              ? 'Backend service is unreachable. Try again in a moment.'
-              : raw.includes('timed out') || raw.includes('cold-starting')
-              ? 'Backend is waking up wait a few seconds and try again.'
-              : raw;
+                ? 'Could not generate payment link check that the contract is compiled and the wallet address is valid.'
+                : raw.includes('wallet_address') || raw.includes('no payout wallet')
+                  ? 'This app has no Payout Wallet set. Add one in Developer Apps first.'
+                  : raw.includes('non-JSON response') || raw.includes('latest code')
+                    ? 'The backend service needs to be redeployed. Redeploy Render and try again.'
+                    : raw.includes('Could not reach') || raw.includes('unreachable')
+                      ? 'Backend service is unreachable. Try again in a moment.'
+                      : raw.includes('timed out') || raw.includes('cold-starting')
+                        ? 'Backend is waking up wait a few seconds and try again.'
+                        : raw;
           _renderSandboxError(friendly);
           return;
         }
@@ -6370,10 +6458,10 @@ http_response_code(200);</pre>
 
     function _renderSandboxPending(charge, amtUsd, sk) {
       const resEl = document.getElementById('sandbox-result');
-      const payUrl  = charge.payment_url || '';
+      const payUrl = charge.payment_url || '';
       // Properly escape URL for HTML attribute (only escape quotes, leave & as-is for URL params)
       const safePayUrl = payUrl.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-      const amtTon  = charge.required_nano ? (charge.required_nano / 1e9).toFixed(4) : '—';
+      const amtTon = charge.required_nano ? (charge.required_nano / 1e9).toFixed(4) : '—';
       const envLabel = _sandboxEnv === 'test' ? 'Testnet' : 'Mainnet';
 
       // If payment_url is missing (charge creation partially failed) show error
@@ -6488,24 +6576,24 @@ http_response_code(200);</pre>
             colorDark: '#0d111a', colorLight: '#ffffff',
             correctLevel: QRCode.CorrectLevel.M,
           });
-        } catch (_) {}
+        } catch (_) { }
       }
-      
+
       // Add touch animation to wallet buttons
       setTimeout(() => {
         document.querySelectorAll('.sbx-wallet-btn').forEach(btn => {
-          btn.addEventListener('touchstart', function() {
+          btn.addEventListener('touchstart', function () {
             this.style.transform = 'scale(0.95)';
             this.style.opacity = '0.7';
-          }, {passive: true});
-          btn.addEventListener('touchend', function() {
+          }, { passive: true });
+          btn.addEventListener('touchend', function () {
             this.style.transform = 'scale(1)';
             this.style.opacity = '1';
-          }, {passive: true});
-          btn.addEventListener('touchcancel', function() {
+          }, { passive: true });
+          btn.addEventListener('touchcancel', function () {
             this.style.transform = 'scale(1)';
             this.style.opacity = '1';
-          }, {passive: true});
+          }, { passive: true });
         });
       }, 50);
     }
@@ -6607,7 +6695,7 @@ http_response_code(200);</pre>
           }
           if (!r.ok) return; // transient error, keep polling
           const charge = await r.json();
-          console.log('[sandbox poll]', {id: chargeId, status: charge.status, required: charge.required_nano_amount, vault: charge.vault_address});
+          console.log('[sandbox poll]', { id: chargeId, status: charge.status, required: charge.required_nano_amount, vault: charge.vault_address });
           if (charge.status === 'completed') {
             clearInterval(_sandboxPollTimer);
             _sandboxPollTimer = null;
@@ -6648,9 +6736,9 @@ http_response_code(200);</pre>
           if (analyticsCta) analyticsCta.style.display = 'block';
           // Keep legacy hidden elements in sync (sandbox reads from these)
           const legacyRev = document.getElementById('dev-total-revenue');
-          const legacyTx  = document.getElementById('dev-total-transactions');
+          const legacyTx = document.getElementById('dev-total-transactions');
           if (legacyRev) legacyRev.textContent = fmtUsd(total_revenue_usd_cents || 0);
-          if (legacyTx)  legacyTx.textContent  = total_transactions || 0;
+          if (legacyTx) legacyTx.textContent = total_transactions || 0;
         }
 
         if (!platforms.length) {
@@ -6681,10 +6769,10 @@ http_response_code(200);</pre>
 
         el.innerHTML = '';
         for (const p of platforms) {
-          const rev      = p.revenue_usd_cents || 0;
-          const txCount  = p.transactions_count || 0;
+          const rev = p.revenue_usd_cents || 0;
+          const txCount = p.transactions_count || 0;
           const hasWallet = !!p.wallet_address;
-          const hasLive   = !!p.publishable_key_live;
+          const hasLive = !!p.publishable_key_live;
           const statusColor = p.status === 'active' ? 'var(--success)' : 'var(--danger)';
 
           // Environment badge
@@ -6787,9 +6875,9 @@ http_response_code(200);</pre>
         if (!r.ok) throw new Error(await _errDetail(r));
         const data = await r.json();
         const p = _cachedPlatforms.find(x => x.id === platformId);
-        if (!p) { container.innerHTML = `<div class="empty">${ico('alert',40)}<p>App not found.</p></div>`; return; }
+        if (!p) { container.innerHTML = `<div class="empty">${ico('alert', 40)}<p>App not found.</p></div>`; return; }
 
-        const wallet = p.wallet_address ? `${p.wallet_address.slice(0,10)}…${p.wallet_address.slice(-6)}` : 'Not set';
+        const wallet = p.wallet_address ? `${p.wallet_address.slice(0, 10)}…${p.wallet_address.slice(-6)}` : 'Not set';
         const hasLive = !!p.publishable_key_live;
         const s = data.stats || {};
 
@@ -6797,17 +6885,17 @@ http_response_code(200);</pre>
         let html = `
           <div style="display:flex;gap:0;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:var(--r-sm);overflow:hidden;margin-bottom:18px">
             <div style="flex:1;padding:14px 0;text-align:center">
-              <div style="font-size:20px;font-weight:800;color:var(--accent)">$${(s.total_volume_usd||0).toFixed(2)}</div>
+              <div style="font-size:20px;font-weight:800;color:var(--accent)">$${(s.total_volume_usd || 0).toFixed(2)}</div>
               <div style="font-size:10.5px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Volume</div>
             </div>
             <div style="width:1px;background:rgba(255,255,255,.07)"></div>
             <div style="flex:1;padding:14px 0;text-align:center">
-              <div style="font-size:20px;font-weight:800;color:#fff">${s.total_charges||0}</div>
+              <div style="font-size:20px;font-weight:800;color:#fff">${s.total_charges || 0}</div>
               <div style="font-size:10.5px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Charges</div>
             </div>
             <div style="width:1px;background:rgba(255,255,255,.07)"></div>
             <div style="flex:1;padding:14px 0;text-align:center">
-              <div style="font-size:20px;font-weight:800;color:#fff">${(s.success_rate_pct||0).toFixed(0)}%</div>
+              <div style="font-size:20px;font-weight:800;color:#fff">${(s.success_rate_pct || 0).toFixed(0)}%</div>
               <div style="font-size:10.5px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px">Success</div>
             </div>
           </div>
@@ -6927,9 +7015,9 @@ http_response_code(200);</pre>
             ${w && w.recent_deliveries && w.recent_deliveries.length ? `
             <div style="padding:10px 16px">
               <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;margin-bottom:6px">Recent Deliveries</div>
-              ${w.recent_deliveries.slice(0,3).map(d => `
+              ${w.recent_deliveries.slice(0, 3).map(d => `
                 <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;border-bottom:1px solid rgba(255,255,255,.04)">
-                  <span style="color:${d.status==='success'?'var(--success)':'var(--danger)'};font-weight:700">${d.status.toUpperCase()} · HTTP ${d.response_status_code||'ERR'}</span>
+                  <span style="color:${d.status === 'success' ? 'var(--success)' : 'var(--danger)'};font-weight:700">${d.status.toUpperCase()} · HTTP ${d.response_status_code || 'ERR'}</span>
                   <span style="color:rgba(255,255,255,.4)">Charge #${d.charge_id}</span>
                 </div>`).join('')}
             </div>` : ''}
@@ -6976,7 +7064,7 @@ http_response_code(200);</pre>
         _appChargesAllDone = false;
         await _fetchAppCharges(true);
       } catch (e) {
-        container.innerHTML = `<div class="empty">${ico('alert',40)}<p>Failed to load app details.</p></div>`;
+        container.innerHTML = `<div class="empty">${ico('alert', 40)}<p>Failed to load app details.</p></div>`;
       }
     }
 
@@ -7575,9 +7663,9 @@ http_response_code(200);</pre>
         const r = await apiFetch(`${API}/config`);
         if (r.ok) {
           const d = await r.json();
-          BOT_USERNAME  = d.bot_username  || '';
+          BOT_USERNAME = d.bot_username || '';
           TON_USD_PRICE = d.ton_usd_price || null;
-          IS_TESTNET    = !!d.is_testnet;
+          IS_TESTNET = !!d.is_testnet;
         }
       } catch (_) { }
 
@@ -7652,7 +7740,7 @@ http_response_code(200);</pre>
 
     async function loadAnalytics(mode) {
       // Reset to skeletons
-      document.getElementById('analytics-kpis').innerHTML = [1,2,3,4].map(() =>
+      document.getElementById('analytics-kpis').innerHTML = [1, 2, 3, 4].map(() =>
         `<div class="skeleton-card" style="height:80px;border-radius:var(--r-sm)"></div>`
       ).join('');
       document.getElementById('analytics-breakdown-list').innerHTML = `<div class="loading" style="padding:20px 0">Loading…</div>`;
@@ -7670,7 +7758,7 @@ http_response_code(200);</pre>
         document.getElementById('analytics-period-badge').textContent = 'Last 30 days';
       } catch (e) {
         document.getElementById('analytics-kpis').innerHTML =
-          `<div class="alert alert-error" style="grid-column:1/-1">${ico('alert',14)} Failed to load analytics</div>`;
+          `<div class="alert alert-error" style="grid-column:1/-1">${ico('alert', 14)} Failed to load analytics</div>`;
         console.error('analytics error', e);
       }
     }
@@ -7678,15 +7766,15 @@ http_response_code(200);</pre>
     function _renderAnalyticsKpis(d, mode) {
       const tonUsd = TON_USD_PRICE || 0;
       const kpis = mode === 'developer' ? [
-        { label: 'API Revenue',    value: fmtUsd(d.total_revenue_usd_cents || 0),                  sub: _nanoToUsdStr(d.total_revenue_nano || 0, tonUsd) },
-        { label: 'Charges',        value: (d.total_charges || 0).toString(),                        sub: `${d.completed_charges || 0} completed` },
-        { label: 'Success Rate',   value: `${(d.success_rate_pct || 0).toFixed(1)}%`,               sub: `${d.failed_charges || 0} failed` },
-        { label: 'This Month',     value: fmtUsd(d.month_revenue_usd_cents || 0),                   sub: _nanoToUsdStr(d.month_revenue_nano || 0, tonUsd) },
+        { label: 'API Revenue', value: fmtUsd(d.total_revenue_usd_cents || 0), sub: _nanoToUsdStr(d.total_revenue_nano || 0, tonUsd) },
+        { label: 'Charges', value: (d.total_charges || 0).toString(), sub: `${d.completed_charges || 0} completed` },
+        { label: 'Success Rate', value: `${(d.success_rate_pct || 0).toFixed(1)}%`, sub: `${d.failed_charges || 0} failed` },
+        { label: 'This Month', value: fmtUsd(d.month_revenue_usd_cents || 0), sub: _nanoToUsdStr(d.month_revenue_nano || 0, tonUsd) },
       ] : [
-        { label: 'Net Revenue',    value: fmtUsd(d.net_revenue_usd_cents || 0),                     sub: _nanoToUsdStr(d.net_revenue_nano || 0, tonUsd) },
-        { label: 'Active Members', value: (d.total_active_subs || 0).toString(),                    sub: `across ${d.total_groups || 0} network(s)` },
-        { label: 'This Month',     value: fmtUsd(d.month_revenue_usd_cents || 0),                   sub: `${d.month_new_subs || 0} new subs` },
-        { label: 'Churn (30d)',    value: `${(d.churn_rate_pct || 0).toFixed(1)}%`,                 sub: `${d.churned_subs || 0} lost` },
+        { label: 'Net Revenue', value: fmtUsd(d.net_revenue_usd_cents || 0), sub: _nanoToUsdStr(d.net_revenue_nano || 0, tonUsd) },
+        { label: 'Active Members', value: (d.total_active_subs || 0).toString(), sub: `across ${d.total_groups || 0} network(s)` },
+        { label: 'This Month', value: fmtUsd(d.month_revenue_usd_cents || 0), sub: `${d.month_new_subs || 0} new subs` },
+        { label: 'Churn (30d)', value: `${(d.churn_rate_pct || 0).toFixed(1)}%`, sub: `${d.churned_subs || 0} lost` },
       ];
 
       document.getElementById('analytics-kpis').innerHTML = kpis.map(k => `
@@ -7711,7 +7799,7 @@ http_response_code(200);</pre>
       const maxVal = Math.max(...daily.map(d => d.usd_cents || 0), 1);
       const w = canvas.parentElement.clientWidth || 300;
       const h = 100;
-      canvas.width  = w;
+      canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, w, h);

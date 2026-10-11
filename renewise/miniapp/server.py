@@ -977,7 +977,7 @@ async def api_groups_create(
             },
         )
 
-    # ── Wallet validation — format + mainnet enforcement ─────────────────────
+    # ── Wallet validation format + mainnet enforcement ─────────────────────
     if not await validate_ton_address(body.wallet_address):
         raise HTTPException(
             status_code=422,
@@ -990,7 +990,7 @@ async def api_groups_create(
             status_code=422,
             detail=(
                 "Testnet wallet address provided (kQ… / 0Q…). "
-                "This system runs on mainnet — please use a mainnet address (EQ… or UQ…)."
+                "This system runs on mainnet please use a mainnet address (EQ… or UQ…)."
             ),
         )
 
@@ -1723,7 +1723,7 @@ class UpdateWalletRequest(BaseModel):
         from renewise.services.wallet import detect_address_network, validate_ton_address as _sync_check
         import asyncio
         v = v.strip()
-        # detect_address_network is sync — safe to call directly
+        # detect_address_network is sync safe to call directly
         net = detect_address_network(v)
         if net is None:
             raise ValueError("Invalid TON wallet address format")
@@ -1806,7 +1806,7 @@ async def api_group_detail(
         "revenue_usd_cents":     revenue_usd_cents,
         # Boolean so the hash is never exposed to the client
         "has_wallet_passcode":   bool(group.get("wallet_passcode_hash")),
-        # Wallet network mismatch warning — set when a testnet wallet is stored
+        # Wallet network mismatch warning set when a testnet wallet is stored
         # on a mainnet deployment. The frontend should display a prominent alert.
         "wallet_network_warning": _check_wallet_network_mismatch(
             group.get("payout_wallet_address") or ""

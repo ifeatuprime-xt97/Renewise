@@ -607,10 +607,10 @@ async def get_user_subscriptions(telegram_user_id: int) -> list[Row]:
 
     Intentionally excludes bare 'pending' rows that have never been paid
     (no last_payment_tx_hash). A pending subscription with no tx hash means
-    the user requested to join but never paid — showing it as a real subscription
+    the user requested to join but never paid showing it as a real subscription
     would be confusing and would incorrectly mark them as 'is_member'.
 
-    Also excludes 'cancelled' rows — if a member left and rejoined we only
+    Also excludes 'cancelled' rows if a member left and rejoined we only
     care about their most recent active/expired state.
     """
     async with _db() as db:

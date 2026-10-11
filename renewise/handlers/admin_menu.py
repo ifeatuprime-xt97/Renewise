@@ -156,7 +156,7 @@ async def _get_network_detail_text(ctx: ContextTypes.DEFAULT_TYPE, g_dict: dict)
                 "\n\n🚨 <b>WALLET WARNING</b>\n"
                 "Your payout wallet is a <b>testnet address</b> (kQ… / 0Q…) "
                 "but the bot is running on <b>mainnet</b>.\n"
-                "Members cannot pay — all payment attempts will fail.\n\n"
+                "Members cannot pay all payment attempts will fail.\n\n"
                 "➡️ Tap <b>Update Wallet</b> below and enter your "
                 "<b>mainnet</b> wallet address (EQ… or UQ…) immediately."
             )
@@ -413,7 +413,7 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return AWAIT_NEW_WALLET
 
-    # On mainnet, reject testnet (kQ.../0Q...) addresses — payouts will never arrive.
+    # On mainnet, reject testnet (kQ.../0Q...) addresses payouts will never arrive.
     from renewise.services.wallet import detect_address_network
     from renewise.config import is_testnet
     _net = detect_address_network(address)
