@@ -38,7 +38,9 @@ log = logging.getLogger(__name__)
     STEP_PRICE_CONFIRM,  # 6 – confirm price + live GRAM equivalent
     STEP_WALLET,         # 7 – enter GRAM wallet
     STEP_FINAL_CONFIRM,  # 8 – final summary confirm
-) = range(9)
+    STEP_PASSKEY,        # 9 – set wallet passkey (mandatory on first paywall)
+    STEP_PASSKEY_CONFIRM,# 10 – confirm passkey by typing it again
+) = range(11)
 
 _W = "wizard"   # user_data key for wizard state dict
 
@@ -721,18 +723,46 @@ async def cb_final_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
                 "(set it to require approval) and share it with your audience.\n\n"
             )
 
+        # Store the group_id so the passkey step can save to the right row
+        _w(ctx)["activated_group_id"] = group_id
+        _w(ctx)["invite_link_section"] = link_section
+
+        # ── Check if admin already has a passkey from a prior paywall ────────
+        existing_group = await queries.get_group_by_id(group_id)
+        already_has_passkey = bool(
+            existing_group and existing_group.get("wallet_passcode_hash")
+        )
+
+        if already_has_passkey:
+            # Passkey already set from a previous paywall — skip the step
+            await query.edit_message_text(
+                "🎉 <b>You're live!</b>\n\n"
+                "Your paywall has been successfully set up and is now active.\n\n"
+                + link_section
+                + "You can manage your communities anytime from the menu below.",
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("📋 Main Menu", callback_data="start:my_groups")],
+                ]),
+            )
+            ctx.user_data.pop(_W, None)
+            return ConversationHandler.END
+
+        # First paywall — prompt passkey creation
         await query.edit_message_text(
-            "🎉 <b>You're live!</b>\n\n"
-            "Your paywall has been successfully set up and is now active.\n\n"
+            "🎉 <b>Paywall activated!</b>\n\n"
             + link_section
-            + "You can manage your communities anytime from the menu below.",
+            + "━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🔒 <b>One last step — set a wallet passkey</b>\n\n"
+            "Create a <b>4-digit PIN</b> to protect your payout wallet. "
+            "Anyone who tries to change your wallet address will need this passkey first.\n\n"
+            "Send your 4-digit passkey now:",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("📋 Main Menu", callback_data="start:my_groups")],
+                [InlineKeyboardButton("⏭ Skip for now", callback_data="pw:skip_passkey")],
             ]),
         )
-        ctx.user_data.pop(_W, None)
-        return ConversationHandler.END
+        return STEP_PASSKEY
 
     except Exception as e:
         log.error("cb_final_confirm failed: chat_id=%s admin=%s error=%s", chat_id, admin_id, e)
@@ -745,6 +775,92 @@ async def cb_final_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
         except Exception:
             pass
         return ConversationHandler.END
+
+
+# ── Step 9 & 10: Passkey setup (mandatory on first paywall) ──────────────────
+
+async def msg_passkey_set(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    """User typed their new 4-digit passkey — store it and ask them to confirm."""
+    pin = update.message.text.strip()
+    if not (pin.isdigit() and len(pin) == 4):
+        await update.message.reply_text(
+            "❌ Passkey must be exactly <b>4 digits</b> (e.g. <code>1234</code>). Try again:",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⏭ Skip for now", callback_data="pw:skip_passkey")],
+            ]),
+        )
+        return STEP_PASSKEY
+
+    _w(ctx)["wizard_passkey"] = pin
+    await update.message.reply_text(
+        "✅ Got it. <b>Confirm your passkey</b> — type it again to make sure:",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("⏭ Skip for now", callback_data="pw:skip_passkey")],
+        ]),
+    )
+    return STEP_PASSKEY_CONFIRM
+
+
+async def msg_passkey_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    """User typed the confirmation — if it matches, save and finish."""
+    pin     = update.message.text.strip()
+    stored  = _w(ctx).get("wizard_passkey", "")
+    group_id = _w(ctx).get("activated_group_id")
+    link_section = _w(ctx).get("invite_link_section", "")
+
+    if pin != stored:
+        await update.message.reply_text(
+            "❌ Passkeys didn't match. Send your <b>new</b> 4-digit passkey again:",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⏭ Skip for now", callback_data="pw:skip_passkey")],
+            ]),
+        )
+        _w(ctx).pop("wizard_passkey", None)
+        return STEP_PASSKEY
+
+    if group_id:
+        try:
+            await queries.set_group_passcode(group_id, pin, update.effective_user.id)
+        except Exception as e:
+            log.warning("Failed to save passkey for group %s: %s", group_id, e)
+
+    await update.message.reply_text(
+        "🔒 <b>Passkey saved!</b>\n\n"
+        "Your payout wallet is now protected. You'll need this PIN to change the wallet address in future.\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "🎉 <b>You're fully set up and live!</b>\n\n"
+        + link_section
+        + "Manage your communities anytime from the menu.",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📋 Main Menu", callback_data="start:my_groups")],
+        ]),
+    )
+    ctx.user_data.pop(_W, None)
+    return ConversationHandler.END
+
+
+async def cb_skip_passkey(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin tapped 'Skip for now' — end the wizard without setting a passkey."""
+    query = update.callback_query
+    await query.answer()
+    link_section = _w(ctx).get("invite_link_section", "")
+
+    await query.edit_message_text(
+        "👍 Passkey skipped. You can set one any time from <b>/menu → 🔑 Set Passkey</b>.\n\n"
+        "🎉 <b>You're live!</b>\n\n"
+        + link_section
+        + "Manage your communities anytime from the menu.",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📋 Main Menu", callback_data="start:my_groups")],
+        ]),
+    )
+    ctx.user_data.pop(_W, None)
+    return ConversationHandler.END
 
 
 # ── back navigation callbacks ─────────────────────────────────────────────────
@@ -892,10 +1008,19 @@ def build_create_paywall_handler() -> ConversationHandler:
                 CallbackQueryHandler(cb_final_confirm,         pattern=r"^pw:final_ok$"),
                 CallbackQueryHandler(cb_price_ok,              pattern=r"^pw:price_ok$"),
             ],
+            STEP_PASSKEY: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, msg_passkey_set),
+                CallbackQueryHandler(cb_skip_passkey,          pattern=r"^pw:skip_passkey$"),
+            ],
+            STEP_PASSKEY_CONFIRM: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, msg_passkey_confirm),
+                CallbackQueryHandler(cb_skip_passkey,          pattern=r"^pw:skip_passkey$"),
+            ],
         },
         fallbacks=[
             CommandHandler("cancel", cmd_cancel),
-            CallbackQueryHandler(cb_back_to_start, pattern=r"^pw:back_to_start$"),
+            CallbackQueryHandler(cb_back_to_start,  pattern=r"^pw:back_to_start$"),
+            CallbackQueryHandler(cb_skip_passkey,   pattern=r"^pw:skip_passkey$"),
         ],
         per_chat=True,
         per_user=True,

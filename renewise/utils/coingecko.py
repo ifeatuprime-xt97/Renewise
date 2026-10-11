@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-CACHE_TTL       = 1800   # 30 minutes: how long a price is considered fresh
+CACHE_TTL       = 60     # 1 minute: fetch a fresh price on every payment request
 STALE_THRESHOLD = 7200   # 2 hours: after this, log WARNING + publish Redis alert
 FLOOR_PRICE     = 1.5    # last-resort fallback price (USD) before first successful fetch
 
