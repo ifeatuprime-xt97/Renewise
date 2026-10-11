@@ -60,11 +60,11 @@ class VaultParams:
 @dataclass(frozen=True)
 class PaymentLink:
     vault_address:      str    # user-friendly bounceable address string
-    ton_deep_link:      str    # ton://transfer/... with &init= — QR code only
-    ton_link_no_init:   str    # ton://transfer/... WITHOUT &init= — Telegram Wallet
-    tonkeeper_url:      str    # https://app.tonkeeper.com/transfer/... with &init=
-    mytonwallet_url:    str    # https://app.mytonwallet.org/transfer/... with &init=
-    tonhub_url:         str    # https://tonhub.com/transfer/... with &init=
+    ton_deep_link:      str    # ton://transfer/... with &init= — all wallet buttons + QR
+    ton_link_no_init:   str    # ton://transfer/... WITHOUT &init= — Telegram Wallet only
+    tonkeeper_url:      str    # ton:// with &init= (same as ton_deep_link, named for clarity)
+    mytonwallet_url:    str    # ton:// with &init= (same as ton_deep_link, named for clarity)
+    tonhub_url:         str    # ton:// with &init= (same as ton_deep_link, named for clarity)
     required_nano:      int    # exact nanogram the buyer must send (incl. gas reserve)
     state_init_boc:     bytes  # raw BOC bytes of the StateInit cell
     body_boc:           bytes  # raw BOC bytes of the Pay{} body cell
@@ -272,8 +272,13 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     body_b64  = base64.urlsafe_b64encode(body_boc).decode().rstrip("=")
     init_b64  = base64.urlsafe_b64encode(state_init_boc).decode().rstrip("=")
 
-    # ton:// WITH &init= — kept only for the QR code image.
-    # All inline buttons use HTTPS URLs instead (see below).
+    # ── ton:// WITH &init= — the correct format for inline keyboard buttons ─────
+    # When used as inline button URLs in Telegram bot messages, ton:// links are
+    # handled by the OS universal link system and open the installed wallet app
+    # directly (Tonkeeper, MyTonWallet, TonHub, etc).
+    # They do NOT open @wallet when used as button URLs — only when tapped as
+    # plain text. HTTPS wallet URLs (https://app.tonkeeper.com/...) open
+    # Telegram's in-app browser instead of the wallet app, so we do NOT use them.
     ton_link = (
         f"ton://transfer/{addr_str}"
         f"?amount={amount}"
@@ -281,49 +286,28 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
         f"&init={init_b64}"
     )
 
-    # ton:// WITHOUT &init= — for Telegram Wallet (@wallet built-in).
+    # ton:// WITHOUT &init= — Telegram Wallet (@wallet built-in) button only.
     # Telegram Wallet shows "Money is currently unavailable" when it receives
-    # a ton:// link containing &init= (StateInit). This stripped version
-    # avoids that error.
+    # &init= (StateInit for contract deployment).
     ton_link_no_init = (
         f"ton://transfer/{addr_str}"
         f"?amount={amount}"
         f"&bin={body_b64}"
     )
 
-    # ── HTTPS wallet universal links — NOT intercepted by Telegram ────────────
-    # When a ton:// URL appears as an inline button in a Telegram bot message,
-    # Telegram routes it through @wallet regardless of which button the user
-    # tapped. Using HTTPS universal links bypasses this interception entirely.
-    #
-    # Tonkeeper: supports &init= per https://docs.tonconsole.com/tonkeeper/deep-linking
-    tonkeeper_url = (
-        f"https://app.tonkeeper.com/transfer/{addr_str}"
-        f"?amount={amount}"
-        f"&bin={body_b64}"
-        f"&init={init_b64}"
-    )
-
-    # MyTonWallet: uses the same path/params structure as Tonkeeper
-    mytonwallet_url = (
-        f"https://app.mytonwallet.org/transfer/{addr_str}"
-        f"?amount={amount}"
-        f"&bin={body_b64}"
-        f"&init={init_b64}"
-    )
-
-    # TonHub: documented at https://docs.tonconsole.com/tonkeeper/deep-linking (External section)
-    tonhub_url = (
-        f"https://tonhub.com/transfer/{addr_str}"
-        f"?amount={amount}"
-        f"&bin={body_b64}"
-        f"&init={init_b64}"
-    )
+    # The three "named" wallet URLs are ton:// with &init= (same as ton_deep_link).
+    # They are kept as separate fields so call sites can pass them independently
+    # to keyboards.py, making the intent clear. The value is identical to
+    # ton_deep_link — wallet selection is done by the OS based on which app the
+    # user has installed, not by the URL scheme.
+    tonkeeper_url   = ton_link  # ton:// — OS routes to Tonkeeper if installed
+    mytonwallet_url = ton_link  # ton:// — OS routes to MyTonWallet if installed
+    tonhub_url      = ton_link  # ton:// — OS routes to TonHub if installed
 
     return PaymentLink(
         vault_address=addr_str,
-        ton_deep_link=ton_link,           # QR code only — ton:// with &init=
-        ton_link_no_init=ton_link_no_init,  # Telegram Wallet button — ton:// no &init=
+        ton_deep_link=ton_link,             # ton:// with &init= — buttons + QR
+        ton_link_no_init=ton_link_no_init,  # ton:// no &init=  — Telegram Wallet
         tonkeeper_url=tonkeeper_url,
         mytonwallet_url=mytonwallet_url,
         tonhub_url=tonhub_url,

@@ -84,22 +84,26 @@ def payment_details_kb(
     """
     Payment keyboard shown alongside the QR code.
 
-    Each wallet button uses a different URL format to bypass Telegram's
-    interception of ton:// links (which always routes to @wallet):
+    Telegram routes ton:// links differently depending on context:
+    - As inline button URLs: handled by the OS → opens the installed wallet app.
+    - As plain text links: intercepted by Telegram → opened in @wallet.
 
-    - Telegram Wallet: ton:// WITHOUT &init= (Telegram Wallet can't handle &init=)
-    - Tonkeeper:       https://app.tonkeeper.com/... (HTTPS, not intercepted)
-    - MyTonWallet:     https://app.mytonwallet.org/... (HTTPS, not intercepted)
-    - TonHub:          https://tonhub.com/... (HTTPS, not intercepted)
+    So ton:// is correct for buttons. The only exception is Telegram Wallet's
+    own button, which receives ton:// WITHOUT &init= because Telegram Wallet
+    cannot handle StateInit and shows 'Money is currently unavailable'.
 
-    All HTTPS URLs include &init= so the vault deploys on first payment.
-    Falls back to payment_url for any URL not explicitly provided (e.g.
-    old call sites that haven't been updated yet).
+    All three external wallet buttons keep ton:// WITH &init= so the vault
+    contract deploys atomically on first payment via the OS wallet app.
+
+    HTTPS URLs (https://app.tonkeeper.com/...) open the in-app browser inside
+    Telegram — do NOT use them for wallet buttons in bot inline keyboards.
+
+    Falls back to payment_url for any URL not explicitly provided.
     """
     _tg  = tg_wallet_url   or payment_url
-    _tk  = tonkeeper_url   or payment_url
-    _mtw = mytonwallet_url or payment_url
-    _th  = tonhub_url      or payment_url
+    _tk  = tonkeeper_url   or payment_url   # ton:// with &init=
+    _mtw = mytonwallet_url or payment_url   # ton:// with &init=
+    _th  = tonhub_url      or payment_url   # ton:// with &init=
 
     rows = [
         [
