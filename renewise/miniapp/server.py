@@ -67,15 +67,15 @@ def _check_wallet_network_mismatch(wallet_address: str) -> str | None:
         net = detect_address_network(wallet_address)
         if not is_testnet() and net == "testnet":
             return (
-                "Your payout wallet is a testnet address (kQ… / 0Q…) but the "
+                "Your payout wallet is a testnet address (kQ... / 0Q...) but the "
                 "platform is running on mainnet. All member payments will fail "
-                "until you update to a mainnet wallet (EQ… / UQ…)."
+                "until you update to a mainnet wallet (EQ... / UQ...)."
             )
         if is_testnet() and net == "mainnet":
             return (
-                "Your payout wallet is a mainnet address (EQ… / UQ…) but the "
+                "Your payout wallet is a mainnet address (EQ... / UQ...) but the "
                 "platform is running on testnet. Test payments will not reach "
-                "this wallet. Use a testnet address (kQ… / 0Q…) for testing."
+                "this wallet. Use a testnet address (kQ... / 0Q...) for testing."
             )
     except Exception:
         pass
@@ -541,7 +541,7 @@ async def get_telegram_user(
 
 async def verify_admin_or_403(telegram_user_id: int, group_id: int) -> dict:
     """
-    Confirm `telegram_user_id` is the registered admin of `group_id`.
+    Confirm `telegram_user_id` is the registered admin of `group_id` (or superadmin).
 
     This is the exact _verify_admin_access logic from admin_menu.py, promoted
     to a shared helper so every endpoint uses it identically no drift.
@@ -550,7 +550,13 @@ async def verify_admin_or_403(telegram_user_id: int, group_id: int) -> dict:
     The group row is returned so callers do not need a second DB round-trip.
     """
     group = await queries.get_group_by_id(group_id)
-    if not group or group["admin_telegram_id"] != telegram_user_id:
+    if not group:
+        raise HTTPException(status_code=403, detail="Unauthorized access to group data")
+    from renewise.config import ALLOWED_SUPERADMIN_IDS
+    admin_id = group.get("admin_telegram_id")
+    is_owner = (int(admin_id) == int(telegram_user_id)) if admin_id is not None else False
+    is_superadmin = int(telegram_user_id) in ALLOWED_SUPERADMIN_IDS
+    if not is_owner and not is_superadmin:
         raise HTTPException(status_code=403, detail="Unauthorized access to group data")
     return dict(group)
 
@@ -1905,23 +1911,35 @@ async def api_group_detail(
             chat_type  = chat_type  or "group"
 
     # Revenue: sum of price_locked_in for active/comped subs convert to cents
-    from renewise.db.connection import _db as _conn
-    async with _conn() as db:
-        revenue_usd = await db.fetchval(
-            "SELECT COALESCE(SUM(price_locked_in),0) FROM subscriptions "
-            "WHERE group_id=$1 AND status IN ('active','comped')",
-            group_id,
-        ) or 0
-        revenue_usd_cents = int(round(float(revenue_usd) * 100))
+    revenue_usd_cents = 0
+    active_count = 0
+    try:
+        from renewise.db.connection import _db as _conn
+        async with _conn() as db:
+            revenue_usd = await db.fetchval(
+                "SELECT COALESCE(SUM(price_locked_in),0) FROM subscriptions "
+                "WHERE group_id=$1 AND status IN ('active','comped')",
+                group_id,
+            ) or 0
+            revenue_usd_cents = int(round(float(revenue_usd) * 100))
 
-    active_count = await queries.count_members(group_id)
+        active_count = await queries.count_members(group_id)
+    except Exception as exc:
+        log.warning("Could not compute live revenue/member count for group %d: %s", group_id, exc)
+        active_count = int(group.get("sub_count") or 0)
+        revenue_usd_cents = int(group.get("revenue_usd_cents") or 0)
+
+    price_cents = group.get("price_usd_cents")
+    if price_cents is None:
+        raw_price = group.get("price") or 0
+        price_cents = int(round(float(raw_price) * 100))
 
     return {
         "id":                    group_id,
         "chat_title":            chat_title,
         "chat_type":             chat_type,
         "status":                group.get("status", "active"),
-        "price_usd_cents":       group.get("price_usd_cents") or int((group.get("price") or 0) * 100),
+        "price_usd_cents":       price_cents,
         "billing_interval_days": group.get("billing_interval_days", 30),
         "payout_wallet_address": group.get("payout_wallet_address"),
         "invite_link":           invite_link or group.get("invite_link"),

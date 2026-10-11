@@ -4949,6 +4949,7 @@ http_response_code(200);</pre>
         if (!r.ok) { el.innerHTML = `<div class="empty">${ico('users', 40)}<p>No admin account.</p></div>`; return; }
         const { groups, total_subs, total_revenue, total_revenue_nano,
           net_revenue, net_revenue_nano, admin_fee_pct } = await r.json();
+        _cachedNetworks = groups || [];
 
         if (total_subs !== undefined) {
           const subsEl = document.getElementById('admin-total-members');
@@ -5139,14 +5140,14 @@ http_response_code(200);</pre>
     // ════════════════════════════════════════════════════
     let _manageGroupId = null;
     let _manageGroupData = null;
+    let _cachedNetworks = [];
 
     async function openManage(groupId) {
       _manageGroupId = groupId;
       _manageGroupData = null;
-      document.getElementById('manage-detail-card').innerHTML = `<div class="loading">Loading…</div>`;
-      document.getElementById('ms-members').textContent = '—';
-      document.getElementById('ms-revenue').textContent = '—';
-      document.getElementById('ms-price').textContent = '—';
+
+      // Find if we have cached group data from loadNetworks
+      const cached = (_cachedNetworks || []).find(x => x.id === groupId);
 
       // Inject icons into manage grid buttons (once)
       const icoMap = {
@@ -5163,81 +5164,76 @@ http_response_code(200);</pre>
 
       App.nav('manage');
 
-      try {
-        const r = await apiFetch(`${API}/groups/${groupId}/detail`, { headers: H() });
-        if (!r.ok) throw new Error(r.status);
-        const g = await r.json();
+      // Helper function to render group data into the manage screen
+      function renderManageData(g) {
         _manageGroupData = g;
+        const membersCount = g.active_members != null ? g.active_members : (g.sub_count != null ? g.sub_count : 0);
+        document.getElementById('ms-members').textContent = membersCount;
 
-        // ── Stats banner ──
-        document.getElementById('ms-members').textContent = g.active_members ?? '—';
-        // Earnings banner: respect the same GRAM/USD toggle preference.
-        // revenue_usd_cents is the sum of price_locked_in for active/comped subs (USD cents).
-        // revenue_nano is 0 (deprecated field from /groups/{id}/detail) not available here;
-        // for the per-group manage view we only have USD, so we show USD always.
-        // The toggle only affects the dashboard hero; per-group stats stay in USD.
-        const revUsd = (g.revenue_usd_cents != null && g.revenue_usd_cents > 0)
-          ? fmtUsd(g.revenue_usd_cents)
-          : '$0.00';
-        document.getElementById('ms-revenue').textContent = revUsd;
-        document.getElementById('ms-price').textContent = g.price_usd_cents ? fmtUsd(g.price_usd_cents) : '—';
+        const revCents = g.revenue_usd_cents != null ? g.revenue_usd_cents : 0;
+        document.getElementById('ms-revenue').textContent = revCents > 0 ? fmtUsd(revCents) : '$0.00';
 
-        // ── Wallet network warning banner ────────────────────────────────────────
+        const priceCents = g.price_usd_cents || (g.price ? Math.round(Number(g.price) * 100) : 0);
+        document.getElementById('ms-price').textContent = priceCents ? fmtUsd(priceCents) : '—';
+
+        // Clear any old wallet mismatch alert before inserting
+        document.querySelectorAll('.manage-wallet-alert').forEach(el => el.remove());
+
         if (g.wallet_network_warning) {
           document.getElementById('manage-detail-card').insertAdjacentHTML(
             'beforebegin',
-            `<div class="alert alert-error" style="margin-bottom:12px">
-          ${ico('alert', 16)}
-          <div>
-            <strong>Wallet Mismatch Payments Failing</strong><br>
-            <span style="font-size:13px">${esc(g.wallet_network_warning)}</span><br>
-            <button class="btn-link" style="margin-top:6px;font-size:13px"
-              onclick="openWalletPage(${groupId},'${esc(g.payout_wallet_address || '')}',null,${g.has_wallet_passcode})">
-              Update Wallet Now →
-            </button>
-          </div>
-        </div>`
+            `<div class="alert alert-error manage-wallet-alert" style="margin-bottom:12px">
+              ${ico('alert', 16)}
+              <div>
+                <strong>Wallet Mismatch Payments Failing</strong><br>
+                <span style="font-size:13px">${esc(g.wallet_network_warning)}</span><br>
+                <button class="btn-link" style="margin-top:6px;font-size:13px"
+                  onclick="openWalletPage(${groupId},'${esc(g.payout_wallet_address || '')}',null,${Boolean(g.has_wallet_passcode || g.wallet_passcode_hash)})">
+                  Update Wallet Now →
+                </button>
+              </div>
+            </div>`
           );
         }
 
-        // ── Detail card ──
         const status = (g.status || 'active').toLowerCase();
-        const typeBadge = entityTypeBadge(g.chat_type);
+        const typeBadge = entityTypeBadge(g.chat_type || g.type);
         const walletRaw = g.payout_wallet_address || '';
         const wallet = walletRaw.length > 16 ? walletRaw.slice(0, 8) + '…' + walletRaw.slice(-5) : (walletRaw || 'Not set');
-        const link = g.invite_link || '';
+        const link = g.invite_link || _groupLinks[groupId] || '';
         const interval = g.billing_interval_days === 7 ? 'week' : 'month';
+
         document.getElementById('manage-detail-card').innerHTML = `
-      <div class="net-hdr">
-        <span class="status-dot ${status}"></span>
-        <span class="net-name">${esc(g.chat_title || 'Network')}</span>
-        ${typeBadge}
-      </div>
-      <div class="net-rows">
-        <div class="data-row"><div class="ico ico-price">${ico('dollar', 15)}</div>
-          <div class="content"><span class="label">Price</span><span class="value">${g.price_usd_cents ? fmtUsd(g.price_usd_cents) : '—'} / ${interval}</span></div></div>
-        <div class="data-row"><div class="ico ico-wallet">${ico('wallet', 15)}</div>
-          <div class="content"><span class="label">Payout Wallet</span><span class="value mono">${esc(wallet)}</span></div></div>
-        <div class="data-row" style="align-items:center">
-          <div class="ico ico-link" style="background:rgba(0,152,234,.12);color:var(--accent)">${ico('link', 15)}</div>
-          <div class="content" style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px">
-            <div style="min-width:0;flex:1">
-              <span class="label">${(g.chat_type === 'channel') ? 'Channel Link' : 'Invite Link'}</span>
-              <span class="value mono" id="mgmt-link-val-${groupId}" style="font-size:12px;color:rgba(255,255,255,.8);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                ${link ? esc(link) : '<span style="color:rgba(255,255,255,.4)">Fetching link…</span>'}
-              </span>
-            </div>
-            <button class="btn-copy-chip" id="mgmt-link-btn-${groupId}"
-              onclick="fetchAndCopyGroupLink(${groupId}, this); event.stopPropagation();">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-              </svg>
-              Copy Link
-            </button>
+          <div class="net-hdr">
+            <span class="status-dot ${status}"></span>
+            <span class="net-name">${esc(g.chat_title || 'Network')}</span>
+            ${typeBadge}
           </div>
-        </div>
-      </div>
-    `;
+          <div class="net-rows">
+            <div class="data-row"><div class="ico ico-price">${ico('dollar', 15)}</div>
+              <div class="content"><span class="label">Price</span><span class="value">${priceCents ? fmtUsd(priceCents) : '—'} / ${interval}</span></div></div>
+            <div class="data-row"><div class="ico ico-wallet">${ico('wallet', 15)}</div>
+              <div class="content"><span class="label">Payout Wallet</span><span class="value mono">${esc(wallet)}</span></div></div>
+            <div class="data-row" style="align-items:center">
+              <div class="ico ico-link" style="background:rgba(0,152,234,.12);color:var(--accent)">${ico('link', 15)}</div>
+              <div class="content" style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px">
+                <div style="min-width:0;flex:1">
+                  <span class="label">${(g.chat_type === 'channel' || g.type === 'channel') ? 'Channel Link' : 'Invite Link'}</span>
+                  <span class="value mono" id="mgmt-link-val-${groupId}" style="font-size:12px;color:rgba(255,255,255,.8);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                    ${link ? esc(link) : '<span style="color:rgba(255,255,255,.4)">Fetching link…</span>'}
+                  </span>
+                </div>
+                <button class="btn-copy-chip" id="mgmt-link-btn-${groupId}"
+                  onclick="fetchAndCopyGroupLink(${groupId}, this); event.stopPropagation();">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  Copy Link
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
 
         if (link) {
           _groupLinks[groupId] = link;
@@ -5254,22 +5250,61 @@ http_response_code(200);</pre>
         // ── Wire each grid button to its own dedicated page ──
         document.getElementById('mgmt-payments').onclick = () => loadHistory(groupId, g.chat_title || 'Network');
         document.getElementById('mgmt-members').onclick = () => openMembers(groupId);
-        document.getElementById('mgmt-price').onclick = () => openPricePage(groupId, g.price_usd_cents);
+        document.getElementById('mgmt-price').onclick = () => openPricePage(groupId, priceCents);
         document.getElementById('mgmt-wallet').onclick = async () => {
           let pending = null;
           try {
             const pr = await apiFetch(`${API}/groups/${groupId}/wallet-change-pending`, { headers: H() });
             if (pr.ok) { const pd = await pr.json(); pending = pd.pending; }
           } catch (_) { }
-          openWalletPage(groupId, g.payout_wallet_address, pending, g.has_wallet_passcode);
+          openWalletPage(groupId, g.payout_wallet_address, pending, Boolean(g.has_wallet_passcode || g.wallet_passcode_hash));
         };
         document.getElementById('mgmt-comp').onclick = () => openCompPage(groupId);
         document.getElementById('mgmt-pause').onclick = () => doPauseResume(groupId, _manageGroupData ? _manageGroupData.status : status, g.chat_title);
         document.getElementById('mgmt-delete').onclick = () => openDeletePage(groupId, g.chat_title || 'Network');
+      }
 
+      // If cached data is present, render it immediately
+      if (cached) {
+        renderManageData(cached);
+      } else {
+        document.getElementById('manage-detail-card').innerHTML = `<div class="loading">Loading…</div>`;
+        document.getElementById('ms-members').textContent = '—';
+        document.getElementById('ms-revenue').textContent = '—';
+        document.getElementById('ms-price').textContent = '—';
+      }
+
+      // Now fetch live / updated detail from the API
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/detail`, { headers: H() });
+        if (!r.ok) {
+          if (!cached) {
+            const errText = r.status === 403 ? 'Access denied' : (r.status === 404 ? 'Network not found' : 'Failed to load details');
+            document.getElementById('manage-detail-card').innerHTML = `
+              <div class="empty">
+                ${ico('alert', 40)}
+                <p>${errText} (${r.status})</p>
+                <button class="btn btn-primary" style="margin-top:12px;padding:8px 18px;font-size:13px" onclick="openManage(${groupId})">
+                  Retry
+                </button>
+              </div>`;
+          }
+          return;
+        }
+        const g = await r.json();
+        renderManageData(g);
       } catch (e) {
-        document.getElementById('manage-detail-card').innerHTML =
-          `<div class="empty">${ico('alert', 40)}<p>Failed to load details.</p></div>`;
+        console.error('Error loading group detail:', e);
+        if (!cached) {
+          document.getElementById('manage-detail-card').innerHTML = `
+            <div class="empty">
+              ${ico('alert', 40)}
+              <p>Failed to load details.</p>
+              <button class="btn btn-primary" style="margin-top:12px;padding:8px 18px;font-size:13px" onclick="openManage(${groupId})">
+                Retry
+              </button>
+            </div>`;
+        }
       }
     }
 
