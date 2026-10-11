@@ -963,6 +963,41 @@ async def set_global_fees(
         )
 
 
+# ── Network mode (shared between bot + miniapp) ──────────────────────────────
+
+async def get_is_testnet() -> bool:
+    """Read the is_testnet flag from the platform_config singleton row.
+
+    Falls back to the TONCENTER_TESTNET env var if the DB row is missing
+    (e.g. before migrations have run).
+    """
+    import os
+    try:
+        async with _db() as db:
+            val = await db.fetchval(
+                "SELECT is_testnet FROM platform_config WHERE id=1"
+            )
+            if val is not None:
+                return bool(val)
+    except Exception:
+        pass
+    return os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+
+
+async def set_is_testnet(testnet: bool) -> None:
+    """Update the is_testnet flag in the platform_config singleton row."""
+    async with _db() as db:
+        await db.execute(
+            "UPDATE platform_config SET is_testnet=$1 WHERE id=1",
+            testnet,
+        )
+    try:
+        from renewise.config import _testnet_cache
+        _testnet_cache.set(testnet)
+    except Exception:
+        pass
+
+
 # ── banned admins ─────────────────────────────────────────────────────────────
 
 async def get_admin_ban_reason(telegram_id: int) -> str | None:

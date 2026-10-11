@@ -63,9 +63,8 @@ class TonCenterKeyManager:
 
     def __init__(self, keys: list[str]) -> None:
         self.keys: list[str] = list(keys)
-        now = asyncio.get_event_loop().time() if self.keys else 0.0
         # Per-key state: key → (last_used_at, cooldown_until)
-        self._last_used:   dict[str, float] = {k: 0.0  for k in self.keys}
+        self._last_used:   dict[str, float] = {k: 0.0 for k in self.keys}
         self._cooldown_until: dict[str, float] = {k: 0.0 for k in self.keys}
 
     def _best_key(self) -> tuple[str | None, float]:

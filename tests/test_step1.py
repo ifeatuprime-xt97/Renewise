@@ -1,6 +1,7 @@
 """Step 1: Schema check + live groups table query"""
 import sqlite3
 import sys
+import os
 import re
 
 # 1. Schema pattern search (simulating Select-String)

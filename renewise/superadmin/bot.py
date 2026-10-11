@@ -124,15 +124,17 @@ async def _guard_refund_exists(update: Update, refund_id: int) -> bool:
 
 
 async def show_main_menu(update: Update, context):
-    from renewise.db.queries import is_payments_paused
-    from renewise.config import TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+    from renewise.db.queries import is_payments_paused, get_is_testnet
+    from renewise.config import TRIGGER_WALLET, TONCENTER_API_KEY, is_testnet
     paused   = await is_payments_paused()
     status   = "🔴 PAUSED" if paused else "🟢 Live"
+    testnet  = await get_is_testnet()
+    net_badge = "🧪 Testnet" if testnet else "🌐 Mainnet"
 
     # Quick trigger health badge for the menu header
     tw_configured = bool(TRIGGER_WALLET)
     tw_balance    = await get_trigger_wallet_balance(
-        TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+        TRIGGER_WALLET, TONCENTER_API_KEY, is_testnet()
     ) if tw_configured else None
     tw_icon, _    = _trigger_health(tw_balance, tw_configured)
 
@@ -141,7 +143,7 @@ async def show_main_menu(update: Update, context):
 
     text = (
         f"🛡 <b>renewise Super-Admin</b>\n\n"
-        f"Platform: <b>{status}</b>\n"
+        f"Platform: <b>{status}</b> | <b>{net_badge}</b>\n"
         f"Trigger wallet: <b>{tw_icon}</b>{refund_badge}\n\n"
         "Choose an action:"
     )
@@ -200,6 +202,7 @@ async def help_cmd(update: Update, context):
         "/overview platform stats\n"
         "/groups paginated group list\n"
         "/killswitch global kill switch\n"
+        "/network view/toggle testnet vs mainnet\n"
         "/lookup &lt;tx_hash|user_id&gt; search\n"
         "/msgadmin &lt;user_id&gt; &lt;text&gt; DM admin via main bot\n"
         "/announce send public announcement\n"
@@ -214,19 +217,21 @@ async def help_cmd(update: Update, context):
 # ── Platform overview ─────────────────────────────────────────────────────────
 
 async def show_overview(update: Update, context):
-    from renewise.db.queries import get_global_fees, is_payments_paused
-    from renewise.config import TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+    from renewise.db.queries import get_global_fees, is_payments_paused, get_is_testnet
+    from renewise.config import TRIGGER_WALLET, TONCENTER_API_KEY, is_testnet
     stats            = await get_platform_overview()
     buyer_bps, admin_bps = await get_global_fees()
     fee_pct          = (buyer_bps + admin_bps) / 10000.0
     fee_rev          = stats["monthly_gmv"] * fee_pct
     paused           = await is_payments_paused()
     ks_status        = "🔴 PAUSED" if paused else "🟢 Live"
+    testnet          = await get_is_testnet()
+    net_status       = "🧪 Testnet" if testnet else "🌐 Mainnet"
 
     # Trigger wallet health
     tw_configured    = bool(TRIGGER_WALLET)
     tw_balance       = await get_trigger_wallet_balance(
-        TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+        TRIGGER_WALLET, TONCENTER_API_KEY, is_testnet()
     ) if tw_configured else None
     tw_icon, tw_label = _trigger_health(tw_balance, tw_configured)
     pending_refunds  = await get_pending_send_refund_count()
@@ -243,6 +248,7 @@ async def show_overview(update: Update, context):
 
     msg = (
         "📊 <b>Platform Overview This Month</b>\n\n"
+        f"<b>Network:</b>        {net_status}\n"
         f"<b>Kill Switch:</b>    {ks_status}\n"
         f"<b>GMV:</b>            ${stats['monthly_gmv']:.2f} USD\n"
         f"<b>Fee Revenue:</b>    ${fee_rev:.2f} USD\n"
@@ -358,7 +364,7 @@ async def show_platform_details(update: Update, context, platform_id: int):
 
 async def show_platform_charges(update: Update, context, platform_id: int, page: int):
     """Paginated charge history for a single developer platform."""
-    from renewise.config import TONCENTER_TESTNET
+    from renewise.config import is_testnet
     LIMIT  = 6
     offset = page * LIMIT
     rows, total = await get_platform_charges_page(platform_id, LIMIT, offset)
@@ -366,7 +372,7 @@ async def show_platform_charges(update: Update, context, platform_id: int, page:
 
     explorer_base = (
         "https://testnet.tonscan.org/tx/"
-        if TONCENTER_TESTNET
+        if is_testnet()
         else "https://tonscan.org/tx/"
     )
 
@@ -1155,17 +1161,51 @@ async def show_killswitch_status(update: Update, context):
 async def killswitch_cmd(update: Update, context):
     await show_killswitch_status(update, context)
 
+# ── Network Mode ──────────────────────────────────────────────────────────────
+
+async def show_network_status(update: Update, context):
+    """View and toggle platform network mode (Testnet vs Mainnet)."""
+    from renewise.db.queries import get_is_testnet
+    testnet = await get_is_testnet()
+    if testnet:
+        text = (
+            "🧪 <b>Network Mode: TESTNET</b>\n\n"
+            "Both bot and Mini App are currently configured for <b>TON Testnet</b>.\n\n"
+            "• Testnet wallet addresses (<code>kQ...</code> / <code>0Q...</code>) are accepted.\n"
+            "• Test charges and subscriptions use testnet GRAM.\n"
+            "• Blockchain explorer: <code>testnet.tonscan.org</code>."
+        )
+        kb = [[InlineKeyboardButton("🌐 Switch to Mainnet", callback_data="sa_settings_toggle_network_prompt")]]
+    else:
+        text = (
+            "🌐 <b>Network Mode: MAINNET</b>\n\n"
+            "Both bot and Mini App are currently configured for <b>TON Mainnet</b>.\n\n"
+            "• Production wallet addresses (<code>EQ...</code> / <code>UQ...</code>) are enforced.\n"
+            "• Real GRAM payments are accepted.\n"
+            "• Blockchain explorer: <code>tonscan.org</code>."
+        )
+        kb = [[InlineKeyboardButton("🧪 Switch to Testnet", callback_data="sa_settings_toggle_network_prompt")]]
+    kb.append([InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")])
+    markup = InlineKeyboardMarkup(kb)
+    if update.callback_query:
+        await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=markup)
+
+async def network_cmd(update: Update, context):
+    await show_network_status(update, context)
+
 # ── Trigger Wallet Status ─────────────────────────────────────────────────────
 
 async def show_trigger_status(update: Update, context):
     """Live trigger wallet health screen with balance, gas estimate, and refund count."""
     from renewise.config import (
-        TRIGGER_WALLET, TRIGGER_MNEMONIC, TONCENTER_API_KEY, TONCENTER_TESTNET
+        TRIGGER_WALLET, TRIGGER_MNEMONIC, TONCENTER_API_KEY, is_testnet
     )
 
     tw_configured = bool(TRIGGER_WALLET and TRIGGER_MNEMONIC)
     tw_balance    = await get_trigger_wallet_balance(
-        TRIGGER_WALLET, TONCENTER_API_KEY, TONCENTER_TESTNET
+        TRIGGER_WALLET, TONCENTER_API_KEY, is_testnet()
     ) if tw_configured else None
 
     tw_icon, tw_label = _trigger_health(tw_balance, tw_configured)
@@ -1194,7 +1234,7 @@ async def show_trigger_status(update: Update, context):
         if tw_configured and len(TRIGGER_WALLET) > 18
         else (f"<code>{TRIGGER_WALLET}</code>" if tw_configured else "—")
     )
-    network_label = "Testnet" if TONCENTER_TESTNET else "Mainnet"
+    network_label = "Testnet" if is_testnet() else "Mainnet"
 
     text = (
         f"⚡ <b>Trigger Wallet Status</b> ({network_label})\n\n"
@@ -1377,16 +1417,22 @@ async def show_pending_wallet_changes(update: Update, context):
 # ── Settings menu ─────────────────────────────────────────────────────────────
 
 async def show_settings_menu(update: Update, context):
-    from renewise.db.queries import get_global_fees
+    from renewise.db.queries import get_global_fees, get_is_testnet
     buyer_bps, admin_bps = await get_global_fees()
+    testnet = await get_is_testnet()
+    net_badge = "🧪 TESTNET" if testnet else "🌐 MAINNET"
+    net_btn_label = "Switch to Mainnet 🌐" if testnet else "Switch to Testnet 🧪"
     text = (
         "⚙️ <b>Platform Settings</b>\n\n"
+        f"Network Mode: <b>{net_badge}</b>\n"
+        f"<i>Authoritative source for both bot and Mini App.</i>\n\n"
         f"Global default fees:\n"
         f"  Buyer fee: <b>{buyer_bps} bps ({buyer_bps / 100:.2f}%)</b>\n"
         f"  Admin fee: <b>{admin_bps} bps ({admin_bps / 100:.2f}%)</b>\n\n"
         "<i>Per-group overrides take precedence.</i>"
     )
     kb = [
+        [InlineKeyboardButton(f"🔄 {net_btn_label}", callback_data="sa_settings_toggle_network_prompt")],
         [InlineKeyboardButton("💰 Adjust Global Fee",  callback_data="sa_settings_globalfee")],
         [
             InlineKeyboardButton("🚫 Ban Admin",   callback_data="sa_settings_ban_prompt"),
@@ -2320,6 +2366,38 @@ async def sa_callback_handler(update: Update, context):
             await show_settings_menu(update, context)
             await query.answer()
 
+        elif data == "sa_settings_toggle_network_prompt":
+            from renewise.db.queries import get_is_testnet
+            cur = await get_is_testnet()
+            target_name = "Mainnet (Production)" if cur else "Testnet (Testing)"
+            target_badge = "🌐 Mainnet" if cur else "🧪 Testnet"
+            cur_badge = "🧪 Testnet" if cur else "🌐 Mainnet"
+            await query.edit_message_text(
+                f"⚠️ <b>Confirm Network Mode Switch?</b>\n\n"
+                f"Current mode: <b>{cur_badge}</b>\n"
+                f"Switching to: <b>{target_badge}</b>\n\n"
+                f"⚠️ This will update the network configuration for <b>both</b> the Telegram bot (Render) "
+                f"and the Mini App (Vercel).\n\n"
+                f"Are you sure you want to proceed?",
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton(f"✅ Switch to {target_name}", callback_data="sa_settings_toggle_network_confirm")],
+                    [InlineKeyboardButton("❌ Cancel", callback_data="sa_settings_menu")],
+                ]),
+            )
+            await query.answer()
+
+        elif data == "sa_settings_toggle_network_confirm":
+            from renewise.db.queries import get_is_testnet, set_is_testnet
+            cur = await get_is_testnet()
+            new_val = not cur
+            await set_is_testnet(new_val)
+            user_id = update.effective_user.id if update.effective_user else 0
+            await audit(None, "toggle_network_mode", user_id, {"is_testnet": new_val, "acting_as": "superadmin"})
+            mode_label = "Testnet 🧪" if new_val else "Mainnet 🌐"
+            await query.answer(f"Network mode switched to {mode_label}!", show_alert=True)
+            await show_settings_menu(update, context)
+
         elif data == "sa_settings_globalfee":
             await show_global_fee_prompt(update, context)
             await query.answer()
@@ -2536,6 +2614,7 @@ def build_app():
     application.add_handler(CommandHandler("overview",       overview_cmd))
     application.add_handler(CommandHandler("groups",         groups_cmd))
     application.add_handler(CommandHandler("killswitch",     killswitch_cmd))
+    application.add_handler(CommandHandler("network",        network_cmd))
     application.add_handler(CommandHandler("lookup",         lookup_cmd))
     application.add_handler(CommandHandler("msgadmin",       msgadmin_cmd))
     application.add_handler(CommandHandler("announce",       announce_cmd))

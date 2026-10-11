@@ -3719,6 +3719,7 @@ http_response_code(200);</pre>
 
     let BOT_USERNAME = '';
     let TON_USD_PRICE = null; // populated from /api/config on startup
+    let IS_TESTNET = false; // populated from /api/config on startup (DB-backed)
 
     // ════════════════════════════════════════════════════
     // Global fetch wrapper intercepts 401 session expiry
@@ -7568,6 +7569,7 @@ http_response_code(200);</pre>
           const d = await r.json();
           BOT_USERNAME  = d.bot_username  || '';
           TON_USD_PRICE = d.ton_usd_price || null;
+          IS_TESTNET    = !!d.is_testnet;
         }
       } catch (_) { }
 

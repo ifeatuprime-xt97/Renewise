@@ -68,14 +68,82 @@ TONCENTER_TESTNET: bool = os.getenv("TONCENTER_TESTNET", "false").lower() == "tr
 
 
 def is_testnet() -> bool:
-    """Read TONCENTER_TESTNET fresh from the environment every time.
+    """Return True when the platform is running in testnet mode.
 
-    Use this instead of importing the module-level TONCENTER_TESTNET constant
-    in long-running processes (bot, Mini App server). The constant is bound
-    once at import time; this function always reflects the current env var,
-    which matters when the env is changed on Render without a full redeploy.
+    The authoritative value lives in the ``platform_config`` DB table so that
+    both Render (bot) and Vercel (Mini App) always agree.  An in-memory cache
+    (30 s TTL) avoids a DB round-trip on every call.
+
+    Falls back to the TONCENTER_TESTNET env var when the DB is unreachable
+    (e.g. very early startup before the pool is ready).
     """
-    return os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+    return _testnet_cache.get()
+
+
+class _TestnetCache:
+    """Thin sync wrapper around the async ``queries.get_is_testnet()`` call.
+
+    Caches the result for ``ttl`` seconds so hot paths (wallet validation,
+    admin menu rendering) never block on the DB.
+    """
+
+    def __init__(self, ttl: float = 30.0) -> None:
+        self._ttl = ttl
+        self._value: bool | None = None
+        self._expires: float = 0.0
+
+    def get(self) -> bool:
+        import time
+        now = time.monotonic()
+        if self._value is not None and now < self._expires:
+            return self._value
+
+        # Try to refresh from the DB.  We're inside a sync function so we
+        # need to schedule the coroutine on the running event loop.
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is not None and loop.is_running():
+            # We're inside an async context create a task and return
+            # the stale/env-var value for this one call.  The task will
+            # update the cache for all subsequent calls.
+            loop.create_task(self._refresh())
+            if self._value is not None:
+                return self._value
+            # First call before any refresh completed fall back to env var.
+            return os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+        else:
+            # No running loop (import-time, CLI, etc.) env var only.
+            return os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+
+    async def _refresh(self) -> None:
+        import time
+        try:
+            from renewise.db.queries import get_is_testnet
+            self._value = await get_is_testnet()
+            self._expires = time.monotonic() + self._ttl
+        except Exception:
+            # DB not ready yet keep using env var fallback.
+            if self._value is None:
+                self._value = os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+                self._expires = time.monotonic() + 5.0  # retry sooner
+
+    def set(self, value: bool) -> None:
+        """Immediately update the cached value and reset its expiration."""
+        import time
+        self._value = value
+        self._expires = time.monotonic() + self._ttl
+
+    def invalidate(self) -> None:
+        """Force the next call to re-read from the DB."""
+        self._value = None
+        self._expires = 0.0
+
+
+_testnet_cache = _TestnetCache(ttl=30.0)
 
 # ── Redis & Background Jobs (Phase 3) ─────────────────────────────────────────
 REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")

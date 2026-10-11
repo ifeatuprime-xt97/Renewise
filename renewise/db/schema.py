@@ -106,7 +106,8 @@ CREATE TABLE IF NOT EXISTS platform_config (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     payments_paused BOOLEAN NOT NULL DEFAULT 0,
     paused_at       DATETIME,
-    paused_by       INTEGER
+    paused_by       INTEGER,
+    is_testnet      BOOLEAN NOT NULL DEFAULT 0
 )
 """
 
@@ -382,7 +383,8 @@ async def init_db() -> None:
                 paused_at            TIMESTAMPTZ,
                 paused_by            BIGINT,
                 global_buyer_fee_bps INTEGER,
-                global_admin_fee_bps INTEGER
+                global_admin_fee_bps INTEGER,
+                is_testnet           BOOLEAN NOT NULL DEFAULT FALSE
             )
             """,
             """
@@ -539,17 +541,6 @@ async def init_db() -> None:
                     "INSERT INTO platform_config (id, payments_paused) "
                     "OVERRIDING SYSTEM VALUE VALUES (1, FALSE) ON CONFLICT DO NOTHING"
                 )
-                # Seed fee defaults
-                buyer_bps_default = int(os.getenv("BUYER_FEE_BPS", "200"))
-                admin_bps_default = int(os.getenv("ADMIN_FEE_BPS", "330"))
-                await db.execute(
-                    "UPDATE platform_config "
-                    "SET global_buyer_fee_bps = COALESCE(global_buyer_fee_bps, $1), "
-                    "    global_admin_fee_bps = COALESCE(global_admin_fee_bps, $2) "
-                    "WHERE id = 1",
-                    buyer_bps_default, admin_bps_default,
-                )
-
                 # ── Postgres migrations (idempotent) ──────────────────────────
                 # Each statement is wrapped in a DO-EXCEPTION block so re-running on
                 # a database that has already been migrated is completely safe.
@@ -598,6 +589,8 @@ async def init_db() -> None:
                 # platform_config global fee defaults
                 "DO $$ BEGIN ALTER TABLE platform_config ADD COLUMN global_buyer_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE platform_config ADD COLUMN global_admin_fee_bps INTEGER; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
+                # platform_config network mode (shared between bot + miniapp)
+                "DO $$ BEGIN ALTER TABLE platform_config ADD COLUMN is_testnet BOOLEAN NOT NULL DEFAULT FALSE; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 # subscriptions payment tracking columns
                 "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN required_nano_amount BIGINT; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
                 "DO $$ BEGIN ALTER TABLE subscriptions ADD COLUMN amount_paid_so_far BIGINT DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END; $$;",
@@ -613,6 +606,25 @@ async def init_db() -> None:
                 ]
                 for mig in pg_migrations:
                     await db.execute(mig)
+
+                # Seed fee defaults after columns exist
+                buyer_bps_default = int(os.getenv("BUYER_FEE_BPS", "200"))
+                admin_bps_default = int(os.getenv("ADMIN_FEE_BPS", "330"))
+                await db.execute(
+                    "UPDATE platform_config "
+                    "SET global_buyer_fee_bps = COALESCE(global_buyer_fee_bps, $1), "
+                    "    global_admin_fee_bps = COALESCE(global_admin_fee_bps, $2) "
+                    "WHERE id = 1",
+                    buyer_bps_default, admin_bps_default,
+                )
+                # Seed is_testnet from env var after column exists (one-time bootstrap)
+                env_testnet = os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+                await db.execute(
+                    "UPDATE platform_config "
+                    "SET is_testnet = $1 "
+                    "WHERE id = 1 AND is_testnet = FALSE AND $1 = TRUE",
+                    env_testnet,
+                )
 
                 # ── One-time fix: regenerate test keys that were accidentally hashed ──
                 # A previous migration SHA-256 hashed the secret_key_test column.
@@ -677,6 +689,8 @@ async def init_db() -> None:
             # Added here so they exist before the seed UPDATE below.
             "ALTER TABLE platform_config ADD COLUMN global_buyer_fee_bps INTEGER",
             "ALTER TABLE platform_config ADD COLUMN global_admin_fee_bps INTEGER",
+            # ── Network mode (shared between bot + miniapp) ───────────────────
+            "ALTER TABLE platform_config ADD COLUMN is_testnet BOOLEAN NOT NULL DEFAULT 0",
             "ALTER TABLE subscriptions ADD COLUMN required_nano_amount INTEGER",
             "ALTER TABLE subscriptions ADD COLUMN amount_paid_so_far INTEGER DEFAULT 0",
             "ALTER TABLE subscriptions ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP",
@@ -734,6 +748,13 @@ async def init_db() -> None:
             "    global_admin_fee_bps = COALESCE(global_admin_fee_bps, ?) "
             "WHERE id = 1",
             (buyer_bps_default, admin_bps_default),
+        )
+        # Seed is_testnet from env var (one-time bootstrap)
+        env_testnet = 1 if os.getenv("TONCENTER_TESTNET", "false").lower() == "true" else 0
+        await db.execute(
+            "UPDATE platform_config SET is_testnet = ? "
+            "WHERE id = 1 AND is_testnet = 0 AND ? = 1",
+            (env_testnet, env_testnet),
         )
 
         # ── Data-quality fix: zero out stale groups.price values ──────────────

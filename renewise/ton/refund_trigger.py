@@ -36,7 +36,7 @@ from dataclasses import dataclass
 
 from pytoniq_core import Address
 
-from renewise.config import TRIGGER_MNEMONIC, TONCENTER_TESTNET, TONCENTER_API_KEYS
+from renewise.config import TRIGGER_MNEMONIC, is_testnet, TONCENTER_API_KEYS
 
 log = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ async def send_refund_trigger(
     except ValueError as exc:
         return RefundTriggerResult(success=False, tx_hash="", error=str(exc))
 
-    config_url = _TESTNET_CONFIG_URL if TONCENTER_TESTNET else _MAINNET_CONFIG_URL
+    config_url = _TESTNET_CONFIG_URL if is_testnet() else _MAINNET_CONFIG_URL
 
     try:
         from pytoniq import LiteBalancer, WalletV4R2
@@ -101,7 +101,7 @@ async def send_refund_trigger(
 
         log.info(
             "refund_trigger: connecting to %s | vault=%s recipient=%s",
-            "testnet" if TONCENTER_TESTNET else "mainnet",
+            "testnet" if is_testnet() else "mainnet",
             vault_address,
             recipient_address,
         )
