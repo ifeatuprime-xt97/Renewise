@@ -83,8 +83,11 @@ async def client(conn, monkeypatch):
     group_id = row[0]
 
     # Import app AFTER patching so the patched _db is used
-    from renewise.miniapp.server import app, get_telegram_user
+    from renewise.miniapp.server import app, get_telegram_user, limiter
     from fastapi import FastAPI
+
+    orig_limiter = getattr(limiter, "enabled", True)
+    limiter.enabled = False
 
     # Override auth dependency
     async def _fake_user():
@@ -92,13 +95,15 @@ async def client(conn, monkeypatch):
 
     app.dependency_overrides[get_telegram_user] = _fake_user
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as c:
-        yield c, group_id
-
-    app.dependency_overrides.clear()
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://test",
+        ) as c:
+            yield c, group_id
+    finally:
+        limiter.enabled = orig_limiter
+        app.dependency_overrides.clear()
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

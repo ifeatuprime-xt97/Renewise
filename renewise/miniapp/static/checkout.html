@@ -677,14 +677,50 @@
     var _requiredNano = 0;
 
     // ─── Render wallet links as native <a> tags ─────────────────────────────
-    function renderWalletLinks(payUrl) {
-      if (!payUrl) return;
+    // ─── Render wallet links as native <a> tags ─────────────────────────────
+    function renderWalletLinks(chargeOrUrl) {
+      if (!chargeOrUrl) return;
 
       var container = document.getElementById('wallet-links-container');
       if (!container) return;
 
-      // Escape only quotes for HTML attribute safety (keep & as-is for URL params)
-      var safeUrl = payUrl.split('"').join('&' + 'quot;').split("'").join('&' + '#39;');
+      var charge = (typeof chargeOrUrl === 'object' && chargeOrUrl !== null) ? chargeOrUrl : {};
+      var payUrl = (typeof chargeOrUrl === 'string') ? chargeOrUrl : (charge.payment_url || _paymentUrl || '');
+      if (!payUrl) return;
+
+      var vaultAddr = charge.vault_address || _vaultAddr || '';
+      var isTest = charge.is_testnet || charge.mode === 'test' || (vaultAddr && (vaultAddr.startsWith('0Q') || vaultAddr.startsWith('kQ')));
+      var queryPart = payUrl.indexOf('?') !== -1 ? payUrl.split('?')[1] : '';
+
+      var tonkeeperUrl = charge.tonkeeper_url || (vaultAddr && queryPart ? ('https://app.tonkeeper.com/transfer/' + vaultAddr + '?' + queryPart) : payUrl);
+      var mytonwalletUrl = charge.mytonwallet_url || (vaultAddr && queryPart ? ('https://my.tt/transfer/' + vaultAddr + '?' + queryPart) : payUrl);
+      var tonhubUrl = charge.tonhub_url || (vaultAddr && queryPart ? ('https://tonhub.com/transfer/' + vaultAddr + '?' + queryPart) : payUrl);
+      var tgWalletUrl = charge.tg_wallet_url || payUrl.replace(/&init=[^&]*/g, '');
+
+      // Escape quotes for HTML attribute safety
+      function escUrl(u) {
+        return (u || '').split('"').join('&quot;').split("'").join('&#39;');
+      }
+
+      var safeTonkeeper = escUrl(tonkeeperUrl);
+      var safeMyTon = escUrl(mytonwalletUrl);
+      var safeTonhub = escUrl(tonhubUrl);
+      var safeTgWallet = escUrl(tgWalletUrl);
+
+      var tgWalletHtml = '';
+      if (!isTest) {
+        tgWalletHtml = `
+        <!-- Telegram Wallet (mainnet only, &init= stripped, inline SVG to avoid 403 Forbidden) -->
+        <a href="${safeTgWallet}" data-url="${safeTgWallet}" target="_blank" rel="noreferrer" class="wallet-btn" onclick="handleWalletClick(event, '${safeTgWallet}', 'telegram')">
+          <svg viewBox="0 0 32 32" width="26" height="26" class="wallet-icon" style="border-radius:10px;flex-shrink:0" fill="none">
+            <rect width="32" height="32" rx="10" fill="#2AABEE"/>
+            <path d="M7 16L24.5 9.5L19.5 23L15.5 18L11.5 20L12.5 17L7 16Z" fill="white"/>
+          </svg>
+          <span>Telegram Wallet</span>
+        </a>`;
+      }
+
+      var tonhubClass = isTest ? 'wallet-btn' : 'wallet-btn full';
 
       container.innerHTML = `
         <div class="info-note">
@@ -696,8 +732,8 @@
           </div>
         </div>
 
-        <!-- Tonkeeper (full-width primary) -->
-        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn primary">
+        <!-- Tonkeeper (full-width primary, universal link) -->
+        <a href="${safeTonkeeper}" data-url="${safeTonkeeper}" target="_blank" rel="noreferrer" class="wallet-btn primary" onclick="handleWalletClick(event, '${safeTonkeeper}', 'tonkeeper')">
           <img class="wallet-icon"
                src="https://tonkeeper.com/assets/tonconnect-icon.png"
                alt="Tonkeeper"
@@ -705,17 +741,10 @@
           <span>Open Tonkeeper</span>
         </a>
 
-        <!-- Telegram Wallet -->
-        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn" onclick="handleWalletClick(event, '${safeUrl}', 'telegram')">
-          <img class="wallet-icon"
-               src="https://wallet.tg/images/logo-288.png"
-               alt="Telegram Wallet"
-               width="26" height="26">
-          <span>Telegram Wallet</span>
-        </a>
+        ${tgWalletHtml}
 
-        <!-- MyTonWallet -->
-        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn">
+        <!-- MyTonWallet (universal link) -->
+        <a href="${safeMyTon}" data-url="${safeMyTon}" target="_blank" rel="noreferrer" class="wallet-btn" onclick="handleWalletClick(event, '${safeMyTon}', 'mytonwallet')">
           <img class="wallet-icon"
                src="https://mytonwallet.io/img/icon-256x256.png"
                alt="MyTonWallet"
@@ -723,8 +752,8 @@
           <span>MyTonWallet</span>
         </a>
 
-        <!-- Tonhub .full makes it span both columns so no orphaned button -->
-        <a href="${safeUrl}" target="_blank" rel="noreferrer" class="wallet-btn full">
+        <!-- Tonhub -->
+        <a href="${safeTonhub}" data-url="${safeTonhub}" target="_blank" rel="noreferrer" class="${tonhubClass}" onclick="handleWalletClick(event, '${safeTonhub}', 'tonhub')">
           <img class="wallet-icon"
                src="https://tonhub.com/tonconnect_logo.png"
                alt="Tonhub"
@@ -736,12 +765,10 @@
 
     // ─── Wallet link handler ────────────────────────────────────────────────
     function handleWalletClick(e, url, wallet) {
-      // Inside Telegram WebView, ton:// links are intercepted and routed to
-      // Telegram Wallet automatically just let the default href work.
-      // In a regular browser, attempt to open the ton:// link; if nothing
-      // handles it after 1.5s show a helpful message.
-      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-        return; // inside Telegram let href handle it natively
+      if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
+        e.preventDefault();
+        window.Telegram.WebApp.openLink(url);
+        return;
       }
       if (wallet === 'telegram') {
         e.preventDefault();
@@ -891,7 +918,7 @@
         }
 
         // Render wallet links as native <a> tags
-        renderWalletLinks(_paymentUrl);
+        renderWalletLinks(charge);
 
         if (_paymentUrl) {
           /* global QRCode */

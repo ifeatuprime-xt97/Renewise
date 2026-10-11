@@ -247,6 +247,10 @@ async def create_charge(
         "required_nano": payment_req.required_nano,
         "vault_address": payment_req.vault_address,
         "payment_url": payment_req.payment_url,
+        "tg_wallet_url": payment_req.tg_wallet_url,
+        "tonkeeper_url": payment_req.tonkeeper_url,
+        "mytonwallet_url": payment_req.mytonwallet_url,
+        "tonhub_url": payment_req.tonhub_url,
         "status": "pending",
         "checkout_url": f"{base_url}/checkout/{charge_id}"
     }

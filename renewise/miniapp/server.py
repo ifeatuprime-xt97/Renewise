@@ -302,6 +302,34 @@ async def api_public_checkout(request: Request, charge_id: int) -> dict:
             if vault_address else None
         )
 
+        from renewise.config import is_testnet as _cfg_testnet
+        is_test = (
+            row["mode"] == "test"
+            or _cfg_testnet()
+            or bool(vault_address and vault_address.startswith(("0Q", "kQ")))
+        )
+
+        # Build wallet-specific URLs so Mini App / WebApp can open Tonkeeper and
+        # MyTonWallet directly via universal links, avoiding Telegram intercepting ton://
+        # and showing "Money is currently unavailable".
+        tg_wallet_url = None
+        tonkeeper_url = None
+        mytonwallet_url = None
+        tonhub_url = None
+        if payment_url and vault_address:
+            import re as _re
+            # Telegram Wallet cannot handle &init= StateInit payload
+            tg_wallet_url = _re.sub(r"&init=[^&]*", "", payment_url)
+            query_part = payment_url.split("?", 1)[1] if "?" in payment_url else ""
+            if query_part:
+                tonkeeper_url = f"https://app.tonkeeper.com/transfer/{vault_address}?{query_part}"
+                mytonwallet_url = f"https://my.tt/transfer/{vault_address}?{query_part}"
+                tonhub_url = f"https://tonhub.com/transfer/{vault_address}?{query_part}"
+            else:
+                tonkeeper_url = payment_url
+                mytonwallet_url = payment_url
+                tonhub_url = payment_url
+
         # Resolve buyer_fee_bps use stored value or fall back to global default
         # so the checkout page always shows the correct fee breakdown.
         _stored_bps = row["buyer_fee_bps"]
@@ -320,6 +348,11 @@ async def api_public_checkout(request: Request, charge_id: int) -> dict:
             "vault_address": vault_address,
             "required_nano": required_nano,
             "payment_url": payment_url,
+            "tg_wallet_url": tg_wallet_url,
+            "tonkeeper_url": tonkeeper_url,
+            "mytonwallet_url": mytonwallet_url,
+            "tonhub_url": tonhub_url,
+            "is_testnet": is_test,
             "buyer_fee_bps": _global_buyer_bps,
         }
 

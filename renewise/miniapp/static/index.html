@@ -6748,10 +6748,15 @@ http_response_code(200);</pre>
     function _renderSandboxPending(charge, amtUsd, sk) {
       const resEl = document.getElementById('sandbox-result');
       const payUrl = charge.payment_url || '';
-      // Properly escape URL for HTML attribute (only escape quotes, leave & as-is for URL params)
-      const safePayUrl = payUrl.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       const amtTon = charge.required_nano ? (charge.required_nano / 1e9).toFixed(4) : '—';
       const envLabel = _sandboxEnv === 'test' ? 'Testnet' : 'Mainnet';
+      const vaultAddr = charge.vault_address || '';
+      const isTest = _sandboxEnv === 'test' || charge.mode === 'test' || charge.is_testnet || (vaultAddr && (vaultAddr.startsWith('0Q') || vaultAddr.startsWith('kQ')));
+      const queryPart = payUrl.includes('?') ? payUrl.split('?')[1] : '';
+      const tonkeeperUrl = charge.tonkeeper_url || (vaultAddr && queryPart ? `https://app.tonkeeper.com/transfer/${vaultAddr}?${queryPart}` : payUrl);
+      const mytonwalletUrl = charge.mytonwallet_url || (vaultAddr && queryPart ? `https://my.tt/transfer/${vaultAddr}?${queryPart}` : payUrl);
+      const tonhubUrl = charge.tonhub_url || (vaultAddr && queryPart ? `https://tonhub.com/transfer/${vaultAddr}?${queryPart}` : payUrl);
+      const tgWalletUrl = charge.tg_wallet_url || payUrl.replace(/&init=[^&]*/g, '');
 
       // If payment_url is missing (charge creation partially failed) show error
       if (!payUrl) {
@@ -6807,8 +6812,8 @@ http_response_code(200);</pre>
             </div>
           </div>
 
-          <!-- Tonkeeper full width primary (native link, no JS) -->
-          <a href="${safePayUrl}" target="_blank" rel="noreferrer" class="sbx-wallet-btn sbx-wallet-primary"
+          <!-- Tonkeeper full width primary (universal link + openLink handler) -->
+          <a href="${esc(tonkeeperUrl)}" data-url="${esc(tonkeeperUrl)}" target="_blank" rel="noreferrer" class="sbx-wallet-btn sbx-wallet-primary"
             style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
                    padding:14px;border-radius:14px;background:var(--accent);border:none;
                    color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
@@ -6819,18 +6824,10 @@ http_response_code(200);</pre>
             <span style="pointer-events:none">Open Tonkeeper</span>
           </a>
 
-          <!-- 3-column grid (native links, no JS) -->
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
-            <a href="${safePayUrl}" target="_blank" rel="noreferrer" class="sbx-wallet-btn"
-              style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
-                     border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
-                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;
-                     -webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform 0.1s, opacity 0.15s">
-              <img src="https://wallet.tg/images/logo-288.png" width="32" height="32"
-                   style="border-radius:9px;pointer-events:none" alt="Telegram Wallet">
-              <span style="pointer-events:none">Telegram Wallet</span>
-            </a>
-            <a href="${safePayUrl}" target="_blank" rel="noreferrer" class="sbx-wallet-btn"
+          ${isTest ? `
+          <!-- 2-column grid for testnet (Telegram Wallet does not exist on Testnet) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+            <a href="${esc(mytonwalletUrl)}" data-url="${esc(mytonwalletUrl)}" target="_blank" rel="noreferrer" class="sbx-wallet-btn"
               style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
                      border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
                      color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;
@@ -6839,7 +6836,7 @@ http_response_code(200);</pre>
                    style="border-radius:9px;pointer-events:none" alt="MyTonWallet">
               <span style="pointer-events:none">MyTonWallet</span>
             </a>
-            <a href="${safePayUrl}" target="_blank" rel="noreferrer" class="sbx-wallet-btn"
+            <a href="${esc(tonhubUrl)}" data-url="${esc(tonhubUrl)}" target="_blank" rel="noreferrer" class="sbx-wallet-btn"
               style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
                      border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
                      color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;
@@ -6849,6 +6846,40 @@ http_response_code(200);</pre>
               <span style="pointer-events:none">Tonhub</span>
             </a>
           </div>
+          ` : `
+          <!-- 3-column grid for mainnet -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+            <a href="${esc(tgWalletUrl)}" data-url="${esc(tgWalletUrl)}" target="_blank" rel="noreferrer" class="sbx-wallet-btn"
+              style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
+                     border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;
+                     -webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform 0.1s, opacity 0.15s">
+              <svg viewBox="0 0 32 32" width="32" height="32" style="border-radius:9px;pointer-events:none" fill="none">
+                <rect width="32" height="32" rx="9" fill="#2AABEE"/>
+                <path d="M7 16L24.5 9.5L19.5 23L15.5 18L11.5 20L12.5 17L7 16Z" fill="white"/>
+              </svg>
+              <span style="pointer-events:none">Telegram Wallet</span>
+            </a>
+            <a href="${esc(mytonwalletUrl)}" data-url="${esc(mytonwalletUrl)}" target="_blank" rel="noreferrer" class="sbx-wallet-btn"
+              style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
+                     border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;
+                     -webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform 0.1s, opacity 0.15s">
+              <img src="https://mytonwallet.io/img/icon-256x256.png" width="32" height="32"
+                   style="border-radius:9px;pointer-events:none" alt="MyTonWallet">
+              <span style="pointer-events:none">MyTonWallet</span>
+            </a>
+            <a href="${esc(tonhubUrl)}" data-url="${esc(tonhubUrl)}" target="_blank" rel="noreferrer" class="sbx-wallet-btn"
+              style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
+                     border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+                     color:#fff;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;
+                     -webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform 0.1s, opacity 0.15s">
+              <img src="https://tonhub.com/tonconnect_logo.png" width="32" height="32"
+                   style="border-radius:9px;pointer-events:none" alt="Tonhub">
+              <span style="pointer-events:none">Tonhub</span>
+            </a>
+          </div>
+          `}
 
           <p style="font-size:11px;color:rgba(255,255,255,.25)">
             Polling for confirmation every 3 seconds (up to 10 minutes)…
@@ -6868,9 +6899,17 @@ http_response_code(200);</pre>
         } catch (_) { }
       }
 
-      // Add touch animation to wallet buttons
+      // Add click & touch listeners to wallet buttons
       setTimeout(() => {
         document.querySelectorAll('.sbx-wallet-btn').forEach(btn => {
+          btn.addEventListener('click', function (e) {
+            const url = this.getAttribute('data-url') || this.getAttribute('href');
+            if (!url) return;
+            if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
+              e.preventDefault();
+              window.Telegram.WebApp.openLink(url);
+            }
+          });
           btn.addEventListener('touchstart', function () {
             this.style.transform = 'scale(0.95)';
             this.style.opacity = '0.7';

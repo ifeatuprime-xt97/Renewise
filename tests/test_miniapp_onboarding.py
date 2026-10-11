@@ -106,11 +106,13 @@ async def setup_test_db(monkeypatch, tmp_path):
     monkeypatch.setattr(_cfg,    "DATABASE_PATH", _TEST_DB_PATH)
     monkeypatch.setattr(_cfg,    "DATABASE_URL", "")
     monkeypatch.setattr(_cfg,    "USE_POSTGRES", False)
+    monkeypatch.setattr(_cfg,    "BOT_TOKEN", FAKE_TOKEN)
     monkeypatch.setattr(_conn,   "DATABASE_PATH", _TEST_DB_PATH)
     monkeypatch.setattr(_conn,   "DATABASE_URL", "")
     monkeypatch.setattr(_conn,   "USE_POSTGRES", False)
     monkeypatch.setattr(_schema, "DATABASE_PATH", _TEST_DB_PATH)
     monkeypatch.setattr(_conn,   "_pg_pool", None)
+    monkeypatch.setattr("renewise.miniapp.server.BOT_TOKEN", FAKE_TOKEN)
 
     # init_db reads the configured database settings and opens the SQLite DB
     # through the real connection wrapper, which is the behavior we want to test.
