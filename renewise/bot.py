@@ -3,6 +3,7 @@ renewise bot entry point.
 Run with: python -m renewise.bot
 """
 import asyncio
+import html
 import sys
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -253,6 +254,95 @@ async def post_init(app: Application) -> None:
             app.bot_data["keepalive_task"] = ka_task
     except Exception as exc:
         log.warning("Keep-alive failed to start: %s", exc)
+
+    # ── Testnet wallet scan on mainnet ────────────────────────────────────────
+    # If TONCENTER_TESTNET=false (mainnet mode) and any active group still has
+    # a testnet payout wallet (kQ.../0Q...) stored, payments will fail silently.
+    # Scan at startup and DM superadmins + the affected group admins immediately.
+    try:
+        from renewise.config import TONCENTER_TESTNET as _IS_TESTNET
+        from renewise.services.wallet import detect_address_network as _detect_net
+        import aiosqlite as _aiosqlite
+        from renewise.config import DATABASE_PATH as _DB_PATH
+
+        if not _IS_TESTNET:
+            async with _aiosqlite.connect(_DB_PATH) as _db:
+                _db.row_factory = _aiosqlite.Row
+                _cur = await _db.execute(
+                    "SELECT id, chat_title, admin_telegram_id, payout_wallet_address "
+                    "FROM groups WHERE status IN ('active','paused') "
+                    "AND payout_wallet_address IS NOT NULL"
+                )
+                _groups = await _cur.fetchall()
+
+            _bad = [
+                g for g in _groups
+                if _detect_net(g["payout_wallet_address"] or "") == "testnet"
+            ]
+
+            if _bad:
+                _names = ", ".join(
+                    f"{g['chat_title'] or 'Group ' + str(g['id'])}" for g in _bad
+                )
+                _sa_msg = (
+                    "🚨 <b>Testnet Wallet Alert</b>\n\n"
+                    f"<b>{len(_bad)} network(s) have testnet payout wallets "
+                    f"on a mainnet deployment:</b>\n\n"
+                    + "\n".join(
+                        f"• <b>{g['chat_title'] or 'Group ' + str(g['id'])}</b> — "
+                        f"<code>{(g['payout_wallet_address'] or '')[:20]}…</code>"
+                        for g in _bad
+                    )
+                    + "\n\n"
+                    "All payment attempts for these networks will show "
+                    "<b>\"Money is currently unavailable\"</b> to members.\n\n"
+                    "Affected admins have been notified. Ask them to update "
+                    "their payout wallet to a mainnet address (EQ… / UQ…) "
+                    "via /menu → Update Wallet."
+                )
+                await _send_sa_alert(_sa_msg)
+                log.error(
+                    "🚨 %d group(s) have testnet wallets on mainnet: %s",
+                    len(_bad), _names,
+                )
+
+                # Also DM each affected group admin directly
+                from telegram import Bot as _Bot
+                _main_bot = _Bot(BOT_TOKEN)
+                for _g in _bad:
+                    _admin_id = _g["admin_telegram_id"]
+                    _title    = _g["chat_title"] or f"Group {_g['id']}"
+                    _wallet   = _g["payout_wallet_address"] or ""
+                    try:
+                        await _main_bot.send_message(
+                            chat_id=_admin_id,
+                            parse_mode="HTML",
+                            text=(
+                                "🚨 <b>Action Required — Testnet Wallet Detected</b>\n\n"
+                                f"Your network <b>{html.escape(_title)}</b> has a "
+                                f"testnet payout wallet stored:\n"
+                                f"<code>{_wallet[:24]}…</code>\n\n"
+                                "The bot is now running on <b>mainnet</b>. "
+                                "This means <b>all member payment attempts will fail</b> "
+                                "with \"Money is currently unavailable\" until you fix this.\n\n"
+                                "➡️ Please open /menu → select your network → "
+                                "<b>Update Wallet</b> and enter your "
+                                "<b>mainnet wallet address</b> (starts with EQ… or UQ…).\n\n"
+                                "If you don't have a mainnet wallet yet, you can create one "
+                                "for free via the built-in Telegram @wallet."
+                            ),
+                        )
+                        log.info(
+                            "Testnet wallet warning DM sent to admin %d for group %d",
+                            _admin_id, _g["id"],
+                        )
+                    except Exception as _dm_exc:
+                        log.warning(
+                            "Could not DM admin %d about testnet wallet: %s",
+                            _admin_id, _dm_exc,
+                        )
+    except Exception as _scan_exc:
+        log.warning("Testnet wallet scan failed (non-fatal): %s", _scan_exc)
 
     log.info("Database initialised.")
 

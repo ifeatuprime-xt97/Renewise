@@ -52,6 +52,37 @@ from renewise.services.wallet import validate_ton_address
 
 log = logging.getLogger(__name__)
 
+
+def _check_wallet_network_mismatch(wallet_address: str) -> str | None:
+    """
+    Return a warning string when a testnet wallet is stored on a mainnet
+    deployment (or vice-versa), otherwise None.
+
+    Called on every /api/groups/{id}/detail response so the frontend can
+    surface a prominent alert to the admin.
+    """
+    if not wallet_address:
+        return None
+    try:
+        from renewise.services.wallet import detect_address_network
+        from renewise.config import TONCENTER_TESTNET
+        net = detect_address_network(wallet_address)
+        if not TONCENTER_TESTNET and net == "testnet":
+            return (
+                "Your payout wallet is a testnet address (kQ… / 0Q…) but the "
+                "platform is running on mainnet. All member payments will fail "
+                "until you update to a mainnet wallet (EQ… / UQ…)."
+            )
+        if TONCENTER_TESTNET and net == "mainnet":
+            return (
+                "Your payout wallet is a mainnet address (EQ… / UQ…) but the "
+                "platform is running on testnet. Test payments will not reach "
+                "this wallet. Use a testnet address (kQ… / 0Q…) for testing."
+            )
+    except Exception:
+        pass
+    return None
+
 # ---------------------------------------------------------------------------
 # Bot username cache resolved once at startup via the Bot API.
 # Used by the frontend to construct deep-links in the CONFIRMED correct format:
@@ -1764,6 +1795,11 @@ async def api_group_detail(
         "revenue_usd_cents":     revenue_usd_cents,
         # Boolean so the hash is never exposed to the client
         "has_wallet_passcode":   bool(group.get("wallet_passcode_hash")),
+        # Wallet network mismatch warning — set when a testnet wallet is stored
+        # on a mainnet deployment. The frontend should display a prominent alert.
+        "wallet_network_warning": _check_wallet_network_mismatch(
+            group.get("payout_wallet_address") or ""
+        ),
     }
 
 

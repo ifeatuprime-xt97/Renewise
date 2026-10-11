@@ -4678,6 +4678,11 @@ http_response_code(200);</pre>
             ${ico('hash', 14)} Manage
           </button>
         </div>
+        ${(walletRaw && (walletRaw.startsWith('kQ') || walletRaw.startsWith('0Q'))) ? `
+        <div class="alert alert-error" style="margin-top:10px;font-size:12px;padding:10px 12px">
+          ${ico('alert',13)} <strong>Testnet wallet on mainnet</strong> — payments failing.
+          Tap Manage → Update Wallet.
+        </div>` : ''}
       `;
           el.appendChild(card);
 
@@ -4756,7 +4761,25 @@ http_response_code(200);</pre>
         document.getElementById('ms-revenue').textContent = revUsd;
         document.getElementById('ms-price').textContent = g.price_usd_cents ? fmtUsd(g.price_usd_cents) : '—';
 
-        // ── Detail card ──
+        // ── Wallet network warning banner ────────────────────────────────────────
+    if (g.wallet_network_warning) {
+      document.getElementById('manage-detail-card').insertAdjacentHTML(
+        'beforebegin',
+        `<div class="alert alert-error" style="margin-bottom:12px">
+          ${ico('alert',16)}
+          <div>
+            <strong>Wallet Mismatch — Payments Failing</strong><br>
+            <span style="font-size:13px">${esc(g.wallet_network_warning)}</span><br>
+            <button class="btn-link" style="margin-top:6px;font-size:13px"
+              onclick="openWalletPage(${groupId},'${esc(g.payout_wallet_address||'')}',null,${g.has_wallet_passcode})">
+              Update Wallet Now →
+            </button>
+          </div>
+        </div>`
+      );
+    }
+
+    // ── Detail card ──
         const status = (g.status || 'active').toLowerCase();
         const typeBadge = entityTypeBadge(g.chat_type);
         const walletRaw = g.payout_wallet_address || '';

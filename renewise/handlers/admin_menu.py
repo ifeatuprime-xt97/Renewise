@@ -124,8 +124,7 @@ async def _get_network_detail_text(ctx: ContextTypes.DEFAULT_TYPE, g_dict: dict)
 
     usd = g_dict.get("price_usd_cents", 0) / 100.0
     wallet = g_dict.get("payout_wallet_address") or "Not set"
-    if len(wallet) > 20:
-        wallet = f"{wallet[:6]}...{wallet[-4:]}"
+    wallet_display = f"{wallet[:6]}...{wallet[-4:]}" if len(wallet) > 20 else wallet
 
     invite_link = g_dict.get("invite_link")
     if not invite_link:
@@ -145,15 +144,34 @@ async def _get_network_detail_text(ctx: ContextTypes.DEFAULT_TYPE, g_dict: dict)
     status_icon = "✅" if status == "active" else "⏸" if status == "paused" else "❄️"
     interval = g_dict.get("billing_interval_days", 30)
 
+    # ── Testnet wallet warning on mainnet ──────────────────────────────────────
+    from renewise.services.wallet import detect_address_network
+    from renewise.config import TONCENTER_TESTNET
+    wallet_warning = ""
+    raw_wallet = g_dict.get("payout_wallet_address") or ""
+    if raw_wallet and not TONCENTER_TESTNET:
+        _net = detect_address_network(raw_wallet)
+        if _net == "testnet":
+            wallet_warning = (
+                "\n\n🚨 <b>WALLET WARNING</b>\n"
+                "Your payout wallet is a <b>testnet address</b> (kQ… / 0Q…) "
+                "but the bot is running on <b>mainnet</b>.\n"
+                "Members cannot pay — all payment attempts will fail.\n\n"
+                "➡️ Tap <b>Update Wallet</b> below and enter your "
+                "<b>mainnet</b> wallet address (EQ… or UQ…) immediately."
+            )
+
     lines = [
         "⚙️ <b>Network Dashboard</b>\n",
         f"{status_icon} {chat_type} <b>{title}</b>",
         f"  💰 ${usd:.2f} USD / {interval} days",
         f"  👥 {member_count} active member{'s' if member_count != 1 else ''}",
-        f"  👛 <code>{wallet}</code>",
-        f"  🔗 Link: <code>{invite_link}</code>\n",
-        "What would you like to do?",
+        f"  👛 <code>{wallet_display}</code>",
+        f"  🔗 Link: <code>{invite_link}</code>",
     ]
+    if wallet_warning:
+        lines.append(wallet_warning)
+    lines.append("\nWhat would you like to do?")
     return "\n".join(lines)
 
 
