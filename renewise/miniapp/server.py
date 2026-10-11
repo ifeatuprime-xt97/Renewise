@@ -57,23 +57,21 @@ def _check_wallet_network_mismatch(wallet_address: str) -> str | None:
     """
     Return a warning string when a testnet wallet is stored on a mainnet
     deployment (or vice-versa), otherwise None.
-
-    Called on every /api/groups/{id}/detail response so the frontend can
-    surface a prominent alert to the admin.
+    Reads is_testnet() at call time so it reflects live env changes.
     """
     if not wallet_address:
         return None
     try:
         from renewise.services.wallet import detect_address_network
-        from renewise.config import TONCENTER_TESTNET
+        from renewise.config import is_testnet
         net = detect_address_network(wallet_address)
-        if not TONCENTER_TESTNET and net == "testnet":
+        if not is_testnet() and net == "testnet":
             return (
                 "Your payout wallet is a testnet address (kQ… / 0Q…) but the "
                 "platform is running on mainnet. All member payments will fail "
                 "until you update to a mainnet wallet (EQ… / UQ…)."
             )
-        if TONCENTER_TESTNET and net == "mainnet":
+        if is_testnet() and net == "mainnet":
             return (
                 "Your payout wallet is a mainnet address (EQ… / UQ…) but the "
                 "platform is running on testnet. Test payments will not reach "
@@ -973,8 +971,8 @@ async def api_groups_create(
             detail="Invalid wallet address format",
         )
     from renewise.services.wallet import detect_address_network as _detect
-    from renewise.config import TONCENTER_TESTNET
-    if not TONCENTER_TESTNET and _detect(body.wallet_address) == "testnet":
+    from renewise.config import is_testnet
+    if not is_testnet() and _detect(body.wallet_address) == "testnet":
         raise HTTPException(
             status_code=422,
             detail=(
@@ -1467,11 +1465,11 @@ async def api_developer_update_wallet(
     #   TONCENTER_TESTNET=false, because live charges settle real funds.
     #   If TONCENTER_TESTNET=true (full testnet mode) both types are accepted.
     from renewise.services.wallet import detect_address_network
-    from renewise.config import TONCENTER_TESTNET
+    from renewise.config import is_testnet
     _addr_net = detect_address_network(wallet_address)
     has_live_keys = bool(platform.get("publishable_key_live"))
 
-    if has_live_keys and not TONCENTER_TESTNET and _addr_net == "testnet":
+    if has_live_keys and not is_testnet() and _addr_net == "testnet":
         raise HTTPException(
             status_code=422,
             detail=(
@@ -1924,9 +1922,9 @@ async def api_group_update_wallet(
     # On mainnet, reject testnet addresses outright payouts will never arrive.
     # On testnet, both address types are accepted.
     from renewise.services.wallet import detect_address_network
-    from renewise.config import TONCENTER_TESTNET
+    from renewise.config import is_testnet
     _addr_net = detect_address_network(body.wallet_address)
-    if not TONCENTER_TESTNET and _addr_net == "testnet":
+    if not is_testnet() and _addr_net == "testnet":
         raise HTTPException(
             status_code=422,
             detail=(
@@ -1982,7 +1980,7 @@ async def api_group_update_wallet(
     )
 
     from renewise.services.wallet import detect_address_network
-    from renewise.config import TONCENTER_TESTNET
+    from renewise.config import is_testnet
     addr_network = _addr_net or "unknown"
     # warn on raw addresses only (can't determine testnet/mainnet from raw form)
     warning = (

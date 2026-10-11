@@ -66,6 +66,17 @@ TONCENTER_API_KEYS = [k.strip() for k in _keys_str.split(",") if k.strip()]
 TONCENTER_API_KEY: str = TONCENTER_API_KEYS[0] if TONCENTER_API_KEYS else ""
 TONCENTER_TESTNET: bool = os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
 
+
+def is_testnet() -> bool:
+    """Read TONCENTER_TESTNET fresh from the environment every time.
+
+    Use this instead of importing the module-level TONCENTER_TESTNET constant
+    in long-running processes (bot, Mini App server). The constant is bound
+    once at import time; this function always reflects the current env var,
+    which matters when the env is changed on Render without a full redeploy.
+    """
+    return os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+
 # ── Redis & Background Jobs (Phase 3) ─────────────────────────────────────────
 REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 RQ_QUEUE_NAME: str = os.getenv("RQ_QUEUE_NAME", "renewise_tasks")

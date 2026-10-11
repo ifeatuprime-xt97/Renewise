@@ -260,12 +260,12 @@ async def post_init(app: Application) -> None:
     # a testnet payout wallet (kQ.../0Q...) stored, payments will fail silently.
     # Scan at startup and DM superadmins + the affected group admins immediately.
     try:
-        from renewise.config import TONCENTER_TESTNET as _IS_TESTNET
+        from renewise.config import TONCENTER_TESTNET as _IS_TESTNET, is_testnet as _is_testnet
         from renewise.services.wallet import detect_address_network as _detect_net
         import aiosqlite as _aiosqlite
         from renewise.config import DATABASE_PATH as _DB_PATH
 
-        if not _IS_TESTNET:
+        if not _is_testnet():
             async with _aiosqlite.connect(_DB_PATH) as _db:
                 _db.row_factory = _aiosqlite.Row
                 _cur = await _db.execute(

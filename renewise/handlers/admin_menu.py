@@ -146,10 +146,10 @@ async def _get_network_detail_text(ctx: ContextTypes.DEFAULT_TYPE, g_dict: dict)
 
     # ── Testnet wallet warning on mainnet ──────────────────────────────────────
     from renewise.services.wallet import detect_address_network
-    from renewise.config import TONCENTER_TESTNET
+    from renewise.config import is_testnet
     wallet_warning = ""
     raw_wallet = g_dict.get("payout_wallet_address") or ""
-    if raw_wallet and not TONCENTER_TESTNET:
+    if raw_wallet and not is_testnet():
         _net = detect_address_network(raw_wallet)
         if _net == "testnet":
             wallet_warning = (
@@ -415,9 +415,9 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
     # On mainnet, reject testnet (kQ.../0Q...) addresses — payouts will never arrive.
     from renewise.services.wallet import detect_address_network
-    from renewise.config import TONCENTER_TESTNET
+    from renewise.config import is_testnet
     _net = detect_address_network(address)
-    if not TONCENTER_TESTNET and _net == "testnet":
+    if not is_testnet() and _net == "testnet":
         await update.message.reply_text(
             "❌ That looks like a <b>testnet</b> wallet address (kQ… / 0Q…).\n\n"
             "Please send your <b>mainnet</b> wallet address (EQ… or UQ…). "
@@ -430,9 +430,9 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     # Network check: on mainnet, testnet addresses won't receive payments.
     # On testnet, both address types are accepted.
     from renewise.services.wallet import detect_address_network
-    from renewise.config import TONCENTER_TESTNET
+    from renewise.config import is_testnet
     addr_network = detect_address_network(address)
-    if not TONCENTER_TESTNET and addr_network == "testnet":
+    if not is_testnet() and addr_network == "testnet":
         await update.message.reply_text(
             "⚠️ <b>Testnet address detected</b>\n\n"
             "This looks like a <b>testnet</b> wallet address (starts with <code>kQ</code> or <code>0Q</code>).\n\n"
