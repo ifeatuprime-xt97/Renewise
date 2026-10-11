@@ -37,8 +37,9 @@ def generate_telegram_auth(user_id: int, bot_token: str = "fake_bot_token") -> s
 
 
 import httpx
+import pytest_asyncio
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     transport = httpx.ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

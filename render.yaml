@@ -34,7 +34,7 @@ services:
       - key: TONCENTER_API_KEYS
         sync: false
       - key: TONCENTER_TESTNET
-        value: "false"
+        sync: false
       - key: MIN_CONFIRMATIONS
         value: 1
       - key: POLL_INTERVAL_SECONDS

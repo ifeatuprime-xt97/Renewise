@@ -743,9 +743,8 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
 
     network is 'testnet' for test-mode platform charges, 'mainnet' for everything else.
     """
-    from renewise.config import USE_POSTGRES
-    from renewise.watcher.config import TONCENTER_TESTNET
-    bot_network = "testnet" if TONCENTER_TESTNET else "mainnet"
+    from renewise.config import USE_POSTGRES, is_testnet
+    bot_network = "testnet" if is_testnet() else "mainnet"
 
     async with _db() as db:
         if USE_POSTGRES:
@@ -981,7 +980,11 @@ async def get_is_testnet() -> bool:
                 return bool(val)
     except Exception:
         pass
-    return os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+    try:
+        from renewise.config import _read_env_testnet
+        return _read_env_testnet()
+    except Exception:
+        return os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
 
 
 async def set_is_testnet(testnet: bool) -> None:

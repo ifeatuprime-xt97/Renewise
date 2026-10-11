@@ -200,7 +200,14 @@ def _url_and_manager(network: str | None) -> tuple[str, TonCenterKeyManager]:
         # Fall back to global manager if mainnet-specific list is empty
         km = _key_manager_mainnet if _key_manager_mainnet.keys else _key_manager
         return _MAINNET_URL, km
-    # None → use global config (legacy / bot subscriptions)
+    # None → check dynamic is_testnet() config (legacy / bot subscriptions)
+    try:
+        from renewise.config import is_testnet
+        if is_testnet():
+            km = _key_manager_testnet if _key_manager_testnet.keys else _key_manager
+            return _TESTNET_URL, km
+    except Exception:
+        pass
     return TONCENTER_BASE_URL, _key_manager
 
 

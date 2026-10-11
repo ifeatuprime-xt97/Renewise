@@ -145,6 +145,12 @@ async def _lifespan(application: FastAPI):
 
     try:
         await init_db()
+        from renewise.config import _testnet_cache
+        from renewise.db.queries import get_is_testnet
+        import time as _time
+        _testnet_cache._value = await get_is_testnet()
+        _testnet_cache._expires = _time.monotonic() + 30.0
+        log.info("lifespan: initialized is_testnet=%s", _testnet_cache._value)
     except Exception as exc:
         log.error("lifespan: init_db failed: %s", exc, exc_info=True)
         # Don't crash the whole app DB may already be migrated
@@ -437,7 +443,7 @@ async def api_config() -> dict:
     Intentionally unauthenticated bot username is public.
     """
     from renewise.utils.coingecko import get_ton_usd_price
-    from renewise.config import is_testnet
+    from renewise.config import is_testnet_async
     username = _bot_cache["username"] or await _resolve_bot_username()
     try:
         ton_usd = await get_ton_usd_price()
@@ -446,7 +452,7 @@ async def api_config() -> dict:
     return {
         "bot_username": username,
         "ton_usd_price": ton_usd,
-        "is_testnet": is_testnet(),
+        "is_testnet": await is_testnet_async(),
     }
 
 
@@ -639,7 +645,9 @@ async def api_my_groups(
 
     refreshed_groups = []
     for g in detail["groups"]:
-        refreshed_groups.append(await _refresh_group_meta_from_telegram(dict(g)))
+        g_dict = dict(g)
+        g_dict["wallet_network_warning"] = _check_wallet_network_mismatch(g_dict.get("payout_wallet_address") or "")
+        refreshed_groups.append(await _refresh_group_meta_from_telegram(g_dict))
     detail["groups"] = refreshed_groups
 
     # ── Total GRAM (nanonano) real stored on-chain required amount ──────────

@@ -258,22 +258,18 @@ async def post_init(app: Application) -> None:
     # ── Testnet wallet scan on mainnet ────────────────────────────────────────
     # If TONCENTER_TESTNET=false (mainnet mode) and any active group still has
     # a testnet payout wallet (kQ.../0Q...) stored, payments will fail silently.
-    # Scan at startup and DM superadmins + the affected group admins immediately.
     try:
-        from renewise.config import TONCENTER_TESTNET as _IS_TESTNET, is_testnet as _is_testnet
+        from renewise.config import is_testnet as _is_testnet
         from renewise.services.wallet import detect_address_network as _detect_net
-        import aiosqlite as _aiosqlite
-        from renewise.config import DATABASE_PATH as _DB_PATH
+        from renewise.db.connection import _db as _get_db
 
         if not _is_testnet():
-            async with _aiosqlite.connect(_DB_PATH) as _db:
-                _db.row_factory = _aiosqlite.Row
-                _cur = await _db.execute(
+            async with _get_db() as _db_conn:
+                _groups = await _db_conn.fetch(
                     "SELECT id, chat_title, admin_telegram_id, payout_wallet_address "
                     "FROM groups WHERE status IN ('active','paused') "
                     "AND payout_wallet_address IS NOT NULL"
                 )
-                _groups = await _cur.fetchall()
 
             _bad = [
                 g for g in _groups

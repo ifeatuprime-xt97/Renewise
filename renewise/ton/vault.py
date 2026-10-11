@@ -268,7 +268,8 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     # require() check fails (e.g. underpayment), the sender's wallet will
     # receive an automatic bounce and get their GRAM back.
     # Non-bounceable (UQ...) silently traps money on any execution failure.
-    addr_str  = addr.to_str(is_bounceable=True, is_url_safe=True)
+    from renewise.config import is_testnet
+    addr_str  = addr.to_str(is_bounceable=True, is_url_safe=True, is_test_only=is_testnet())
     body_b64  = base64.urlsafe_b64encode(body_boc).decode().rstrip("=")
     init_b64  = base64.urlsafe_b64encode(state_init_boc).decode().rstrip("=")
 

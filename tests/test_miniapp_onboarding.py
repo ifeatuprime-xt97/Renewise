@@ -141,9 +141,14 @@ def patch_wallet_invalid(monkeypatch):
 
 @pytest_asyncio.fixture
 async def http() -> AsyncGenerator[AsyncClient, None]:
-    from renewise.miniapp.server import app
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        yield c
+    from renewise.miniapp.server import app, limiter
+    orig_enabled = getattr(limiter, "enabled", True)
+    limiter.enabled = False
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+            yield c
+    finally:
+        limiter.enabled = orig_enabled
 
 
 # ── constants ──────────────────────────────────────────────────────────────
@@ -151,7 +156,7 @@ async def http() -> AsyncGenerator[AsyncClient, None]:
 OWNER_ID    = 100001
 ATTACKER_ID = 999999
 CHAT_ID     = -1001234567890
-VALID_WALLET = "EQD2NmD_lH5f5u1Kj3KfGyTvhZSX0Eg6qp2a5IQUKXxOG"
+VALID_WALLET = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAd99"
 
 VALID_BODY = {
     "telegram_chat_id":      CHAT_ID,
@@ -187,9 +192,8 @@ async def test_api_my_groups_refreshes_stale_group_title(monkeypatch, http):
     group_id = await _queries.upsert_group(CHAT_ID, OWNER_ID, "group")
     await _queries.activate_paywall(
         group_id=group_id,
-        price=0,
         billing_interval_days=30,
-        payout_wallet_address="EQD2NmD_lH5f5u1Kj3KfGyTvhZSX0Eg6qp2a5IQUKXxOG",
+        payout_wallet_address=VALID_WALLET,
         chat_title="Old Group Title",
         invite_link=None,
         chat_type="group",
@@ -417,7 +421,10 @@ class TestCreate:
 
         assert resp.status_code == 422
         detail = resp.json()["detail"]
-        assert isinstance(detail, str) and "wallet" in detail.lower()
+        if isinstance(detail, list):
+            assert any("wallet" in str(err).lower() for err in detail)
+        else:
+            assert isinstance(detail, str) and "wallet" in detail.lower()
         assert await _queries.get_group_by_chat_id(CHAT_ID) is None
 
     @pytest.mark.asyncio

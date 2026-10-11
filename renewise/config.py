@@ -64,7 +64,15 @@ ADMIN_FEE_BPS: int = int(os.getenv("ADMIN_FEE_BPS", "330"))
 _keys_str = os.getenv("TONCENTER_API_KEYS", os.getenv("TONCENTER_API_KEY", ""))
 TONCENTER_API_KEYS = [k.strip() for k in _keys_str.split(",") if k.strip()]
 TONCENTER_API_KEY: str = TONCENTER_API_KEYS[0] if TONCENTER_API_KEYS else ""
-TONCENTER_TESTNET: bool = os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+def _read_env_testnet() -> bool:
+    """Read testnet flag from environment, supporting all common variable aliases."""
+    for key in ("TONCENTER_TESTNET", "TESTNET", "TON_TESTNET", "IS_TESTNET"):
+        val = os.getenv(key)
+        if val is not None and val.strip().lower() in ("true", "1", "yes", "on"):
+            return True
+    return False
+
+TONCENTER_TESTNET: bool = _read_env_testnet()
 
 
 def is_testnet() -> bool:
@@ -74,14 +82,19 @@ def is_testnet() -> bool:
     both Render (bot) and Vercel (Mini App) always agree.  An in-memory cache
     (30 s TTL) avoids a DB round-trip on every call.
 
-    Falls back to the TONCENTER_TESTNET env var when the DB is unreachable
+    Falls back to the environment variables when the DB is unreachable
     (e.g. very early startup before the pool is ready).
     """
     return _testnet_cache.get()
 
 
+async def is_testnet_async() -> bool:
+    """Async variant that guarantees fresh DB-backed testnet state."""
+    return await _testnet_cache.get_async()
+
+
 class _TestnetCache:
-    """Thin sync wrapper around the async ``queries.get_is_testnet()`` call.
+    """Sync/async cache around ``queries.get_is_testnet()``.
 
     Caches the result for ``ttl`` seconds so hot paths (wallet validation,
     admin menu rendering) never block on the DB.
@@ -98,8 +111,10 @@ class _TestnetCache:
         if self._value is not None and now < self._expires:
             return self._value
 
-        # Try to refresh from the DB.  We're inside a sync function so we
-        # need to schedule the coroutine on the running event loop.
+        # If environment explicitly specifies testnet, honor it as immediate default
+        env_val = _read_env_testnet()
+
+        # Try to refresh from the DB in background if loop is running
         import asyncio
         try:
             loop = asyncio.get_running_loop()
@@ -107,17 +122,20 @@ class _TestnetCache:
             loop = None
 
         if loop is not None and loop.is_running():
-            # We're inside an async context create a task and return
-            # the stale/env-var value for this one call.  The task will
-            # update the cache for all subsequent calls.
             loop.create_task(self._refresh())
             if self._value is not None:
                 return self._value
-            # First call before any refresh completed fall back to env var.
-            return os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+            return env_val
         else:
-            # No running loop (import-time, CLI, etc.) env var only.
-            return os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+            return self._value if self._value is not None else env_val
+
+    async def get_async(self) -> bool:
+        import time
+        now = time.monotonic()
+        if self._value is not None and now < self._expires:
+            return self._value
+        await self._refresh()
+        return self._value if self._value is not None else _read_env_testnet()
 
     async def _refresh(self) -> None:
         import time
@@ -128,7 +146,7 @@ class _TestnetCache:
         except Exception:
             # DB not ready yet keep using env var fallback.
             if self._value is None:
-                self._value = os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+                self._value = _read_env_testnet()
                 self._expires = time.monotonic() + 5.0  # retry sooner
 
     def set(self, value: bool) -> None:

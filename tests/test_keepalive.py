@@ -105,14 +105,16 @@ def test_load_settings_invalid_port_and_interval():
 
 
 def test_config_ignores_invalid_port_values(monkeypatch):
+    import renewise.config as config
     monkeypatch.setenv("BOT_TOKEN", "test-token")
     monkeypatch.setenv("PORT", "6acAo+LSknqqOJSQAToyKqumKc66koXH2Dx83kPcYTw=")
     monkeypatch.delenv("KEEP_ALIVE_PORT", raising=False)
-    sys.modules.pop("renewise.config", None)
-
-    config = importlib.import_module("renewise.config")
-
-    assert config.KEEP_ALIVE_PORT == 0
+    try:
+        importlib.reload(config)
+        assert config.KEEP_ALIVE_PORT == 0
+    finally:
+        monkeypatch.undo()
+        importlib.reload(config)
 
 
 @pytest.mark.asyncio

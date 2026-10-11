@@ -16,11 +16,18 @@ async def main():
     ALLOWED_SUPERADMIN_IDS.clear()
     ALLOWED_SUPERADMIN_IDS.append(111)
 
-    print("=== 1. Setup Test Group ===")
+    from renewise.config import USE_POSTGRES
     async with _db() as db:
         # Create a test group
-        await db.execute("INSERT OR REPLACE INTO groups (id, telegram_chat_id, admin_telegram_id, price, status) VALUES (999, -100123456, 111, 10, 'active')")
-        await db.commit()
+        if USE_POSTGRES:
+            await db.execute(
+                "INSERT INTO groups (id, telegram_chat_id, admin_telegram_id, price, status) "
+                "VALUES (999, -100123456, 111, 10, 'active') "
+                "ON CONFLICT (id) DO UPDATE SET status='active', telegram_chat_id=-100123456, admin_telegram_id=111, price=10"
+            )
+        else:
+            await db.execute("INSERT OR REPLACE INTO groups (id, telegram_chat_id, admin_telegram_id, price, status) VALUES (999, -100123456, 111, 10, 'active')")
+            await db.commit()
     print("Test group inserted (ID: 999, Chat ID: -100123456)")
 
     print("\n=== 2. Test set_group_status to 'suspended' ===")

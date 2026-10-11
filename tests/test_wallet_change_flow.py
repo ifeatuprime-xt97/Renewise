@@ -78,10 +78,13 @@ async def db():
 # Helper: patch queries._db to use the shared connection
 from contextlib import asynccontextmanager
 
+from renewise.db.connection import _SqConn
+
 def _patch_db(conn, monkeypatch):
+    sq = _SqConn(conn)
     @asynccontextmanager
     async def _fake_db():
-        yield conn
+        yield sq
     monkeypatch.setattr(queries, "_db", _fake_db)
 
 

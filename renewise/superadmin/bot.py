@@ -2182,52 +2182,53 @@ async def sa_callback_handler(update: Update, context):
             await query.answer()
 
     # ── announcements ─────────────────────────────────────────────────────────
-    elif data == "sa_announce_prompt":
-        await show_announce_prompt(update, context)
-        await query.answer()
+    elif data.startswith("sa_announce_"):
+        if data == "sa_announce_prompt":
+            await show_announce_prompt(update, context)
+            await query.answer()
 
-    elif data.startswith("sa_announce_audience_"):
-        audience = data[len("sa_announce_audience_"):]
-        await show_announce_compose(update, context, audience)
-        await query.answer()
+        elif data.startswith("sa_announce_audience_"):
+            audience = data[len("sa_announce_audience_"):]
+            await show_announce_compose(update, context, audience)
+            await query.answer()
 
-    elif data == "sa_announce_cancel":
-        context.user_data.pop("announce_pending", None)
-        context.user_data.pop("announce_confirm_text", None)
-        context.user_data.pop("announce_confirm_audience", None)
-        await query.edit_message_text(
-            "Announcement cancelled.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
-        )
-        await query.answer()
+        elif data == "sa_announce_cancel":
+            context.user_data.pop("announce_pending", None)
+            context.user_data.pop("announce_confirm_text", None)
+            context.user_data.pop("announce_confirm_audience", None)
+            await query.edit_message_text(
+                "Announcement cancelled.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
+            )
+            await query.answer()
 
-    elif data == "sa_announce_confirm":
-        text_to_send = context.user_data.pop("announce_confirm_text", None)
-        audience     = context.user_data.pop("announce_confirm_audience", None)
-        if not text_to_send or not audience:
-            await query.answer("Nothing to send.", show_alert=True)
-            await show_main_menu(update, context)
-            return
+        elif data == "sa_announce_confirm":
+            text_to_send = context.user_data.pop("announce_confirm_text", None)
+            audience     = context.user_data.pop("announce_confirm_audience", None)
+            if not text_to_send or not audience:
+                await query.answer("Nothing to send.", show_alert=True)
+                await show_main_menu(update, context)
+                return
 
-        await query.edit_message_text(
-            "📤 Sending announcement… this may take a moment.",
-            parse_mode="HTML",
-        )
-        sent, fail = await _do_broadcast(context, audience, text_to_send, user_id)
-        audience_labels = {
-            "all_users":   "All Users",
-            "admins":      "All Admins",
-            "active_subs": "Active Subscribers",
-        }
-        label = audience_labels.get(audience, audience)
-        await query.edit_message_text(
-            f"📣 <b>Announcement Sent {label}</b>\n\n"
-            f"✅ Delivered: <b>{sent}</b>\n"
-            f"❌ Failed:    <b>{fail}</b>",
-            parse_mode="HTML",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
-        )
-        await query.answer("Broadcast complete.", show_alert=True)
+            await query.edit_message_text(
+                "📤 Sending announcement… this may take a moment.",
+                parse_mode="HTML",
+            )
+            sent, fail = await _do_broadcast(context, audience, text_to_send, user_id)
+            audience_labels = {
+                "all_users":   "All Users",
+                "admins":      "All Admins",
+                "active_subs": "Active Subscribers",
+            }
+            label = audience_labels.get(audience, audience)
+            await query.edit_message_text(
+                f"📣 <b>Announcement Sent {label}</b>\n\n"
+                f"✅ Delivered: <b>{sent}</b>\n"
+                f"❌ Failed:    <b>{fail}</b>",
+                parse_mode="HTML",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Main Menu", callback_data="sa_home_main")]]),
+            )
+            await query.answer("Broadcast complete.", show_alert=True)
 
     # ── refunds ───────────────────────────────────────────────────────────────
     elif data.startswith("sa_refunds_"):

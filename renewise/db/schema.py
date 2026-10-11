@@ -269,10 +269,10 @@ CREATE INDEX IF NOT EXISTS idx_pal_platform ON platform_audit_log(platform_id)
 """
 
 async def init_db() -> None:
-    from renewise.config import USE_POSTGRES, DATABASE_URL
+    import renewise.config as _cfg
     import os
 
-    if USE_POSTGRES:
+    if _cfg.USE_POSTGRES:
         # ── PostgreSQL / Neon path ────────────────────────────────────────────
         from renewise.db.connection import _db
 
@@ -618,7 +618,8 @@ async def init_db() -> None:
                     buyer_bps_default, admin_bps_default,
                 )
                 # Seed is_testnet from env var after column exists (one-time bootstrap)
-                env_testnet = os.getenv("TONCENTER_TESTNET", "false").lower() == "true"
+                from renewise.config import _read_env_testnet
+                env_testnet = _read_env_testnet()
                 await db.execute(
                     "UPDATE platform_config "
                     "SET is_testnet = $1 "
@@ -750,7 +751,8 @@ async def init_db() -> None:
             (buyer_bps_default, admin_bps_default),
         )
         # Seed is_testnet from env var (one-time bootstrap)
-        env_testnet = 1 if os.getenv("TONCENTER_TESTNET", "false").lower() == "true" else 0
+        from renewise.config import _read_env_testnet
+        env_testnet = 1 if _read_env_testnet() else 0
         await db.execute(
             "UPDATE platform_config SET is_testnet = ? "
             "WHERE id = 1 AND is_testnet = 0 AND ? = 1",

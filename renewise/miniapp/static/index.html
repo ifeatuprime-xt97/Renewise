@@ -4679,9 +4679,17 @@ http_response_code(200);</pre>
             ${ico('hash', 14)} Manage
           </button>
         </div>
-        ${(walletRaw && (walletRaw.startsWith('kQ') || walletRaw.startsWith('0Q'))) ? `
+        ${g.wallet_network_warning ? `
+        <div class="alert alert-error" style="margin-top:10px;font-size:12px;padding:10px 12px">
+          ${ico('alert',13)} <strong>Wallet Mismatch</strong> — ${esc(g.wallet_network_warning)}
+          <br><button class="btn-link" style="margin-top:6px;font-size:12px" onclick="openManage(${g.id})">Tap Manage → Update Wallet</button>
+        </div>` : (!IS_TESTNET && walletRaw && (walletRaw.startsWith('kQ') || walletRaw.startsWith('0Q'))) ? `
         <div class="alert alert-error" style="margin-top:10px;font-size:12px;padding:10px 12px">
           ${ico('alert',13)} <strong>Testnet wallet on mainnet</strong> — payments failing.
+          Tap Manage → Update Wallet.
+        </div>` : (IS_TESTNET && walletRaw && (walletRaw.startsWith('EQ') || walletRaw.startsWith('UQ'))) ? `
+        <div class="alert alert-error" style="margin-top:10px;font-size:12px;padding:10px 12px">
+          ${ico('alert',13)} <strong>Mainnet wallet on testnet</strong> — test payments will fail.
           Tap Manage → Update Wallet.
         </div>` : ''}
       `;

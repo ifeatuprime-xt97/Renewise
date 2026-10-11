@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-async def test():
+async def main():
     bot = Bot(os.getenv("SUPERADMIN_BOT_TOKEN"))
     try:
         chat = await bot.get_chat(73635302)  # A known user ID from the screenshot
@@ -13,4 +13,5 @@ async def test():
     except Exception as e:
         print(f"Failed: {e}")
 
-asyncio.run(test())
+if __name__ == "__main__":
+    asyncio.run(main())
