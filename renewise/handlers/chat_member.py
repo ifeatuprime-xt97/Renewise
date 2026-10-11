@@ -2,6 +2,10 @@
 Handles my_chat_member updates:
   - Bot promoted to admin  → record grant event; DM the adder pointing to /start
   - Bot demoted / removed  → freeze group + DM registered admin
+
+Also handles chat_member updates:
+  - A member leaves or is banned → cancel their subscription so they are not
+    shown as active and do not receive renewal reminders for a group they left.
 """
 from __future__ import annotations
 import logging
@@ -233,4 +237,69 @@ async def handle_my_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
             action="bot_removed_or_demoted",
             actor_id=adder.id,
             details={"chat_id": chat.id, "chat_title": chat.title},
+        )
+
+
+async def handle_chat_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Fires on chat_member updates — i.e. changes to OTHER members' status, not
+    the bot's own status (that is handled by handle_my_chat_member above).
+
+    When a subscriber voluntarily leaves or is banned from a paywalled group,
+    cancel their subscription so:
+      - They no longer appear as 'active' in the admin dashboard
+      - They do not receive renewal reminders for a group they have left
+      - /start correctly stops showing them as a current member
+
+    We only cancel — we do NOT refund. Refunds are a separate flow.
+    We do NOT cancel 'comped' subscriptions — those are intentional free grants.
+    """
+    change = update.chat_member
+    if not change:
+        return
+
+    chat       = change.chat
+    new_status = change.new_chat_member
+    old_status = change.old_chat_member
+    affected   = new_status.user   # the member whose status changed
+
+    # We only care when someone who was an active member left or was banned.
+    was_member = isinstance(old_status, (ChatMemberMember, ChatMemberAdministrator))
+    now_gone   = isinstance(new_status, (ChatMemberLeft, ChatMemberBanned))
+
+    if not (was_member and now_gone):
+        return
+
+    # Ignore bot events — those are handled by handle_my_chat_member
+    if affected.is_bot:
+        return
+
+    group = await queries.get_group_by_chat_id(chat.id)
+    if not group:
+        return   # not a paywalled group
+
+    user_db = await queries.get_user_by_telegram_id(affected.id)
+    if not user_db:
+        return   # never had a subscription
+
+    sub = await queries.get_subscription(user_db["id"], group["id"])
+    if not sub:
+        return   # no subscription row at all
+
+    # Only cancel paid/pending subscriptions — leave 'comped' alone
+    if sub["status"] in ("active", "pending", "frozen"):
+        await queries.cancel_subscription(user_db["id"], group["id"])
+        await queries.audit(
+            group_id=group["id"],
+            action="subscription_cancelled_member_left",
+            actor_id=affected.id,
+            details={
+                "telegram_user_id": affected.id,
+                "previous_status":  sub["status"],
+                "trigger":          "chat_member_left_or_banned",
+            },
+        )
+        log.info(
+            "Subscription cancelled — member left/banned | user=%d group=%d chat=%d",
+            affected.id, group["id"], chat.id,
         )

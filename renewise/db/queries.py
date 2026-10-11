@@ -602,6 +602,17 @@ async def get_user_payment_history(
 
 
 async def get_user_subscriptions(telegram_user_id: int) -> list[Row]:
+    """
+    Returns subscriptions visible to the member in /start → My Subscriptions.
+
+    Intentionally excludes bare 'pending' rows that have never been paid
+    (no last_payment_tx_hash). A pending subscription with no tx hash means
+    the user requested to join but never paid — showing it as a real subscription
+    would be confusing and would incorrectly mark them as 'is_member'.
+
+    Also excludes 'cancelled' rows — if a member left and rejoined we only
+    care about their most recent active/expired state.
+    """
     async with _db() as db:
         return await db.fetch(
             "SELECT s.id AS subscription_id, s.status AS subscription_status, "
@@ -612,6 +623,7 @@ async def get_user_subscriptions(telegram_user_id: int) -> list[Row]:
             "JOIN users u ON u.id = s.user_id "
             "JOIN groups g ON g.id = s.group_id "
             "WHERE u.telegram_user_id = $1 "
+            "AND s.status IN ('active', 'comped', 'expired') "
             "ORDER BY s.next_renewal_date ASC",
             telegram_user_id,
         )

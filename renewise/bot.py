@@ -13,7 +13,7 @@ from telegram.ext import (
 
 from renewise.config import BOT_TOKEN, OVERPAYMENT_REFUND_THRESHOLD_USD
 from renewise.db.schema import init_db
-from renewise.handlers.chat_member import handle_my_chat_member
+from renewise.handlers.chat_member import handle_my_chat_member, handle_chat_member
 from renewise.handlers.join_request import handle_join_request, cb_pay_now, cb_ive_paid, cb_cancel_payment
 from renewise.handlers.create_paywall import build_create_paywall_handler
 from renewise.handlers.admin_menu import register_menu_callbacks
@@ -928,6 +928,9 @@ def main() -> None:
 
     # ── my_chat_member: bot added/removed as admin ────────────────────────────
     app.add_handler(ChatMemberHandler(handle_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
+
+    # ── chat_member: subscriber left or was banned → cancel subscription ──────
+    app.add_handler(ChatMemberHandler(handle_chat_member, ChatMemberHandler.CHAT_MEMBER))
 
     # ── join requests from members ────────────────────────────────────────────
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
