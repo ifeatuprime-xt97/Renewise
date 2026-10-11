@@ -206,13 +206,22 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+from fastapi import Request as _Request
+from fastapi.responses import JSONResponse as _JSONResponse
+
+@app.middleware("http")
+async def _add_cache_control_headers(request: _Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 # Global handler: any unhandled exception returns JSON {"detail": "..."} instead of
 # Starlette's default plain-text "Internal Server Error" body. This prevents the
 # frontend's `(await r.json()).detail` from throwing a JSON parse error on top of
 # the real failure, making the actual error message visible to the user.
-from fastapi import Request as _Request
-from fastapi.responses import JSONResponse as _JSONResponse
-
 @app.exception_handler(Exception)
 async def _unhandled_exception_handler(_request: _Request, exc: Exception) -> _JSONResponse:
     log.exception("Unhandled exception in request to %s", _request.url.path)
@@ -514,41 +523,64 @@ async def verify_admin_or_403(telegram_user_id: int, group_id: int) -> dict:
 
 
 async def _refresh_group_meta_from_telegram(group_row: dict) -> dict:
-    """Refresh stale chat_title/chat_type from Telegram for a single group."""
+    """Refresh stale chat_title/chat_type/invite_link from Telegram for a single group."""
     telegram_chat_id = group_row.get("telegram_chat_id")
     if not telegram_chat_id:
         return group_row
 
     current_title = (group_row.get("chat_title") or "").strip()
     current_type = (group_row.get("chat_type") or "").strip()
+    current_invite = (group_row.get("invite_link") or "").strip()
 
     try:
         import aiohttp as _aiohttp
         async with _aiohttp.ClientSession() as session:
+            new_title = current_title
+            new_type = current_type
+            new_invite = current_invite
+
             async with session.get(
                 f"https://api.telegram.org/bot{BOT_TOKEN}/getChat",
                 params={"chat_id": telegram_chat_id},
                 timeout=_aiohttp.ClientTimeout(total=5),
             ) as resp:
                 data = await resp.json()
-                if not data.get("ok"):
-                    return group_row
-                result = data.get("result") or {}
-                new_title = result.get("title") or result.get("first_name") or str(telegram_chat_id)
-                new_type = result.get("type") or "group"
-                if current_title != new_title or current_type != new_type:
-                    await queries.activate_paywall(
-                        group_id=group_row["id"],
-                        billing_interval_days=group_row.get("billing_interval_days") or 30,
-                        payout_wallet_address=group_row.get("payout_wallet_address") or "",
-                        chat_title=new_title,
-                        invite_link=group_row.get("invite_link"),
-                        chat_type=new_type,
-                    )
-                    group_row["chat_title"] = new_title
-                    group_row["chat_type"] = new_type
-                return group_row
-    except OSError as exc:
+                if data.get("ok"):
+                    result = data.get("result") or {}
+                    new_title = result.get("title") or result.get("first_name") or str(telegram_chat_id)
+                    new_type = result.get("type") or "group"
+                    if not new_invite and result.get("invite_link"):
+                        new_invite = result.get("invite_link")
+
+            # If invite link is still missing, auto-create a join-request invite link
+            if not new_invite:
+                try:
+                    async with session.post(
+                        f"https://api.telegram.org/bot{BOT_TOKEN}/createChatInviteLink",
+                        json={"chat_id": telegram_chat_id, "creates_join_request": True},
+                        timeout=_aiohttp.ClientTimeout(total=5),
+                    ) as link_resp:
+                        link_data = await link_resp.json()
+                        if link_data.get("ok"):
+                            new_invite = link_data["result"].get("invite_link")
+                except Exception as exc:
+                    log.warning("Could not auto-generate invite link in meta refresh for group %s: %s", telegram_chat_id, exc)
+
+            if current_title != new_title or current_type != new_type or (new_invite and current_invite != new_invite):
+                await queries.activate_paywall(
+                    group_id=group_row["id"],
+                    billing_interval_days=group_row.get("billing_interval_days") or 30,
+                    payout_wallet_address=group_row.get("payout_wallet_address") or "",
+                    chat_title=new_title,
+                    invite_link=new_invite or current_invite or None,
+                    chat_type=new_type,
+                )
+                group_row["chat_title"] = new_title
+                group_row["chat_type"] = new_type
+                if new_invite:
+                    group_row["invite_link"] = new_invite
+            return group_row
+    except Exception as exc:
         log.warning("Could not refresh metadata for group %s: %s", telegram_chat_id, type(exc).__name__)
         return group_row
 
@@ -566,6 +598,18 @@ class GroupCreateRequest(BaseModel):
     price_usd_cents: int        # e.g. 999 = $9.99
     billing_interval_days: int  # 7 or 30
     wallet_address: str
+    passcode: str | None = None
+
+    @field_validator("passcode")
+    @classmethod
+    def passcode_must_be_4_digits(cls, v: str | None) -> str | None:
+        if v is not None:
+            v = str(v).strip()
+            if not v:
+                return None
+            if len(v) != 4 or not v.isdigit():
+                raise ValueError("passcode must be a 4-digit number")
+        return v
 
     @field_validator("price_usd_cents")
     @classmethod
@@ -1027,15 +1071,39 @@ async def api_groups_create(
         body.telegram_chat_id, telegram_user_id, chat_type=chat_type
     )
 
+    # Auto-generate invite link immediately upon creation
+    invite_link = None
+    try:
+        import aiohttp as _aiohttp
+        async with _aiohttp.ClientSession() as session:
+            async with session.post(
+                f"https://api.telegram.org/bot{BOT_TOKEN}/createChatInviteLink",
+                json={"chat_id": body.telegram_chat_id, "creates_join_request": True},
+                timeout=_aiohttp.ClientTimeout(total=5),
+            ) as resp:
+                data = await resp.json()
+                if data.get("ok"):
+                    invite_link = data["result"].get("invite_link")
+    except Exception as exc:
+        log.warning("Failed to create invite link on group creation: %s", exc)
+
     await queries.activate_paywall(
         group_id=group_id,
         billing_interval_days=body.billing_interval_days,
         payout_wallet_address=body.wallet_address,
         chat_title=chat_title,
-        invite_link=None,   # bot scheduler generates this; see docstring
+        invite_link=invite_link,
         chat_type=chat_type,
     )
     await queries.update_group_price_usd_cents(group_id, body.price_usd_cents)
+
+    has_passcode = False
+    if body.passcode:
+        try:
+            await queries.set_group_passcode(group_id, body.passcode, telegram_user_id)
+            has_passcode = True
+        except Exception as exc:
+            log.warning("Could not set initial passcode for group %d: %s", group_id, exc)
 
     # ── Audit log real actor's telegram_id, matching pattern everywhere ─────
     await queries.audit(
@@ -1047,6 +1115,7 @@ async def api_groups_create(
             "price_usd_cents":  body.price_usd_cents,
             "interval_days":    body.billing_interval_days,
             "wallet":           body.wallet_address,
+            "has_passcode":     has_passcode,
         },
     )
 
@@ -1065,10 +1134,12 @@ async def api_groups_create(
         "price_usd_cents":       body.price_usd_cents,
         "billing_interval_days": body.billing_interval_days,
         "wallet_address":        body.wallet_address,
-        "invite_link":           None,
+        "has_wallet_passcode":   has_passcode,
+        "invite_link":           invite_link,
         "invite_link_note": (
-            "The bot will generate an invite link automatically. "
-            "Refresh /api/my-groups in a few seconds to see it."
+            "Your invite link is ready! Share it with members to start monetizing."
+            if invite_link else
+            "The bot will generate an invite link automatically. Refresh in a few seconds."
         ),
         "fee_preview": fee_preview,
     }
@@ -1751,33 +1822,52 @@ async def api_group_detail(
     telegram_user_id = user["id"]
     group = await verify_admin_or_403(telegram_user_id, group_id)
 
-    # Try to get a live chat title if the DB value is NULL
+    # Try to get a live chat title/type/invite_link if DB value is missing
     chat_title = group.get("chat_title")
     chat_type  = group.get("chat_type")
-    if not chat_title or not chat_type:
+    invite_link = group.get("invite_link")
+    if not chat_title or not chat_type or not invite_link:
         try:
             import aiohttp as _aiohttp
             async with _aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://api.telegram.org/bot{BOT_TOKEN}/getChat",
-                    params={"chat_id": group["telegram_chat_id"]},
-                    timeout=_aiohttp.ClientTimeout(total=5),
-                ) as resp:
-                    data = await resp.json()
-                    if data.get("ok"):
-                        chat_title = chat_title or data["result"].get("title") or data["result"].get("first_name") or str(group["telegram_chat_id"])
-                        chat_type  = chat_type  or data["result"].get("type", "group")
-                        # Persist both fields so future calls are instant
-                        await queries.activate_paywall(
-                            group_id=group_id,
-                            billing_interval_days=group.get("billing_interval_days") or 30,
-                            payout_wallet_address=group.get("payout_wallet_address") or "",
-                            chat_title=chat_title,
-                            invite_link=group.get("invite_link"),
-                            chat_type=chat_type,
-                        )
-        except OSError as exc:
-            log.warning("Could not resolve chat info for group %d: %s", group_id, type(exc).__name__)
+                if not chat_title or not chat_type:
+                    async with session.get(
+                        f"https://api.telegram.org/bot{BOT_TOKEN}/getChat",
+                        params={"chat_id": group["telegram_chat_id"]},
+                        timeout=_aiohttp.ClientTimeout(total=5),
+                    ) as resp:
+                        data = await resp.json()
+                        if data.get("ok"):
+                            chat_title = chat_title or data["result"].get("title") or data["result"].get("first_name") or str(group["telegram_chat_id"])
+                            chat_type  = chat_type  or data["result"].get("type", "group")
+                            if not invite_link and data["result"].get("invite_link"):
+                                invite_link = data["result"].get("invite_link")
+
+                # If invite_link is still missing, generate one
+                if not invite_link and group.get("telegram_chat_id"):
+                    try:
+                        async with session.post(
+                            f"https://api.telegram.org/bot{BOT_TOKEN}/createChatInviteLink",
+                            json={"chat_id": group["telegram_chat_id"], "creates_join_request": True},
+                            timeout=_aiohttp.ClientTimeout(total=5),
+                        ) as link_resp:
+                            link_data = await link_resp.json()
+                            if link_data.get("ok"):
+                                invite_link = link_data["result"].get("invite_link")
+                    except Exception as exc:
+                        log.warning("Could not auto-create invite link in detail: %s", exc)
+
+                # Persist fields so future calls are instant
+                await queries.activate_paywall(
+                    group_id=group_id,
+                    billing_interval_days=group.get("billing_interval_days") or 30,
+                    payout_wallet_address=group.get("payout_wallet_address") or "",
+                    chat_title=chat_title or f"Chat {group['telegram_chat_id']}",
+                    invite_link=invite_link or group.get("invite_link"),
+                    chat_type=chat_type or "group",
+                )
+        except Exception as exc:
+            log.warning("Could not resolve chat info for group %d: %s", group_id, exc)
             chat_title = chat_title or f"Chat {group['telegram_chat_id']}"
             chat_type  = chat_type  or "group"
 
@@ -1801,7 +1891,7 @@ async def api_group_detail(
         "price_usd_cents":       group.get("price_usd_cents") or int((group.get("price") or 0) * 100),
         "billing_interval_days": group.get("billing_interval_days", 30),
         "payout_wallet_address": group.get("payout_wallet_address"),
-        "invite_link":           group.get("invite_link"),
+        "invite_link":           invite_link or group.get("invite_link"),
         "active_members":        active_count,
         "revenue_usd_cents":     revenue_usd_cents,
         # Boolean so the hash is never exposed to the client
@@ -1812,6 +1902,51 @@ async def api_group_detail(
             group.get("payout_wallet_address") or ""
         ),
     }
+
+
+# ── POST /api/groups/{group_id}/invite-link ──────────────────────────────────
+
+@app.post("/api/groups/{group_id}/invite-link")
+@limiter.limit("30/minute")
+async def api_generate_group_invite_link(
+    group_id: int,
+    request: Request,
+    user: Annotated[dict, Depends(get_telegram_user)],
+) -> dict:
+    """Generate or retrieve the join-request invite link for a group."""
+    telegram_user_id = user["id"]
+    group = await verify_admin_or_403(telegram_user_id, group_id)
+
+    existing_link = group.get("invite_link")
+    if existing_link:
+        return {"ok": True, "invite_link": existing_link}
+
+    chat_id = group.get("telegram_chat_id")
+    if not chat_id:
+        raise HTTPException(status_code=400, detail="Chat ID missing for group")
+
+    import aiohttp as _aiohttp
+    try:
+        async with _aiohttp.ClientSession() as session:
+            async with session.post(
+                f"https://api.telegram.org/bot{BOT_TOKEN}/createChatInviteLink",
+                json={"chat_id": chat_id, "creates_join_request": True},
+                timeout=_aiohttp.ClientTimeout(total=5),
+            ) as resp:
+                data = await resp.json()
+                if not data.get("ok"):
+                    err_desc = data.get("description", "Telegram API error")
+                    raise HTTPException(status_code=502, detail=f"Telegram API: {err_desc}")
+                invite_link = data["result"].get("invite_link")
+                if not invite_link:
+                    raise HTTPException(status_code=502, detail="Empty invite link returned by Telegram")
+                await queries.update_group_invite_link(group_id, invite_link)
+                return {"ok": True, "invite_link": invite_link}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        log.error("Failed to generate invite link for group %s: %s", group_id, exc)
+        raise HTTPException(status_code=500, detail="Could not create invite link. Ensure bot is admin in the chat.")
 
 
 # ── GET /api/groups/{group_id}/members ───────────────────────────────────────

@@ -104,6 +104,7 @@ async def create_charge(
         # ── Proxy to Render bot service ──────────────────────────────────────
         import aiohttp as _aiohttp
         from datetime import datetime as _dt
+        from renewise.utils.alerts import alert_payment_failure
 
         def _json_safe(v):
             """Convert values that aren't JSON-serializable to strings."""
@@ -131,35 +132,48 @@ async def create_charge(
                 ) as _resp:
                     _data = await _resp.json()
                     if _resp.status != 200:
+                        _err_detail = _data.get("error", f"Internal service error {_resp.status}")
+                        await alert_payment_failure(
+                            platform=platform,
+                            charge_id=charge_id,
+                            amount_usd_cents=req.amount_usd_cents,
+                            error=f"Internal service error (HTTP {_resp.status})",
+                            details=_err_detail,
+                        )
                         raise HTTPException(
                             status_code=_resp.status,
-                            detail=_data.get("error", f"Internal service error {_resp.status}"),
+                            detail="Payment service temporarily unavailable. The administration team has been notified. Please try again shortly.",
                         )
                     from renewise.services.payment import PaymentRequest
                     payment_req = PaymentRequest(
-                        payment_url=_data["payment_url"],
-                        vault_address=_data["vault_address"],
-                        required_nano=_data["required_nano"],
-                        payload=_data["vault_address"],
-                        amount=_data["required_nano"] / 1e9,
-                        currency="GRAM",
+                        payment_url=_data.get("payment_url", ""),
+                        tg_wallet_url=_data.get("tg_wallet_url", ""),
+                        tonkeeper_url=_data.get("tonkeeper_url", ""),
+                        mytonwallet_url=_data.get("mytonwallet_url", ""),
+                        tonhub_url=_data.get("tonhub_url", ""),
+                        vault_address=_data.get("vault_address", ""),
+                        payload=_data.get("payload", _data.get("vault_address", "")),
+                        amount=float(_data.get("amount", _data.get("required_nano", 0) / 1e9)),
+                        currency=_data.get("currency", "GRAM"),
+                        required_nano=int(_data.get("required_nano", 0)),
                     )
+                    if not payment_req.payment_url or not payment_req.vault_address:
+                        raise ValueError("Internal service returned incomplete payment details")
         except HTTPException:
             raise
         except Exception as _e:
             import logging as _logging
             _logging.getLogger(__name__).exception("Proxy to internal service failed for charge %s", charge_id)
-            # Give a more specific message based on the error type
-            _ename = type(_e).__name__
-            if "ContentType" in _ename or "JSON" in _ename:
-                _detail = "Internal service returned a non-JSON response Render may not be running the latest code with the /internal/generate-payment-link endpoint."
-            elif "ClientConnectorError" in _ename or "ServerDisconnectedError" in _ename:
-                _detail = "Could not reach the internal Render service. Check INTERNAL_API_URL and that Render is running."
-            elif "TimeoutError" in _ename or "asyncio" in _ename:
-                _detail = "Internal service timed out. Render may be cold-starting."
-            else:
-                _detail = f"Payment service unavailable ({_ename}). Check Render logs."
-            raise HTTPException(status_code=503, detail=_detail)
+            await alert_payment_failure(
+                platform=platform,
+                charge_id=charge_id,
+                amount_usd_cents=req.amount_usd_cents,
+                error=_e,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="Payment service temporarily unavailable. The administration team has been notified. Please try again shortly.",
+            )
     else:
         # ── Local generation (Render or local dev) ────────────────────────────
         try:
@@ -170,17 +184,33 @@ async def create_charge(
             )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
-        except FileNotFoundError:
+        except FileNotFoundError as e:
+            import logging as _logging
+            _logging.getLogger(__name__).error("Payment contract not compiled for charge %s", charge_id)
+            from renewise.utils.alerts import alert_payment_failure
+            await alert_payment_failure(
+                platform=platform,
+                charge_id=charge_id,
+                amount_usd_cents=req.amount_usd_cents,
+                error="Payment contract not compiled on server",
+            )
             raise HTTPException(
                 status_code=503,
-                detail="Payment contract not compiled. Run: cd contracts && npm install && npm run build",
+                detail="Payment service temporarily unavailable. The administration team has been notified. Please try again shortly.",
             )
         except Exception as e:
             import logging as _logging
             _logging.getLogger(__name__).exception("Payment link generation failed for charge %s", charge_id)
+            from renewise.utils.alerts import alert_payment_failure
+            await alert_payment_failure(
+                platform=platform,
+                charge_id=charge_id,
+                amount_usd_cents=req.amount_usd_cents,
+                error=e,
+            )
             raise HTTPException(
                 status_code=500,
-                detail=f"Payment link generation failed ({type(e).__name__}). Check server logs.",
+                detail="Payment service temporarily unavailable. The administration team has been notified. Please try again shortly.",
             )
         
     # Update charge with vault details

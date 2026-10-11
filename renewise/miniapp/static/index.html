@@ -145,11 +145,13 @@
       display: flex;
       width: calc(100% - 48px);
       max-width: 380px;
-      background: #131821;
-      border: 1px solid rgba(255, 255, 255, .07);
+      background: rgba(19, 24, 33, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, .1);
       border-radius: 40px;
       padding: 6px 8px;
-      box-shadow: 0 8px 40px rgba(0, 0, 0, .8), 0 2px 8px rgba(0, 0, 0, .5);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .6), 0 2px 8px rgba(0, 0, 0, .4);
     }
 
     .nav-item {
@@ -331,24 +333,35 @@
 
     .type-badge {
       font-size: 10px;
-      font-weight: 800;
-      letter-spacing: .8px;
+      font-weight: 700;
+      letter-spacing: .6px;
       text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: 20px;
+      padding: 3px 9px;
+      border-radius: 16px;
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      backdrop-filter: blur(4px);
     }
 
     .type-badge.channel {
-      color: #ffffff;
-      background: rgb(2, 158, 249);
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+    }
+
+    .type-badge.channel svg {
+      stroke: #38bdf8;
     }
 
     .type-badge.group {
-      color: #ffffff;
-      background: rgb(172, 79, 249);
+      color: #c084fc;
+      background: rgba(192, 132, 252, 0.12);
+      border: 1px solid rgba(192, 132, 252, 0.28);
+    }
+
+    .type-badge.group svg {
+      stroke: #c084fc;
     }
 
     /* ── Data rows ── */
@@ -365,37 +378,59 @@
       gap: 12px;
     }
 
-    /* Wallet-app style: circular coloured icon container */
+    /* Modern subtle tinted glass icon container */
     .data-row .ico {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s ease;
     }
 
     .ico-price {
-      background: #1a6ed4;
+      background: rgba(0, 152, 234, 0.12);
+      border-color: rgba(0, 152, 234, 0.22);
+    }
+
+    .ico-price svg {
+      stroke: #38bdf8;
     }
 
     .ico-members {
-      background: #0f8c5a;
+      background: rgba(74, 222, 128, 0.12);
+      border-color: rgba(74, 222, 128, 0.22);
+    }
+
+    .ico-members svg {
+      stroke: #4ade80;
     }
 
     .ico-wallet {
-      background: #8b3fd8;
+      background: rgba(168, 85, 247, 0.12);
+      border-color: rgba(168, 85, 247, 0.22);
+    }
+
+    .ico-wallet svg {
+      stroke: #c084fc;
     }
 
     .ico-link {
-      background: #c07010;
+      background: rgba(0, 152, 234, 0.12);
+      border-color: rgba(0, 152, 234, 0.22);
+    }
+
+    .ico-link svg {
+      stroke: #38bdf8;
     }
 
     .data-row .ico svg {
       width: 17px;
       height: 17px;
-      stroke: #ffffff;
     }
 
     .data-row .content {
@@ -450,40 +485,46 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      padding: 9px 10px;
-      border-radius: var(--r-sm);
-      background: rgba(255, 255, 255, .08);
+      gap: 7px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .06);
       border: 1px solid rgba(255, 255, 255, .1);
       color: #ffffff;
       font-family: inherit;
-      font-size: 12.5px;
+      font-size: 13.5px;
       font-weight: 700;
       cursor: pointer;
-      transition: background .15s, transform .1s;
+      transition: all .15s ease;
       -webkit-tap-highlight-color: transparent;
     }
 
     .act-btn svg {
-      width: 14px;
-      height: 14px;
-      stroke: #ffffff;
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
       flex-shrink: 0;
     }
 
     .act-btn:active {
-      background: rgba(255, 255, 255, .14);
-      transform: scale(.97);
+      transform: scale(.98);
+      background: rgba(255, 255, 255, .12);
     }
 
     .act-btn.primary {
-      background: var(--accent);
-      border-color: transparent;
+      background: linear-gradient(135deg, #0098EA 0%, #0084cc 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: #ffffff;
+      box-shadow: 0 4px 14px rgba(0, 152, 234, 0.28);
     }
 
     .act-btn.primary svg {
       stroke: #ffffff;
+    }
+
+    .act-btn.primary:active {
+      background: #007ac4;
+      box-shadow: 0 2px 6px rgba(0, 152, 234, 0.2);
     }
 
     .act-btn.warn {
@@ -558,38 +599,78 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: .5px;
       text-transform: uppercase;
-      padding: 3px 8px;
+      padding: 3px 9px;
       border-radius: 20px;
-      color: #ffffff;
+      backdrop-filter: blur(4px);
     }
 
     .pill svg {
-      width: 9px;
-      height: 9px;
+      width: 10px;
+      height: 10px;
     }
 
     .pill-active {
-      background: rgba(62, 207, 110, .3);
+      color: #4ade80;
+      background: rgba(74, 222, 128, .12);
+      border: 1px solid rgba(74, 222, 128, .28);
     }
 
     .pill-expired {
-      background: rgba(224, 92, 92, .3);
+      color: #f87171;
+      background: rgba(248, 113, 113, .12);
+      border: 1px solid rgba(248, 113, 113, .28);
     }
 
     .pill-comped {
-      background: rgba(240, 165, 0, .3);
+      color: #fbbf24;
+      background: rgba(251, 191, 36, .12);
+      border: 1px solid rgba(251, 191, 36, .28);
     }
 
     .pill-paused {
-      background: rgba(240, 165, 0, .3);
+      color: #fbbf24;
+      background: rgba(251, 191, 36, .12);
+      border: 1px solid rgba(251, 191, 36, .28);
     }
 
     .pill-pending {
-      background: rgba(255, 255, 255, .15);
+      color: rgba(255, 255, 255, .7);
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .15);
+    }
+
+    /* ── Micro copy chip button ── */
+    .btn-copy-chip {
+      flex-shrink: 0;
+      padding: 6px 13px;
+      font-size: 11.5px;
+      font-weight: 700;
+      border-radius: 10px;
+      background: rgba(0, 152, 234, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(0, 152, 234, 0.28);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-copy-chip:active {
+      transform: scale(0.96);
+      background: rgba(0, 152, 234, 0.24);
+      border-color: rgba(0, 152, 234, 0.4);
+    }
+
+    .btn-copy-chip svg {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
     }
 
     /* ══════════════════════════════════════════════════
@@ -641,14 +722,35 @@
     }
 
     .btn-add-network {
-      background: rgba(0, 152, 234, 0.15);
-      border: 1.8px dashed rgba(0, 152, 234, 0.6);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 16px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.1px;
+      margin-top: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-add-network:active {
+      transform: scale(0.985);
+      background: rgba(0, 152, 234, 0.12);
+      border-color: rgba(0, 152, 234, 0.3);
       color: var(--accent);
-      margin-top: 5px;
     }
 
     .btn-add-network svg {
-      stroke: #ffffff;
+      width: 16px;
+      height: 16px;
+      stroke: var(--accent);
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+
+    .btn-add-network:active svg {
+      transform: rotate(90deg);
     }
 
     .btn-renew {
@@ -1089,7 +1191,36 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
+      padding: 0 2px;
+    }
+
+    .section-hdr .page-title {
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .section-hdr .btn-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(0, 152, 234, 0.12);
+      border: 1px solid rgba(0, 152, 234, 0.28);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .section-hdr .btn-link:active {
+      transform: scale(0.96);
+      background: rgba(0, 152, 234, 0.22);
     }
 
     .page-title {
@@ -1409,15 +1540,15 @@
     }
 
     .admin-card {
-      background: linear-gradient(135deg, #005fa3 0%, #0098EA 50%, #38c8f5 100%);
-      border: none;
-      border-radius: var(--r);
-      padding: 22px 20px 20px;
-      margin: 0 0 18px;
+      background: linear-gradient(145deg, #075985 0%, #0284c7 45%, #0098EA 100%);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 24px;
+      padding: 22px 20px 18px;
+      margin: 0 0 22px;
       position: relative;
       overflow: hidden;
       animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 12px 40px rgba(0, 152, 234, .4), 0 4px 12px rgba(0, 0, 0, .3);
+      box-shadow: 0 10px 32px rgba(0, 152, 234, 0.18), 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     .admin-card::before {
@@ -1425,10 +1556,40 @@
       position: absolute;
       top: -40px;
       right: -40px;
-      width: 160px;
-      height: 160px;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, transparent 70%);
       pointer-events: none;
+    }
+
+    .admin-hero-btn {
+      width: 100%;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.1px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .admin-hero-btn:active {
+      transform: scale(0.985);
+      background: rgba(0, 0, 0, 0.32);
+      border-color: rgba(255, 255, 255, 0.3);
     }
 
     @keyframes slideDown {
@@ -1673,9 +1834,42 @@
     .plat-card {
       background: var(--surface);
       border: 1px solid rgba(255, 255, 255, .07);
-      border-radius: var(--r);
+      border-radius: 20px;
       margin-bottom: 14px;
       overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    }
+
+    .plat-act-btn {
+      flex: 1;
+      padding: 11px 8px;
+      background: none;
+      border: none;
+      border-right: 1px solid rgba(255, 255, 255, .06);
+      color: rgba(255, 255, 255, .75);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background 0.15s ease, color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .plat-act-btn:last-child {
+      border-right: none;
+    }
+
+    .plat-act-btn:active {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+    }
+
+    .plat-act-btn.primary {
+      color: var(--accent);
     }
 
     .plat-card-header {
@@ -2082,8 +2276,7 @@
           </div>
         </div>
       </div>
-      <button onclick="openAnalytics('creator')"
-        style="width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:var(--r-sm);background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);color:#ffffff;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent">
+      <button onclick="openAnalytics('creator')" class="admin-hero-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
         </svg>
@@ -2096,7 +2289,13 @@
 
     <div class="section-hdr" id="dashboard-hdr" style="display:none">
       <h1 class="page-title">My Networks</h1>
-      <button class="btn-link" onclick="startWizard()">+ Add</button>
+      <button class="btn-link" onclick="startWizard()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add
+      </button>
     </div>
     <div id="networks-list">
       <div class="loading">Loading…</div>
@@ -2109,9 +2308,8 @@
   <section class="page" id="page-dev-dashboard">
     <div class="section-hdr" style="margin-bottom:16px">
       <h1 class="page-title">My Apps</h1>
-      <button class="btn-link" onclick="openCreatePlatform()"
-        style="font-weight:800;font-size:14px;display:flex;align-items:center;gap:4px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+      <button class="btn-link" onclick="openCreatePlatform()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
@@ -3243,13 +3441,25 @@ http_response_code(200);</pre>
       </button>
     </div>
 
-    <!-- Step 3: Fee preview + Wallet -->
+    <!-- Step 3: Fee preview + Wallet + Passcode -->
     <div class="wiz-step" id="wiz-step-3">
       <div class="glass fee-box" id="wiz-fee-box"></div>
       <div class="field" style="margin-top:18px">
         <label>GRAM Payout Wallet Address</label>
         <input id="wiz-wallet" type="text" placeholder="EQ…">
         <div class="field-err" id="wiz-wallet-err"></div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>Set 4-Digit Wallet Passcode <span style="font-size:11.5px;color:rgba(255,255,255,.5);font-weight:normal">(Protects your wallet from unauthorized changes)</span></label>
+        <input id="wiz-passcode" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:18px;text-align:center"
+               oninput="if(this.value.length>4)this.value=this.value.slice(0,4)">
+        <div class="field-err" id="wiz-passcode-err"></div>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Confirm 4-Digit Passcode</label>
+        <input id="wiz-passcode-confirm" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:6px;font-size:18px;text-align:center"
+               oninput="if(this.value.length>4)this.value=this.value.slice(0,4)">
+        <div class="field-err" id="wiz-passcode-confirm-err"></div>
       </div>
       <button class="btn btn-primary" onclick="Wiz.submitWallet()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3850,8 +4060,15 @@ http_response_code(200);</pre>
       document.body.appendChild(overlay);
     }
 
-    async function apiFetch(url, options) {
-      const resp = await fetch(url, options);
+    async function apiFetch(url, options = {}) {
+      const opts = { ...options };
+      let fetchUrl = url;
+      if (!opts.method || opts.method.toUpperCase() === 'GET') {
+        opts.cache = 'no-store';
+        const sep = fetchUrl.includes('?') ? '&' : '?';
+        fetchUrl = `${fetchUrl}${sep}_t=${Date.now()}`;
+      }
+      const resp = await fetch(fetchUrl, opts);
       if (resp.status === 401) {
         _showSessionExpired();
         const err = new Error('Session expired');
@@ -3940,13 +4157,13 @@ http_response_code(200);</pre>
         'history': () => App.nav('manage'),
         'analytics': () => App.nav(_analyticsReturnPage || 'dashboard'),
         'wizard': () => Wiz.back(),
-        'manage': () => App.nav('dashboard'),
+        'manage': () => { loadNetworks(); App.nav('dashboard'); },
         'members': () => App.nav('manage'),
         'price': () => App.nav('manage'),
         'wallet': () => App.nav('manage'),
         'comp': () => App.nav('manage'),
         'delete': () => App.nav('manage'),
-        'dev-app': () => App.nav('dev-dashboard'),
+        'dev-app': () => { loadPlatforms(); App.nav('dev-dashboard'); },
         'dev-sandbox': () => App.nav(_sandboxReturnPage || 'dev-settings'),
       },
 
@@ -4001,12 +4218,19 @@ http_response_code(200);</pre>
           }
         }
 
-        if (page === 'dev-dashboard') {
+        // Always fetch fresh data on navigation
+        if (page === 'dashboard') {
+          loadNetworks();
+        } else if (page === 'subs') {
+          loadSubs();
+        } else if (page === 'dev-dashboard') {
           loadPlatforms();
         } else if (page === 'dev-subs') {
           loadDevCharges(true);
         } else if (page === 'dev-sandbox') {
           loadSandboxApps();
+        } else if (page === 'manage' && _manageGroupId) {
+          openManage(_manageGroupId);
         }
       },
 
@@ -4014,7 +4238,7 @@ http_response_code(200);</pre>
     };
 
     // ════════════════════════════════════════════════════
-    // Confirm overlay
+    // Confirm overlay & askConfirm helper
     // ════════════════════════════════════════════════════
     const Confirm = {
       _res: null,
@@ -4028,6 +4252,33 @@ http_response_code(200);</pre>
       confirm() { document.getElementById('confirm-overlay').classList.remove('show'); if (this._res) { this._res(true); this._res = null; } },
     };
     document.getElementById('confirm-yes').onclick = () => Confirm.confirm();
+
+    async function askConfirm(title, message) {
+      if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.showConfirm === 'function') {
+        try {
+          return await new Promise(resolve => {
+            window.Telegram.WebApp.showConfirm(message, (confirmed) => resolve(!!confirmed));
+          });
+        } catch (_) {}
+      }
+      return await Confirm.show(title, message);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        if (App._cur === 'dashboard') {
+          loadNetworks();
+        } else if (App._cur === 'subs') {
+          loadSubs();
+        } else if (App._cur === 'dev-dashboard') {
+          loadPlatforms();
+        } else if (App._cur === 'dev-subs') {
+          loadDevCharges(true);
+        } else if (App._cur === 'manage' && _manageGroupId) {
+          openManage(_manageGroupId);
+        }
+      }
+    });
 
     // ════════════════════════════════════════════════════
     // PAYMENT DETAIL SHEET
@@ -4479,6 +4730,68 @@ http_response_code(200);</pre>
       }
     }
 
+    const _groupLinks = {};
+
+    async function fetchAndCopyGroupLink(groupId, btn) {
+      let link = _groupLinks[groupId];
+      if (!link) {
+        if (_manageGroupData && _manageGroupData.id === groupId && _manageGroupData.invite_link) {
+          link = _manageGroupData.invite_link;
+        } else {
+          const el = document.getElementById(`net-link-val-${groupId}`) || document.getElementById(`mgmt-link-val-${groupId}`);
+          const txt = el ? el.textContent.trim() : '';
+          if (txt.startsWith('http')) link = txt;
+        }
+      }
+
+      const origHtml = btn ? btn.innerHTML : '';
+      if (!link) {
+        if (btn) { btn.disabled = true; btn.innerHTML = 'Getting…'; }
+        try {
+          const r = await apiFetch(`${API}/groups/${groupId}/invite-link`, { method: 'POST', headers: H() });
+          if (!r.ok) throw new Error(await _errDetail(r));
+          const data = await r.json();
+          link = data.invite_link;
+        } catch (err) {
+          if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+          WebApp.showAlert('Could not get link: ' + (err.message || err));
+          return;
+        }
+      }
+
+      if (link) {
+        _groupLinks[groupId] = link;
+        const netVal = document.getElementById(`net-link-val-${groupId}`);
+        if (netVal) netVal.textContent = link;
+        const mgmtVal = document.getElementById(`mgmt-link-val-${groupId}`);
+        if (mgmtVal) mgmtVal.textContent = link;
+
+        copyInviteLink(link);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+          setTimeout(() => { if (btn) btn.innerHTML = origHtml || 'Copy Link'; }, 2000);
+        }
+      }
+    }
+
+    async function _resolveGroupLinkAsync(groupId) {
+      if (_groupLinks[groupId]) return;
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/invite-link`, { method: 'POST', headers: H() });
+        if (r.ok) {
+          const data = await r.json();
+          if (data && data.invite_link) {
+            _groupLinks[groupId] = data.invite_link;
+            const netVal = document.getElementById(`net-link-val-${groupId}`);
+            if (netVal) netVal.textContent = data.invite_link;
+            const mgmtVal = document.getElementById(`mgmt-link-val-${groupId}`);
+            if (mgmtVal) mgmtVal.textContent = data.invite_link;
+          }
+        }
+      } catch (_) {}
+    }
+
     // ════════════════════════════════════════════════════
     // Entity type helper strict DB-driven, never defaults to "group"
     // Rule: channel → CHANNEL badge; group/supergroup → GROUP badge
@@ -4746,19 +5059,24 @@ http_response_code(200);</pre>
             <div class="ico ico-wallet">${ico('wallet', 15)}</div>
             <div class="content"><span class="label">Payout Wallet</span><span class="value mono">${esc(wallet)}</span></div>
           </div>
-          ${link ? `<div class="data-row">
-            <div class="ico ico-link">${ico('link', 15)}</div>
-            <div class="content"><span class="label">Invite Link</span><span class="value">
-              <a href="#" onclick="copyInviteLink('${esc(link)}', this);return false;"
-                style="display:inline-flex;align-items:center;gap:5px">
-                ${esc(link.length > 34 ? link.slice(0, 32) + '…' : link)}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                  style="width:13px;height:13px;flex-shrink:0;opacity:.6">
+          <div class="data-row" style="align-items:center">
+            <div class="ico ico-link" style="background:rgba(0,152,234,.12);color:var(--accent)">${ico('link', 15)}</div>
+            <div class="content" style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px">
+              <div style="min-width:0;flex:1">
+                <span class="label">${(g.chat_type === 'channel' || g.type === 'channel') ? 'Channel Link' : 'Invite Link'}</span>
+                <span class="value mono" id="net-link-val-${g.id}" style="font-size:12px;color:rgba(255,255,255,.8);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  ${link ? esc(link) : '<span style="color:rgba(255,255,255,.4)">Fetching link…</span>'}
+                </span>
+              </div>
+              <button class="btn-copy-chip" id="net-link-btn-${g.id}"
+                onclick="fetchAndCopyGroupLink(${g.id}, this); event.stopPropagation();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>
-              </a>
-            </span></div>
-          </div>` : ''}
+                Copy Link
+              </button>
+            </div>
+          </div>
         </div>
         <div class="net-divider"></div>
         <div class="net-actions">
@@ -4782,6 +5100,12 @@ http_response_code(200);</pre>
         </div>` : ''}
       `;
           el.appendChild(card);
+
+          if (link) {
+            _groupLinks[g.id] = link;
+          } else {
+            _resolveGroupLinkAsync(g.id);
+          }
 
           // Async title resolution for NULL chat_title rows
           if (!g.chat_title || !g.chat_title.trim()) {
@@ -4894,19 +5218,32 @@ http_response_code(200);</pre>
           <div class="content"><span class="label">Price</span><span class="value">${g.price_usd_cents ? fmtUsd(g.price_usd_cents) : '—'} / ${interval}</span></div></div>
         <div class="data-row"><div class="ico ico-wallet">${ico('wallet', 15)}</div>
           <div class="content"><span class="label">Payout Wallet</span><span class="value mono">${esc(wallet)}</span></div></div>
-        ${link ? `<div class="data-row"><div class="ico ico-link">${ico('link', 15)}</div>
-          <div class="content"><span class="label">Invite Link</span><span class="value">
-            <a href="#" onclick="copyInviteLink('${esc(link)}', this);return false;"
-              style="display:inline-flex;align-items:center;gap:5px">
-              ${esc(link.length > 34 ? link.slice(0, 32) + '…' : link)}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                style="width:13px;height:13px;flex-shrink:0;opacity:.6">
+        <div class="data-row" style="align-items:center">
+          <div class="ico ico-link" style="background:rgba(0,152,234,.12);color:var(--accent)">${ico('link', 15)}</div>
+          <div class="content" style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px">
+            <div style="min-width:0;flex:1">
+              <span class="label">${(g.chat_type === 'channel') ? 'Channel Link' : 'Invite Link'}</span>
+              <span class="value mono" id="mgmt-link-val-${groupId}" style="font-size:12px;color:rgba(255,255,255,.8);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                ${link ? esc(link) : '<span style="color:rgba(255,255,255,.4)">Fetching link…</span>'}
+              </span>
+            </div>
+            <button class="btn-copy-chip" id="mgmt-link-btn-${groupId}"
+              onclick="fetchAndCopyGroupLink(${groupId}, this); event.stopPropagation();">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
               </svg>
-            </a>
-          </span></div></div>` : ''}
+              Copy Link
+            </button>
+          </div>
+        </div>
       </div>
     `;
+
+        if (link) {
+          _groupLinks[groupId] = link;
+        } else {
+          _resolveGroupLinkAsync(groupId);
+        }
 
         // ── Pause button state ──
         const isPaused = status === 'paused';
@@ -5353,11 +5690,9 @@ http_response_code(200);</pre>
         btn.disabled = false;
         btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
 
-        // ── Passkey prompt: if no passkey is set, offer to set one now ──────
-        // This mirrors the bot wizard which always prompts passkey creation
-        // immediately after the wallet is saved.
+        // ── Passkey prompt: if no passkey is set, prompt immediately ──────
         if (!_walletHasPasscode) {
-          setTimeout(() => _promptPasskeyAfterWallet(groupId), 800);
+          setTimeout(() => promptGroupPasscode(groupId, false), 500);
         }
       } catch (e) {
         document.getElementById('wallet-err').textContent = String(e.message || e);
@@ -5366,89 +5701,31 @@ http_response_code(200);</pre>
       }
     }
 
-    // ── Passkey prompt shown immediately after wallet is saved for the first time ──
-    // Matches the bot wizard behaviour: wallet saved → passkey created → done.
-    async function _promptPasskeyAfterWallet(groupId) {
-      // Build an inline passkey section directly in wallet-result
-      const el = document.getElementById('wallet-result');
-      el.innerHTML = alertHtml('Wallet saved! Now protect it with a 4-digit passkey.', 'success') + `
-        <div class="glass" style="padding:18px;margin-top:12px;border-radius:var(--r)">
-          <div style="font-size:14px;font-weight:700;margin-bottom:4px">🔒 Set a Wallet Passkey</div>
-          <p style="font-size:13px;margin-bottom:14px">
-            Anyone who tries to change your payout wallet will need this PIN.
-            You can skip it now and set it later from Manage.
-          </p>
-          <div class="field">
-            <label>New 4-digit PIN</label>
-            <input id="post-wallet-pin1" type="number" maxlength="4" placeholder="••••"
-                   oninput="if(this.value.length>4)this.value=this.value.slice(0,4)">
-          </div>
-          <div class="field">
-            <label>Confirm PIN</label>
-            <input id="post-wallet-pin2" type="number" maxlength="4" placeholder="••••"
-                   oninput="if(this.value.length>4)this.value=this.value.slice(0,4)">
-            <div class="field-err" id="post-wallet-pin-err"></div>
-          </div>
-          <button class="btn btn-primary" id="post-wallet-pin-btn"
-                  onclick="_savePostWalletPasskey(${groupId})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Save Passkey
-          </button>
-          <button class="btn btn-ghost" onclick="document.getElementById('wallet-result').innerHTML=alertHtml('Wallet saved. You can set a passkey later from Manage → Set Passkey.','success')">
-            Skip for now
-          </button>
-        </div>`;
-    }
-
-    async function _savePostWalletPasskey(groupId) {
-      const pin1 = document.getElementById('post-wallet-pin1').value.trim();
-      const pin2 = document.getElementById('post-wallet-pin2').value.trim();
-      const errEl = document.getElementById('post-wallet-pin-err');
-      errEl.textContent = '';
-
-      if (!/^\d{4}$/.test(pin1)) { errEl.textContent = 'PIN must be exactly 4 digits'; return; }
-      if (pin1 !== pin2) { errEl.textContent = "PINs don't match try again"; return; }
-
-      const btn = document.getElementById('post-wallet-pin-btn');
-      btn.disabled = true; btn.textContent = 'Saving…';
-
-      try {
-        const r = await apiFetch(`${API}/groups/${groupId}/passcode`, {
-          method: 'POST', headers: H(),
-          body: JSON.stringify({ new_passcode: pin1 }),
-        });
-        if (!r.ok) throw new Error(await _errDetail(r));
-        WebApp.HapticFeedback.notificationOccurred('success');
-        _walletHasPasscode = true;
-        document.getElementById('wallet-result').innerHTML = alertHtml(
-          '✅ Passkey saved! Your wallet is now protected.', 'success'
-        );
-      } catch (e) {
-        errEl.textContent = String(e.message || e);
-        btn.disabled = false;
-        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Save Passkey`;
-      }
-    }
-
-    async function submitGroupPasscode() {
-      if (!_walletGroupId) return;
-      const fields = _walletHasPasscode
+    async function promptGroupPasscode(groupId, hasExistingPasscode) {
+      const gid = groupId || _walletGroupId || _manageGroupId;
+      if (!gid) return;
+      const hasPass = hasExistingPasscode !== undefined ? !!hasExistingPasscode : _walletHasPasscode;
+      const fields = hasPass
         ? [
           { id: 'current', label: 'Current Passkey', placeholder: '••••' },
           { id: 'new', label: 'New Passkey', placeholder: '••••' },
+          { id: 'confirm', label: 'Confirm New Passkey', placeholder: '••••' },
         ]
-        : [{ id: 'new', label: 'New 4-digit Passkey', placeholder: '••••' }];
+        : [
+          { id: 'new', label: 'New 4-digit Passkey', placeholder: '••••' },
+          { id: 'confirm', label: 'Confirm Passkey', placeholder: '••••' }
+        ];
 
       const result = await showPinModal({
-        title: _walletHasPasscode ? 'Change Passkey' : 'Set Wallet Passkey',
+        title: hasPass ? 'Change Passkey' : 'Set Wallet Passkey',
         subtitle: 'Required to authorize future wallet changes.',
         fields,
         submitLabel: 'Save Passkey',
       });
-      if (!result) return;
+      if (!result || !result.new) return;
 
       try {
-        const r = await apiFetch(`${API}/groups/${_walletGroupId}/passcode`, {
+        const r = await apiFetch(`${API}/groups/${gid}/passcode`, {
           method: 'POST',
           headers: H(),
           body: JSON.stringify({
@@ -5464,11 +5741,9 @@ http_response_code(200);</pre>
         const btn = document.getElementById('wallet-passkey-btn');
         if (sub) sub.textContent = '🔒 Set required to change wallet';
         if (btn) btn.textContent = 'Change';
-        // Keep _manageGroupData in sync so re-opening the page shows the right state
         if (_manageGroupData) _manageGroupData.has_wallet_passcode = true;
       } catch (e) {
         const msg = String(e.message || e);
-        // Keep hard-lockout (429) messages intact, only map plain wrong-passkey errors
         const isLocked = msg.toLowerCase().includes('too many incorrect');
         const friendly = isLocked
           ? msg
@@ -5478,6 +5753,8 @@ http_response_code(200);</pre>
         WebApp.showAlert('Error: ' + friendly);
       }
     }
+
+    const submitGroupPasscode = promptGroupPasscode;
 
     // ════════════════════════════════════════════════════
     // COMP A MEMBER PAGE
@@ -5965,7 +6242,11 @@ http_response_code(200);</pre>
     }
 
     async function regenerateKey(mode) {
-      if (!confirm(`Are you sure you want to regenerate your ${mode} secret key? The old one will immediately stop working.`)) return;
+      const ok = await askConfirm(
+        `Regenerate ${mode} Secret Key`,
+        `Are you sure you want to regenerate your ${mode} secret key? The old one will immediately stop working.`
+      );
+      if (!ok) return;
 
       try {
         const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/keys/regenerate`, {
@@ -5985,7 +6266,11 @@ http_response_code(200);</pre>
     }
 
     async function deletePlatform(platformId) {
-      if (!confirm('Delete this platform? This permanently removes the platform, all its charges, webhooks, and both key pairs. This cannot be undone.')) return;
+      const ok = await askConfirm(
+        'Delete Platform',
+        'Are you sure you want to delete this app? This permanently removes the app, all its charges, webhooks, and both key pairs. This cannot be undone.'
+      );
+      if (!ok) return;
 
       try {
         const id = platformId || currentPlatformId;
@@ -6041,7 +6326,11 @@ http_response_code(200);</pre>
     }
 
     async function rotateWebhookSecret() {
-      if (!confirm('Rotate the webhook signing secret? Your server must be updated immediately or webhook verification will fail.')) return;
+      const ok = await askConfirm(
+        'Rotate Webhook Secret',
+        'Rotate the webhook signing secret? Your server must be updated immediately or webhook verification will fail.'
+      );
+      if (!ok) return;
 
       try {
         const r = await apiFetch(`${API}/developer/platforms/${currentPlatformId}/webhook/rotate-secret`, {
@@ -6426,21 +6715,21 @@ http_response_code(200);</pre>
         if (!r.ok) {
           const data = await r.json().catch(() => ({}));
           const raw = data.detail || `HTTP ${r.status}`;
-          // Map technical server messages to something actionable
-          const friendly =
-            raw.includes('contract not compiled') || raw.includes('FileNotFoundError')
-              ? 'Payment contract not built on this server. Ask the operator to run: cd contracts && npm run build'
-              : raw.includes('Payment link generation failed')
-                ? 'Could not generate payment link check that the contract is compiled and the wallet address is valid.'
-                : raw.includes('wallet_address') || raw.includes('no payout wallet')
-                  ? 'This app has no Payout Wallet set. Add one in Developer Apps first.'
-                  : raw.includes('non-JSON response') || raw.includes('latest code')
-                    ? 'The backend service needs to be redeployed. Redeploy Render and try again.'
-                    : raw.includes('Could not reach') || raw.includes('unreachable')
-                      ? 'Backend service is unreachable. Try again in a moment.'
-                      : raw.includes('timed out') || raw.includes('cold-starting')
-                        ? 'Backend is waking up wait a few seconds and try again.'
-                        : raw;
+          // Map technical server messages to clean, actionable text
+          let friendly = 'Payment service temporarily unavailable. The administration team has been notified. Please try again shortly.';
+          if (raw.includes('wallet_address') || raw.includes('no payout wallet')) {
+            friendly = 'This app has no Payout Wallet set. Add one in Developer Apps first.';
+          } else if (raw.includes('positive') || raw.includes('Minimum charge')) {
+            friendly = raw;
+          } else if (raw.includes('external_reference already exists')) {
+            friendly = 'A charge with this reference already exists. Please try again.';
+          } else if (raw.includes('Invalid API key') || raw.includes('revoked')) {
+            friendly = raw;
+          } else if (raw.includes('timed out') || raw.includes('cold-starting') || raw.includes('waking up')) {
+            friendly = 'Service is starting up. Please wait a few seconds and try again.';
+          } else if (raw.includes('notified')) {
+            friendly = raw;
+          }
           _renderSandboxError(friendly);
           return;
         }
@@ -6814,17 +7103,17 @@ http_response_code(200);</pre>
               </svg>
             </div>
             <div style="display:flex;gap:0;border-top:1px solid rgba(255,255,255,.06)">
-              <button style="flex:1;padding:11px 8px;background:none;border:none;border-right:1px solid rgba(255,255,255,.06);color:var(--accent);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"
+              <button class="plat-act-btn primary"
                 onclick="openDevApp(${p.id})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 Manage
               </button>
-              <button style="flex:1;padding:11px 8px;background:none;border:none;border-right:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.75);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"
+              <button class="plat-act-btn"
                 onclick="openDevApp(${p.id})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                 Charges
               </button>
-              <button style="flex:1;padding:11px 8px;background:none;border:none;color:rgba(255,255,255,.75);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px"
+              <button class="plat-act-btn"
                 onclick="setSandboxEnv('test'); _sandboxSelectPlatform(${p.id}); openSandbox('dev-app')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
                 Sandbox
@@ -7277,6 +7566,10 @@ http_response_code(200);</pre>
             }
             result[f.id] = val;
           }
+          if (result.new && result.confirm && result.new !== result.confirm) {
+            overlay.querySelector('#pin-error').textContent = 'Passkeys do not match';
+            return;
+          }
           overlay.remove();
           resolve(result);
         };
@@ -7432,7 +7725,13 @@ http_response_code(200);</pre>
       return {
         init() {
           _step = 0;
-          _state = { chat: null, priceUsdCents: null, intervalDays: 30, wallet: '', feePreview: null };
+          _state = { chat: null, priceUsdCents: null, intervalDays: 30, wallet: '', passcode: '', feePreview: null };
+          const w = document.getElementById('wiz-wallet'); if (w) w.value = '';
+          const p1 = document.getElementById('wiz-passcode'); if (p1) p1.value = '';
+          const p2 = document.getElementById('wiz-passcode-confirm'); if (p2) p2.value = '';
+          const e1 = document.getElementById('wiz-wallet-err'); if (e1) e1.textContent = '';
+          const e2 = document.getElementById('wiz-passcode-err'); if (e2) e2.textContent = '';
+          const e3 = document.getElementById('wiz-passcode-confirm-err'); if (e3) e3.textContent = '';
           _go(0); _err('wiz-0-error', '');
         },
 
@@ -7504,18 +7803,42 @@ http_response_code(200);</pre>
         submitWallet() {
           const addr = document.getElementById('wiz-wallet').value.trim();
           document.getElementById('wiz-wallet-err').textContent = '';
-          if (!addr) { document.getElementById('wiz-wallet-err').textContent = 'Please enter your GRAM wallet address.'; return; }
+          const pin1 = (document.getElementById('wiz-passcode')?.value || '').trim();
+          const pin2 = (document.getElementById('wiz-passcode-confirm')?.value || '').trim();
+          const pinErr1 = document.getElementById('wiz-passcode-err');
+          const pinErr2 = document.getElementById('wiz-passcode-confirm-err');
+          if (pinErr1) pinErr1.textContent = '';
+          if (pinErr2) pinErr2.textContent = '';
+
+          if (!addr) {
+            document.getElementById('wiz-wallet-err').textContent = 'Please enter your GRAM wallet address.';
+            return;
+          }
+          if (!pin1) {
+            if (pinErr1) pinErr1.textContent = 'Please enter a 4-digit passcode for your wallet.';
+            return;
+          }
+          if (!/^\d{4}$/.test(pin1)) {
+            if (pinErr1) pinErr1.textContent = 'Passcode must be exactly 4 numeric digits.';
+            return;
+          }
+          if (pin1 !== pin2) {
+            if (pinErr2) pinErr2.textContent = 'Passcodes do not match. Please re-enter.';
+            return;
+          }
+
           _state.wallet = addr;
+          _state.passcode = pin1;
           const usd = (_state.priceUsdCents / 100).toFixed(2);
           const interval = _state.intervalDays === 7 ? 'Weekly' : 'Monthly';
           const short = addr.length > 18 ? addr.slice(0, 9) + '…' + addr.slice(-6) : addr;
-          // Strict type badge on summary too
           document.getElementById('wiz-summary').innerHTML = `
         <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.3px;margin-bottom:14px">Summary</div>
         <div class="data-row" style="margin-bottom:10px"><div class="ico">${ico('hash', 15)}</div><div class="content"><span class="label">Network</span><span class="value">${esc(_state.chat.chat_title)}</span></div></div>
         <div class="data-row" style="margin-bottom:10px"><div class="ico">${ico('broadcast', 15)}</div><div class="content"><span class="label">Type</span><span class="value">${entityTypeBadge(_state.chat.chat_type)}</span></div></div>
         <div class="data-row" style="margin-bottom:10px"><div class="ico">${ico('dollar', 15)}</div><div class="content"><span class="label">Price</span><span class="value">$${usd} ${interval}</span></div></div>
-        <div class="data-row"><div class="ico">${ico('wallet', 15)}</div><div class="content"><span class="label">Wallet</span><span class="value mono">${esc(short)}</span></div></div>
+        <div class="data-row" style="margin-bottom:10px"><div class="ico">${ico('wallet', 15)}</div><div class="content"><span class="label">Wallet</span><span class="value mono">${esc(short)}</span></div></div>
+        <div class="data-row"><div class="ico">${ico('lock', 15)}</div><div class="content"><span class="label">Wallet Passcode</span><span class="value" style="color:#4ade80">🔒 4-digit passcode set</span></div></div>
       `;
           _err('wiz-final-error', '');
           _go(4);
@@ -7532,6 +7855,7 @@ http_response_code(200);</pre>
               price_usd_cents: _state.priceUsdCents,
               billing_interval_days: _state.intervalDays,
               wallet_address: _state.wallet,
+              passcode: _state.passcode || undefined,
             };
             const r = await apiFetch(`${API}/groups/create`, { method: 'POST', headers: H(), body: JSON.stringify(payload) });
             const data = await r.json();
@@ -7542,17 +7866,30 @@ http_response_code(200);</pre>
             }
             WebApp.HapticFeedback.notificationOccurred('success');
             const fp = data.fee_preview;
+            if (data.invite_link) {
+              _groupLinks[data.group_id] = data.invite_link;
+            }
             document.getElementById('wiz-summary').innerHTML = `
           ${alertHtml(`Paywall activated! ${data.chat_title} is now live.`, 'success')}
           <div class="fee-row"><span class="fl">Member pays</span><span class="fv">$${fp.member_pays_usd.toFixed(2)}</span></div>
           <div class="fee-row"><span class="fl">You receive</span><span class="fv">$${fp.admin_receives_usd.toFixed(2)}</span></div>
           <div class="fee-row"><span class="fl">Platform fee</span><span class="fv">$${fp.platform_keeps_usd.toFixed(2)}</span></div>
-          <p style="margin-top:12px;font-size:12.5px">${esc(data.invite_link_note)}</p>
+          ${data.invite_link ? `
+          <div style="margin-top:14px;padding:12px;background:rgba(0,152,234,.1);border:1px solid rgba(0,152,234,.3);border-radius:10px">
+            <div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:6px">Join / Channel Link:</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span class="mono" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(data.invite_link)}</span>
+              <button class="btn btn-ghost" onclick="copyInviteLink('${esc(data.invite_link)}', this)" style="padding:4px 10px;font-size:11px;background:rgba(0,152,234,.2);color:var(--accent);border-radius:6px">Copy</button>
+            </div>
+          </div>` : `<p style="margin-top:12px;font-size:12.5px">${esc(data.invite_link_note)}</p>`}
         `;
             btn.innerHTML = `${ico('check', 17)} Done`;
             btn.disabled = false;
             btn.onclick = () => { loadNetworks(); App.nav('dashboard'); };
             loadNetworks();
+            if (!data.has_wallet_passcode) {
+              setTimeout(() => promptGroupPasscode(data.group_id, false), 400);
+            }
           } catch (e) {
             _err('wiz-final-error', 'Network error. Please try again.');
             btn.disabled = false;

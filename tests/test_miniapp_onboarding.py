@@ -554,3 +554,39 @@ class TestCreate:
         assert resp.json()["billing_interval_days"] == 7
         group = await _queries.get_group_by_chat_id(CHAT_ID)
         assert group["billing_interval_days"] == 7
+
+    @pytest.mark.asyncio
+    async def test_group_create_with_passcode(self, http, patch_wallet_valid):
+        """Passcode provided on creation is validated and stored."""
+        await _seed_grant(OWNER_ID)
+        resp = await http.post(
+            "/api/groups/create",
+            json={**VALID_BODY, "passcode": "9876"},
+            headers=_auth(OWNER_ID),
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["has_wallet_passcode"] is True
+        group = await _queries.get_group_by_id(data["group_id"])
+        assert group["wallet_passcode_hash"] is not None
+
+    @pytest.mark.asyncio
+    async def test_get_group_invite_link_endpoint(self, http, patch_wallet_valid):
+        """POST /api/groups/{group_id}/invite-link returns existing or generated invite link."""
+        await _seed_grant(OWNER_ID)
+        create_resp = await http.post(
+            "/api/groups/create", json=VALID_BODY, headers=_auth(OWNER_ID)
+        )
+        assert create_resp.status_code == 200
+        group_id = create_resp.json()["group_id"]
+
+        # Set an invite link in DB
+        await _queries.update_group_invite_link(group_id, "https://t.me/+testlink123")
+
+        link_resp = await http.post(
+            f"/api/groups/{group_id}/invite-link",
+            headers=_auth(OWNER_ID),
+        )
+        assert link_resp.status_code == 200
+        assert link_resp.json()["invite_link"] == "https://t.me/+testlink123"
+

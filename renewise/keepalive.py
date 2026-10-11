@@ -162,21 +162,43 @@ async def handle_generate_payment_link(request: web.Request) -> web.Response:
             price_usd_cents=price_usd_cents,
         )
         return web.json_response({
-            "payment_url":   result.payment_url,
-            "vault_address": result.vault_address,
-            "required_nano": result.required_nano,
+            "payment_url":     result.payment_url,
+            "tg_wallet_url":   result.tg_wallet_url,
+            "tonkeeper_url":   result.tonkeeper_url,
+            "mytonwallet_url": result.mytonwallet_url,
+            "tonhub_url":      result.tonhub_url,
+            "vault_address":   result.vault_address,
+            "payload":         result.payload,
+            "amount":          result.amount,
+            "currency":        result.currency,
+            "required_nano":   result.required_nano,
         })
     except ValueError as e:
         return web.json_response({"error": str(e)}, status=400)
     except FileNotFoundError:
+        log.error("Payment contract not compiled on Render when generating link for charge %s", charge_id)
+        from renewise.utils.alerts import alert_payment_failure
+        await alert_payment_failure(
+            platform=platform,
+            charge_id=charge_id,
+            amount_usd_cents=price_usd_cents,
+            error="Payment contract not compiled on Render",
+        )
         return web.json_response(
-            {"error": "Contract not compiled. Run: cd contracts && npm run build"},
+            {"error": "Payment service temporarily unavailable. The administration team has been notified."},
             status=503,
         )
     except Exception as e:
         log.exception("Payment link generation failed for charge %s", charge_id)
+        from renewise.utils.alerts import alert_payment_failure
+        await alert_payment_failure(
+            platform=platform,
+            charge_id=charge_id,
+            amount_usd_cents=price_usd_cents,
+            error=e,
+        )
         return web.json_response(
-            {"error": f"Payment link generation failed: {type(e).__name__}"},
+            {"error": "Payment service temporarily unavailable. The administration team has been notified."},
             status=500,
         )
 
