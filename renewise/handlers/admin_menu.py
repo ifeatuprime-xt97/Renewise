@@ -395,6 +395,20 @@ async def msg_new_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return AWAIT_NEW_WALLET
 
+    # On mainnet, reject testnet (kQ.../0Q...) addresses — payouts will never arrive.
+    from renewise.services.wallet import detect_address_network
+    from renewise.config import TONCENTER_TESTNET
+    _net = detect_address_network(address)
+    if not TONCENTER_TESTNET and _net == "testnet":
+        await update.message.reply_text(
+            "❌ That looks like a <b>testnet</b> wallet address (kQ… / 0Q…).\n\n"
+            "Please send your <b>mainnet</b> wallet address (EQ… or UQ…). "
+            "Real payouts can only be sent to mainnet addresses.",
+            parse_mode="HTML",
+            reply_markup=cancel_input_kb(),
+        )
+        return AWAIT_NEW_WALLET
+
     # Network check: on mainnet, testnet addresses won't receive payments.
     # On testnet, both address types are accepted.
     from renewise.services.wallet import detect_address_network

@@ -5232,10 +5232,81 @@ http_response_code(200);</pre>
         }
         btn.disabled = false;
         btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
+
+        // ── Passkey prompt: if no passkey is set, offer to set one now ──────
+        // This mirrors the bot wizard which always prompts passkey creation
+        // immediately after the wallet is saved.
+        if (!_walletHasPasscode) {
+          setTimeout(() => _promptPasskeyAfterWallet(groupId), 800);
+        }
       } catch (e) {
         document.getElementById('wallet-err').textContent = String(e.message || e);
         btn.disabled = false;
         btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Update Wallet`;
+      }
+    }
+
+    // ── Passkey prompt shown immediately after wallet is saved for the first time ──
+    // Matches the bot wizard behaviour: wallet saved → passkey created → done.
+    async function _promptPasskeyAfterWallet(groupId) {
+      // Build an inline passkey section directly in wallet-result
+      const el = document.getElementById('wallet-result');
+      el.innerHTML = alertHtml('Wallet saved! Now protect it with a 4-digit passkey.', 'success') + `
+        <div class="glass" style="padding:18px;margin-top:12px;border-radius:var(--r)">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">🔒 Set a Wallet Passkey</div>
+          <p style="font-size:13px;margin-bottom:14px">
+            Anyone who tries to change your payout wallet will need this PIN.
+            You can skip it now and set it later from Manage.
+          </p>
+          <div class="field">
+            <label>New 4-digit PIN</label>
+            <input id="post-wallet-pin1" type="number" maxlength="4" placeholder="••••"
+                   oninput="if(this.value.length>4)this.value=this.value.slice(0,4)">
+          </div>
+          <div class="field">
+            <label>Confirm PIN</label>
+            <input id="post-wallet-pin2" type="number" maxlength="4" placeholder="••••"
+                   oninput="if(this.value.length>4)this.value=this.value.slice(0,4)">
+            <div class="field-err" id="post-wallet-pin-err"></div>
+          </div>
+          <button class="btn btn-primary" id="post-wallet-pin-btn"
+                  onclick="_savePostWalletPasskey(${groupId})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save Passkey
+          </button>
+          <button class="btn btn-ghost" onclick="document.getElementById('wallet-result').innerHTML=alertHtml('Wallet saved. You can set a passkey later from Manage → Set Passkey.','success')">
+            Skip for now
+          </button>
+        </div>`;
+    }
+
+    async function _savePostWalletPasskey(groupId) {
+      const pin1 = document.getElementById('post-wallet-pin1').value.trim();
+      const pin2 = document.getElementById('post-wallet-pin2').value.trim();
+      const errEl = document.getElementById('post-wallet-pin-err');
+      errEl.textContent = '';
+
+      if (!/^\d{4}$/.test(pin1)) { errEl.textContent = 'PIN must be exactly 4 digits'; return; }
+      if (pin1 !== pin2)          { errEl.textContent = "PINs don't match — try again"; return; }
+
+      const btn = document.getElementById('post-wallet-pin-btn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+
+      try {
+        const r = await apiFetch(`${API}/groups/${groupId}/passcode`, {
+          method: 'POST', headers: H(),
+          body: JSON.stringify({ new_passcode: pin1 }),
+        });
+        if (!r.ok) throw new Error(await _errDetail(r));
+        WebApp.HapticFeedback.notificationOccurred('success');
+        _walletHasPasscode = true;
+        document.getElementById('wallet-result').innerHTML = alertHtml(
+          '✅ Passkey saved! Your wallet is now protected.', 'success'
+        );
+      } catch (e) {
+        errEl.textContent = String(e.message || e);
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Save Passkey`;
       }
     }
 

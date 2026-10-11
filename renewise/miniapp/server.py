@@ -541,6 +541,15 @@ class GroupCreateRequest(BaseModel):
             raise ValueError("billing_interval_days must be 7 (weekly) or 30 (monthly)")
         return v
 
+    @field_validator("wallet_address")
+    @classmethod
+    def wallet_must_be_valid(cls, v: str) -> str:
+        from renewise.services.wallet import detect_address_network
+        v = v.strip()
+        if detect_address_network(v) is None:
+            raise ValueError("Invalid TON wallet address format")
+        return v
+
 
 # ---------------------------------------------------------------------------
 # Existing read endpoints
@@ -926,11 +935,21 @@ async def api_groups_create(
             },
         )
 
-    # ── Wallet validation (same validate_ton_address the bot uses) ────────────
+    # ── Wallet validation — format + mainnet enforcement ─────────────────────
     if not await validate_ton_address(body.wallet_address):
         raise HTTPException(
             status_code=422,
             detail="Invalid wallet address format",
+        )
+    from renewise.services.wallet import detect_address_network as _detect
+    from renewise.config import TONCENTER_TESTNET
+    if not TONCENTER_TESTNET and _detect(body.wallet_address) == "testnet":
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Testnet wallet address provided (kQ… / 0Q…). "
+                "This system runs on mainnet — please use a mainnet address (EQ… or UQ…)."
+            ),
         )
 
     # ── Fee transparency (mirrors cb_confirm_chat) ────────────────────────────
@@ -1655,6 +1674,18 @@ class UpdatePriceRequest(BaseModel):
 class UpdateWalletRequest(BaseModel):
     wallet_address: str
     passcode: str | None = None
+
+    @field_validator("wallet_address")
+    @classmethod
+    def wallet_must_be_valid(cls, v: str) -> str:
+        from renewise.services.wallet import detect_address_network, validate_ton_address as _sync_check
+        import asyncio
+        v = v.strip()
+        # detect_address_network is sync — safe to call directly
+        net = detect_address_network(v)
+        if net is None:
+            raise ValueError("Invalid TON wallet address format")
+        return v
 
 
 class CompMemberRequest(BaseModel):

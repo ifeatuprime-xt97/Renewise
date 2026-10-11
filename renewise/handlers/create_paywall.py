@@ -627,6 +627,19 @@ async def msg_wallet(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return STEP_WALLET
 
+    # On mainnet, reject testnet (kQ.../0Q...) addresses outright.
+    from renewise.services.wallet import detect_address_network
+    from renewise.config import TONCENTER_TESTNET
+    _net = detect_address_network(text)
+    if not TONCENTER_TESTNET and _net == "testnet":
+        await update.message.reply_text(
+            "❌ That looks like a <b>testnet</b> wallet address (kQ… / 0Q…).\n\n"
+            "Please send your <b>mainnet</b> wallet address (EQ… or UQ…). "
+            "Real payouts can only be sent to mainnet addresses.",
+            parse_mode="HTML",
+        )
+        return STEP_WALLET
+
     _w(ctx)["wallet_address"] = text
     return await _show_final_summary(update.message, ctx, text)
 
