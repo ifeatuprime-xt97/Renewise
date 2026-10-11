@@ -205,7 +205,7 @@ def compute_vault_address(p: VaultParams, code_cell: Cell | None = None) -> Addr
         .end_cell()
     )
     addr = Address((WORKCHAIN, state_init_cell.hash))
-    addr.is_bounceable = True
+    addr.is_bounceable = False
     return addr
 
 
@@ -264,22 +264,20 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     state_init_boc = init_cell.to_boc()
     body_boc       = body.to_boc()
 
-    # IMPORTANT: use bounceable=True (EQ... prefix) so that if the contract's
-    # require() check fails (e.g. underpayment), the sender's wallet will
-    # receive an automatic bounce and get their GRAM back.
-    # Non-bounceable (UQ...) silently traps money on any execution failure.
+    # IMPORTANT: use non-bounceable format (UQ... on mainnet, 0Q... on testnet)
+    # because PaymentVault is deployed atomically on first payment (StateInit attached).
+    # In the TON standard, bounceable addresses (EQ... / kQ...) are strictly invalid
+    # for accounts that are not yet active on-chain. When wallet apps (MyTonWallet,
+    # Tonkeeper) parse a transfer link to an uninitialized bounceable address, they abort
+    # with: "You entered an address in the 'EQ...' format, but the address is not active...
+    # enter the address in the 'UQ...' format."
+    # Non-bounceable allows wallet apps to attach StateInit and execute the payment.
     from renewise.config import is_testnet
-    addr_str  = addr.to_str(is_bounceable=True, is_url_safe=True, is_test_only=is_testnet())
+    addr_str  = addr.to_str(is_bounceable=False, is_url_safe=True, is_test_only=is_testnet())
     body_b64  = base64.urlsafe_b64encode(body_boc).decode().rstrip("=")
     init_b64  = base64.urlsafe_b64encode(state_init_boc).decode().rstrip("=")
 
-    # ── ton:// WITH &init= — the correct format for inline keyboard buttons ─────
-    # When used as inline button URLs in Telegram bot messages, ton:// links are
-    # handled by the OS universal link system and open the installed wallet app
-    # directly (Tonkeeper, MyTonWallet, TonHub, etc).
-    # They do NOT open @wallet when used as button URLs — only when tapped as
-    # plain text. HTTPS wallet URLs (https://app.tonkeeper.com/...) open
-    # Telegram's in-app browser instead of the wallet app, so we do NOT use them.
+    # ── ton:// WITH &init= — the standard format for TON wallets ────────────────
     ton_link = (
         f"ton://transfer/{addr_str}"
         f"?amount={amount}"
@@ -296,14 +294,22 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
         f"&bin={body_b64}"
     )
 
-    # The three "named" wallet URLs are ton:// with &init= (same as ton_deep_link).
-    # They are kept as separate fields so call sites can pass them independently
-    # to keyboards.py, making the intent clear. The value is identical to
-    # ton_deep_link — wallet selection is done by the OS based on which app the
-    # user has installed, not by the URL scheme.
-    tonkeeper_url   = ton_link  # ton:// — OS routes to Tonkeeper if installed
-    mytonwallet_url = ton_link  # ton:// — OS routes to MyTonWallet if installed
-    tonhub_url      = ton_link  # ton:// — OS routes to TonHub if installed
+    # Wallet-specific universal/deep links:
+    # Tonkeeper universal link prevents Telegram on iOS from hijacking the link
+    # into @wallet (which fails with "Money is currently unavailable").
+    tonkeeper_url   = (
+        f"https://app.tonkeeper.com/transfer/{addr_str}"
+        f"?amount={amount}"
+        f"&bin={body_b64}"
+        f"&init={init_b64}"
+    )
+    mytonwallet_url = (
+        f"https://my.tt/transfer/{addr_str}"
+        f"?amount={amount}"
+        f"&bin={body_b64}"
+        f"&init={init_b64}"
+    )
+    tonhub_url      = ton_link  # ton:// — TonHub handles standard ton:// format
 
     return PaymentLink(
         vault_address=addr_str,

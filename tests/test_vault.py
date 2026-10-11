@@ -249,6 +249,12 @@ class TestAddressDeterminism:
         assert link.required_nano == required_payment_nano(_params())
         assert len(link.state_init_boc) > 0
         assert len(link.body_boc) > 0
+        # Vault address must be non-bounceable (starts with UQ on mainnet or 0Q on testnet)
+        assert link.vault_address.startswith(("UQ", "0Q")), (
+            f"Vault address must be non-bounceable, got: {link.vault_address}"
+        )
+        assert link.tonkeeper_url.startswith("https://app.tonkeeper.com/transfer/")
+        assert link.mytonwallet_url.startswith("https://my.tt/transfer/")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -238,8 +238,9 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         ctx.bot_data.get("pending_joins", {}).pop(user.id, None)
         return
 
-    # payment_url is already ton:// with &init= use directly for the QR
-    ton_qr_url = payment_url
+    # QR code encodes Tonkeeper universal link so mobile camera scanners route directly
+    # to the wallet app instead of getting hijacked by Telegram's in-app ton:// handler.
+    ton_qr_url = tonkeeper_url or payment_url
 
     # Show USD equivalent so the user can sanity-check the amount
     try:
@@ -250,13 +251,21 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception:
         usd_line = ""
 
+    from renewise.config import is_testnet
+    testnet_notice = ""
+    if is_testnet():
+        testnet_notice = "⚠️ <b>Testnet Mode:</b> Pay using Tonkeeper or MyTonWallet (set to Testnet).\n\n"
+
     caption = (
         f"💳 <b>Payment</b>\n\n"
+        f"{testnet_notice}"
         f"<b>Amount to send:</b>\n"
         f"<code>{amount_ton:.9f} GRAM</code>  {usd_line}\n\n"
+        f"<b>Recipient address:</b>\n"
+        f"<code>{vault_addr}</code>\n\n"
         f"<b>How to pay:</b>\n"
-        f"• Tap the button below to open your wallet\n"
-        f"• Or scan the QR code with your mobile wallet\n\n"
+        f"• Tap your wallet button below to open your app with everything pre-filled\n"
+        f"• Or scan the QR code with your mobile wallet camera\n\n"
         f"💡 <b>Your wallet may show a warning.</b> This is normal for first payments. "
         f"Your GRAM is safe and will be split automatically on the blockchain.\n\n"
         f"Send the <b>exact amount shown</b> overpayments are refunded automatically."

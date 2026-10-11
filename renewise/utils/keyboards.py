@@ -101,21 +101,37 @@ def payment_details_kb(
     Falls back to payment_url for any URL not explicitly provided.
     """
     _tg  = tg_wallet_url   or payment_url
-    _tk  = tonkeeper_url   or payment_url   # ton:// with &init=
-    _mtw = mytonwallet_url or payment_url   # ton:// with &init=
-    _th  = tonhub_url      or payment_url   # ton:// with &init=
+    _tk  = tonkeeper_url   or payment_url
+    _mtw = mytonwallet_url or payment_url
+    _th  = tonhub_url      or payment_url
 
-    rows = [
-        [
-            InlineKeyboardButton("📲 Telegram Wallet", url=_tg),
-            InlineKeyboardButton("💎 Tonkeeper",        url=_tk),
-        ],
-        [
-            InlineKeyboardButton("🔷 MyTonWallet",     url=_mtw),
-            InlineKeyboardButton("🔹 TonHub",           url=_th),
-        ],
-        [InlineKeyboardButton("✅ I've Paid",           callback_data="join:paid")],
-    ]
+    from renewise.config import is_testnet
+    if is_testnet():
+        # Telegram Wallet (@wallet) does NOT exist on Testnet and will fail with
+        # 'Money is currently unavailable'. Show Tonkeeper and MyTonWallet instead.
+        rows = [
+            [
+                InlineKeyboardButton("💎 Tonkeeper",        url=_tk),
+                InlineKeyboardButton("🔷 MyTonWallet",     url=_mtw),
+            ],
+            [
+                InlineKeyboardButton("🔹 TonHub",           url=_th),
+                InlineKeyboardButton("✅ I've Paid",         callback_data="join:paid"),
+            ],
+        ]
+    else:
+        rows = [
+            [
+                InlineKeyboardButton("📲 Telegram Wallet", url=_tg),
+                InlineKeyboardButton("💎 Tonkeeper",        url=_tk),
+            ],
+            [
+                InlineKeyboardButton("🔷 MyTonWallet",     url=_mtw),
+                InlineKeyboardButton("🔹 TonHub",           url=_th),
+            ],
+            [InlineKeyboardButton("✅ I've Paid",           callback_data="join:paid")],
+        ]
+
     if support_url:
         rows.append([InlineKeyboardButton("💬 Contact Support", url=support_url)])
     rows.append([InlineKeyboardButton("❌ Cancel", callback_data="join:cancel")])

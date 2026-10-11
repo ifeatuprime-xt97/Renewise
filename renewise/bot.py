@@ -436,14 +436,22 @@ async def _send_renewal_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE, 
             exact_ton     = payment.required_nano / 1_000_000_000
             fee_breakdown = ""
 
+        testnet_notice = ""
+        from renewise.config import is_testnet
+        if is_testnet():
+            testnet_notice = "⚠️ <b>Testnet Mode:</b> Pay using Tonkeeper or MyTonWallet (set to Testnet).\n\n"
+
         caption = (
             f"🔄 <b>Renew Subscription</b>\n\n"
+            f"{testnet_notice}"
             f"{fee_breakdown}"
             f"<b>Amount to send:</b>\n"
             f"<code>{exact_ton:.9f} GRAM</code>\n\n"
+            f"<b>Recipient address:</b>\n"
+            f"<code>{payment.vault_address}</code>\n\n"
             f"<b>How to pay:</b>\n"
-            f"• Tap the button below to open your wallet\n"
-            f"• Or scan the QR code\n\n"
+            f"• Tap your wallet button below to open your app\n"
+            f"• Or scan the QR code with your wallet camera\n\n"
             f"💡 <b>Your wallet may show a warning.</b> This is normal your GRAM is safe!\n\n"
             f"<i>Your subscription extends automatically after payment confirms.</i>"
         )
@@ -539,15 +547,19 @@ async def _send_payment_details(
             pass
     ctx.bot_data.setdefault("pending_joins", {})[user_telegram_id] = {
         **pending,
-        "group_id":    group_id,
-        "payment_url": payment.payment_url,
-        "vault_addr":  payment.vault_address,
-        "amount_ton":  payment.amount,
+        "group_id":       group_id,
+        "payment_url":    payment.payment_url,
+        "tg_wallet_url":  payment.tg_wallet_url,
+        "tonkeeper_url":  payment.tonkeeper_url,
+        "mytonwallet_url": payment.mytonwallet_url,
+        "tonhub_url":     payment.tonhub_url,
+        "vault_addr":     payment.vault_address,
+        "amount_ton":     payment.amount,
     }
 
-    # payment.payment_url is already ton:// with &init= use it for both the
-    # button and the QR code. No conversion needed.
-    ton_qr_url = payment.payment_url
+    # Use Tonkeeper universal link for the QR code so mobile cameras open the wallet
+    # app directly rather than having iOS redirect ton:// into Telegram (@wallet).
+    ton_qr_url = payment.tonkeeper_url
 
     # Build fee breakdown for display.
     # payment.required_nano is the exact amount the vault enforces on-chain
@@ -579,15 +591,32 @@ async def _send_payment_details(
         exact_ton     = payment.required_nano / 1_000_000_000
         fee_breakdown = ""
 
+    from renewise.config import is_testnet
+    testnet_active = is_testnet()
+    testnet_notice = ""
+    if testnet_active:
+        testnet_notice = "⚠️ <b>Testnet Mode:</b> Pay using Tonkeeper or MyTonWallet (set to Testnet).\n\n"
+
+    choose_text = (
+        "Choose how to pay:\n"
+        "• Tap your wallet button below to open your app with everything pre-filled.\n"
+        "• Or scan the QR code with your wallet camera.\n\n"
+    ) if testnet_active else (
+        "Choose how to pay:\n"
+        "• <b>Telegram Wallet</b> - tap the button below, instant.\n"
+        "• <b>Other GRAM Wallet</b> - tap the button below, opens your installed wallet app with everything pre-filled.\n"
+        "• Or scan the QR code\n\n"
+    )
+
     caption = (
         f"📲 <b>Payment Details</b>\n\n"
+        f"{testnet_notice}"
         f"{fee_breakdown}"
         f"<b>Amount to send:</b>\n"
         f"<code>{exact_ton:.9f} GRAM</code>\n\n"
-        f"Choose how to pay:\n"
-        f"• <b>Telegram Wallet</b> - tap the button below, instant.\n"
-        f"• <b>Other GRAM Wallet</b> - tap the button below, opens your installed wallet app with everything pre-filled.\n"
-        f"• Or scan the QR code\n\n"
+        f"<b>Recipient address:</b>\n"
+        f"<code>{payment.vault_address}</code>\n\n"
+        f"{choose_text}"
         f"💡 <b>Your wallet may show a warning.</b> This is normal your GRAM is safe!\n\n"
         f"Send the <b>exact amount shown</b> overpayments are refunded automatically."
     )
