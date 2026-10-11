@@ -73,34 +73,42 @@ def pay_now_kb() -> InlineKeyboardMarkup:
     ])
 
 
-def payment_details_kb(payment_url: str, support_url: str = "", tg_wallet_url: str = "") -> InlineKeyboardMarkup:
+def payment_details_kb(
+    payment_url:     str,
+    support_url:     str  = "",
+    tg_wallet_url:   str  = "",
+    tonkeeper_url:   str  = "",
+    mytonwallet_url: str  = "",
+    tonhub_url:      str  = "",
+) -> InlineKeyboardMarkup:
     """
     Payment keyboard shown alongside the QR code.
 
-    payment_url     — ton:// WITH &init= — used for Tonkeeper, MyTonWallet, TonHub, QR
-    tg_wallet_url   — ton:// WITHOUT &init= — used for Telegram Wallet only.
-                      Telegram Wallet shows "Money is currently unavailable" when
-                      it receives a ton:// link with &init= (StateInit), because it
-                      doesn't support contract deployment. The other wallets need
-                      &init= to deploy the vault on first payment.
+    Each wallet button uses a different URL format to bypass Telegram's
+    interception of ton:// links (which always routes to @wallet):
 
-    Row 1: Telegram Wallet (no-init link) | Tonkeeper (full link)
-    Row 2: MyTonWallet (full link)        | TonHub (full link)
-    Row 3: ✅ I've Paid
-    Row 4: 💬 Contact Support  (only when support_url is set)
-    Row 5: ❌ Cancel
+    - Telegram Wallet: ton:// WITHOUT &init= (Telegram Wallet can't handle &init=)
+    - Tonkeeper:       https://app.tonkeeper.com/... (HTTPS, not intercepted)
+    - MyTonWallet:     https://app.mytonwallet.org/... (HTTPS, not intercepted)
+    - TonHub:          https://tonhub.com/... (HTTPS, not intercepted)
+
+    All HTTPS URLs include &init= so the vault deploys on first payment.
+    Falls back to payment_url for any URL not explicitly provided (e.g.
+    old call sites that haven't been updated yet).
     """
-    # Fall back to payment_url if tg_wallet_url wasn't provided (e.g. old call sites)
-    _tg_url = tg_wallet_url or payment_url
+    _tg  = tg_wallet_url   or payment_url
+    _tk  = tonkeeper_url   or payment_url
+    _mtw = mytonwallet_url or payment_url
+    _th  = tonhub_url      or payment_url
 
     rows = [
         [
-            InlineKeyboardButton("📲 Telegram Wallet", url=_tg_url),
-            InlineKeyboardButton("💎 Tonkeeper",        url=payment_url),
+            InlineKeyboardButton("📲 Telegram Wallet", url=_tg),
+            InlineKeyboardButton("💎 Tonkeeper",        url=_tk),
         ],
         [
-            InlineKeyboardButton("🔷 MyTonWallet",     url=payment_url),
-            InlineKeyboardButton("🔹 TonHub",           url=payment_url),
+            InlineKeyboardButton("🔷 MyTonWallet",     url=_mtw),
+            InlineKeyboardButton("🔹 TonHub",           url=_th),
         ],
         [InlineKeyboardButton("✅ I've Paid",           callback_data="join:paid")],
     ]

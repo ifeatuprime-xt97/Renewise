@@ -221,6 +221,9 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     payment_url     = pending.get("payment_url")
     tg_wallet_url   = pending.get("tg_wallet_url") or pending.get("payment_url")
+    tonkeeper_url   = pending.get("tonkeeper_url")  or pending.get("payment_url")
+    mytonwallet_url = pending.get("mytonwallet_url") or pending.get("payment_url")
+    tonhub_url      = pending.get("tonhub_url")     or pending.get("payment_url")
     vault_addr      = pending.get("vault_addr")
     amount_ton      = pending.get("amount_ton")
 
@@ -268,7 +271,13 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             photo=qr_file,
             caption=caption,
             parse_mode="HTML",
-            reply_markup=payment_details_kb(payment_url, _support_url(), tg_wallet_url=tg_wallet_url),
+            reply_markup=payment_details_kb(
+                payment_url, _support_url(),
+                tg_wallet_url=tg_wallet_url,
+                tonkeeper_url=tonkeeper_url,
+                mytonwallet_url=mytonwallet_url,
+                tonhub_url=tonhub_url,
+            ),
         )
     except Exception as e:
         log.error("cb_pay_now send_photo failed for user %s: %r", user.id, e)
@@ -277,7 +286,13 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 user.id,
                 caption,
                 parse_mode="HTML",
-                reply_markup=payment_details_kb(payment_url, _support_url(), tg_wallet_url=tg_wallet_url),
+                reply_markup=payment_details_kb(
+                payment_url, _support_url(),
+                tg_wallet_url=tg_wallet_url,
+                tonkeeper_url=tonkeeper_url,
+                mytonwallet_url=mytonwallet_url,
+                tonhub_url=tonhub_url,
+            ),
             )
         except Exception as e2:
             # Bot can't DM the user (they haven't started a chat with the bot yet).
@@ -301,7 +316,13 @@ async def cb_pay_now(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 await query.edit_message_text(
                     fallback_text,
                     parse_mode="HTML",
-                    reply_markup=payment_details_kb(payment_url, _support_url(), tg_wallet_url=tg_wallet_url),
+                    reply_markup=payment_details_kb(
+                payment_url, _support_url(),
+                tg_wallet_url=tg_wallet_url,
+                tonkeeper_url=tonkeeper_url,
+                mytonwallet_url=mytonwallet_url,
+                tonhub_url=tonhub_url,
+            ),
                 )
             except Exception as e3:
                 log.error(

@@ -98,13 +98,16 @@ class PaymentStatus(str, Enum):
 
 @dataclass
 class PaymentRequest:
-    payment_url:    str    # ton:// with &init= — for Tonkeeper/MyTonWallet/TonHub/QR
-    tg_wallet_url:  str    # ton:// WITHOUT &init= — for Telegram Wallet button
-    vault_address:  str    # raw vault address (for chain-watcher indexing)
-    payload:        str    # opaque string vault address used as unique key
-    amount:         float  # human-readable GRAM (price + buyer_fee, no gas reserve)
-    currency:       str
-    required_nano:  int    # exact nanogram the user must send (stored in DB for race-free verification)
+    payment_url:      str    # ton:// with &init= — QR code only
+    tg_wallet_url:    str    # ton:// WITHOUT &init= — Telegram Wallet button
+    tonkeeper_url:    str    # https://app.tonkeeper.com/... — HTTPS, not intercepted
+    mytonwallet_url:  str    # https://app.mytonwallet.org/... — HTTPS
+    tonhub_url:       str    # https://tonhub.com/... — HTTPS
+    vault_address:    str    # raw vault address (for chain-watcher indexing)
+    payload:          str    # opaque string vault address used as unique key
+    amount:           float  # human-readable GRAM (price + buyer_fee, no gas reserve)
+    currency:         str
+    required_nano:    int    # exact nanogram the user must send (stored in DB for race-free verification)
 
 
 # ── Public interface ──────────────────────────────────────────────────────────
@@ -219,6 +222,9 @@ async def generate_payment_request(
     return PaymentRequest(
         payment_url=link.ton_deep_link,
         tg_wallet_url=link.ton_link_no_init,
+        tonkeeper_url=link.tonkeeper_url,
+        mytonwallet_url=link.mytonwallet_url,
+        tonhub_url=link.tonhub_url,
         vault_address=link.vault_address,
         payload=link.vault_address,
         amount=total_gram,
@@ -298,6 +304,9 @@ async def generate_platform_payment_request(
     return PaymentRequest(
         payment_url=link.ton_deep_link,
         tg_wallet_url=link.ton_link_no_init,
+        tonkeeper_url=link.tonkeeper_url,
+        mytonwallet_url=link.mytonwallet_url,
+        tonhub_url=link.tonhub_url,
         vault_address=link.vault_address,
         payload=link.vault_address,
         amount=total_gram,

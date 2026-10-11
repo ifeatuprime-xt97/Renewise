@@ -59,12 +59,15 @@ class VaultParams:
 
 @dataclass(frozen=True)
 class PaymentLink:
-    vault_address:    str    # user-friendly bounceable address string
-    ton_deep_link:    str    # ton://transfer/... with &init= for Tonkeeper / TonHub / QR
-    ton_link_no_init: str    # ton://transfer/... WITHOUT &init= for Telegram Wallet
-    required_nano:    int    # exact nanogram the buyer must send (incl. gas reserve)
-    state_init_boc:   bytes  # raw BOC bytes of the StateInit cell
-    body_boc:         bytes  # raw BOC bytes of the Pay{} body cell
+    vault_address:      str    # user-friendly bounceable address string
+    ton_deep_link:      str    # ton://transfer/... with &init= — QR code only
+    ton_link_no_init:   str    # ton://transfer/... WITHOUT &init= — Telegram Wallet
+    tonkeeper_url:      str    # https://app.tonkeeper.com/transfer/... with &init=
+    mytonwallet_url:    str    # https://app.mytonwallet.org/transfer/... with &init=
+    tonhub_url:         str    # https://tonhub.com/transfer/... with &init=
+    required_nano:      int    # exact nanogram the buyer must send (incl. gas reserve)
+    state_init_boc:     bytes  # raw BOC bytes of the StateInit cell
+    body_boc:           bytes  # raw BOC bytes of the Pay{} body cell
 
 
 # ── Cell builders ─────────────────────────────────────────────────────────────
@@ -269,8 +272,8 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     body_b64  = base64.urlsafe_b64encode(body_boc).decode().rstrip("=")
     init_b64  = base64.urlsafe_b64encode(state_init_boc).decode().rstrip("=")
 
-    # ton:// WITH &init= — for Tonkeeper, MyTonWallet, TonHub, and QR codes.
-    # These wallets deploy the vault contract on first payment atomically.
+    # ton:// WITH &init= — kept only for the QR code image.
+    # All inline buttons use HTTPS URLs instead (see below).
     ton_link = (
         f"ton://transfer/{addr_str}"
         f"?amount={amount}"
@@ -279,22 +282,51 @@ def build_payment_link(p: VaultParams, code_cell: Cell | None = None) -> Payment
     )
 
     # ton:// WITHOUT &init= — for Telegram Wallet (@wallet built-in).
-    # Telegram Wallet does not support the &init= parameter and shows
-    # "Money is currently unavailable" when it encounters it.
-    # On first payment this means the vault won't be deployed via Telegram Wallet;
-    # that's acceptable — the warning in the message already says to use another
-    # wallet if Telegram Wallet shows an error. On renewals (vault already deployed)
-    # this link works perfectly because no StateInit is needed.
+    # Telegram Wallet shows "Money is currently unavailable" when it receives
+    # a ton:// link containing &init= (StateInit). This stripped version
+    # avoids that error.
     ton_link_no_init = (
         f"ton://transfer/{addr_str}"
         f"?amount={amount}"
         f"&bin={body_b64}"
     )
 
+    # ── HTTPS wallet universal links — NOT intercepted by Telegram ────────────
+    # When a ton:// URL appears as an inline button in a Telegram bot message,
+    # Telegram routes it through @wallet regardless of which button the user
+    # tapped. Using HTTPS universal links bypasses this interception entirely.
+    #
+    # Tonkeeper: supports &init= per https://docs.tonconsole.com/tonkeeper/deep-linking
+    tonkeeper_url = (
+        f"https://app.tonkeeper.com/transfer/{addr_str}"
+        f"?amount={amount}"
+        f"&bin={body_b64}"
+        f"&init={init_b64}"
+    )
+
+    # MyTonWallet: uses the same path/params structure as Tonkeeper
+    mytonwallet_url = (
+        f"https://app.mytonwallet.org/transfer/{addr_str}"
+        f"?amount={amount}"
+        f"&bin={body_b64}"
+        f"&init={init_b64}"
+    )
+
+    # TonHub: documented at https://docs.tonconsole.com/tonkeeper/deep-linking (External section)
+    tonhub_url = (
+        f"https://tonhub.com/transfer/{addr_str}"
+        f"?amount={amount}"
+        f"&bin={body_b64}"
+        f"&init={init_b64}"
+    )
+
     return PaymentLink(
         vault_address=addr_str,
-        ton_deep_link=ton_link,          # with &init=  → Tonkeeper / MyTonWallet / TonHub / QR
-        ton_link_no_init=ton_link_no_init,  # without &init= → Telegram Wallet
+        ton_deep_link=ton_link,           # QR code only — ton:// with &init=
+        ton_link_no_init=ton_link_no_init,  # Telegram Wallet button — ton:// no &init=
+        tonkeeper_url=tonkeeper_url,
+        mytonwallet_url=mytonwallet_url,
+        tonhub_url=tonhub_url,
         required_nano=amount,
         state_init_boc=state_init_boc,
         body_boc=body_boc,
