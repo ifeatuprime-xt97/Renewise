@@ -42,22 +42,22 @@
     })();
   </script>
   <style>
-    /* ── Design tokens MyTonWallet-inspired palette ── */
+    /* ── Design tokens — MyTonWallet exact palette ── */
     :root {
-      --bg: #090D16;
-      --surface: #131821;
-      --surface2: #1a2133;
+      --bg: #0E1621;
+      --surface: #1C2333;
+      --surface2: #222D3E;
       --text: #ffffff;
       --sub: rgba(255, 255, 255, 0.55);
-      --accent: #0098EA;
-      --accent-dark: #007ac4;
+      --accent: #2AABEE;
+      --accent-dark: #1a8bc4;
       --accent-txt: #ffffff;
-      --link: #0098EA;
-      --destructive: #ff5c5c;
+      --link: #2AABEE;
+      --destructive: #e05c5c;
       /* semantic */
-      --success: #4ade80;
-      --warn: #fbbf24;
-      --danger: #ff5c5c;
+      --success: #2DC55E;
+      --warn: #f5a623;
+      --danger: #e05c5c;
       /* glass */
       --glass-bg: rgba(255, 255, 255, 0.04);
       --glass-border: rgba(255, 255, 255, 0.08);
@@ -145,9 +145,9 @@
       display: flex;
       width: calc(100% - 48px);
       max-width: 380px;
-      background: rgba(19, 24, 33, 0.88);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(28, 35, 51, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: none;
       border-radius: 40px;
       padding: 6px 8px;
@@ -390,31 +390,31 @@
       justify-content: center;
       flex-shrink: 0;
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: none;
       transition: all 0.2s ease;
     }
 
     .ico-price {
-      background: rgba(0, 152, 234, 0.12);
-      border-color: rgba(0, 152, 234, 0.22);
+      background: rgba(42, 171, 238, 0.15);
+      border-color: rgba(42, 171, 238, 0.0);
     }
 
     .ico-price svg {
-      stroke: #38bdf8;
+      stroke: #2AABEE;
     }
 
     .ico-members {
-      background: rgba(74, 222, 128, 0.12);
-      border-color: rgba(74, 222, 128, 0.22);
+      background: rgba(45, 197, 94, 0.15);
+      border-color: rgba(45, 197, 94, 0.0);
     }
 
     .ico-members svg {
-      stroke: #4ade80;
+      stroke: #2DC55E;
     }
 
     .ico-wallet {
-      background: rgba(168, 85, 247, 0.12);
-      border-color: rgba(168, 85, 247, 0.22);
+      background: rgba(168, 85, 247, 0.15);
+      border-color: rgba(168, 85, 247, 0.0);
     }
 
     .ico-wallet svg {
@@ -422,12 +422,12 @@
     }
 
     .ico-link {
-      background: rgba(0, 152, 234, 0.12);
-      border-color: rgba(0, 152, 234, 0.22);
+      background: rgba(42, 171, 238, 0.15);
+      border-color: rgba(42, 171, 238, 0.0);
     }
 
     .ico-link svg {
-      stroke: #38bdf8;
+      stroke: #2AABEE;
     }
 
     .data-row .ico svg {
@@ -529,10 +529,10 @@
     }
 
     .act-btn.primary {
-      background: linear-gradient(135deg, #0098EA 0%, #0084cc 100%);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: linear-gradient(135deg, #2AABEE 0%, #1a8bc4 100%);
+      border: none;
       color: #ffffff;
-      box-shadow: 0 4px 14px rgba(0, 152, 234, 0.28);
+      box-shadow: 0 4px 14px rgba(42, 171, 238, 0.30);
       border-radius: 40px;
     }
 
@@ -725,7 +725,7 @@
     .btn-primary {
       background: var(--accent);
       color: #ffffff;
-      box-shadow: 0 4px 24px rgba(0, 152, 234, .35);
+      box-shadow: 0 4px 24px rgba(42, 171, 238, .32);
       border-radius: 40px;
     }
 
@@ -1559,7 +1559,7 @@
     }
 
     .admin-card {
-      background: linear-gradient(160deg, #0098EA 0%, #2AABEE 50%, #4FC3FF 100%);
+      background: linear-gradient(160deg, #1a8bc4 0%, #2AABEE 50%, #54c8ff 100%);
       border: none;
       border-radius: 28px;
       padding: 22px 20px 18px;
