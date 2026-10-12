@@ -44,9 +44,9 @@
   <style>
     /* ── Design tokens MyTonWallet-inspired palette ── */
     :root {
-      --bg: #0C1220;
-      --surface: #18202F;
-      --surface2: #1F2B3E;
+      --bg: #090D16;
+      --surface: #131821;
+      --surface2: #1a2133;
       --text: #ffffff;
       --sub: rgba(255, 255, 255, 0.55);
       --accent: #0098EA;
@@ -59,8 +59,8 @@
       --warn: #fbbf24;
       --danger: #ff5c5c;
       /* glass */
-      --glass-bg: rgba(255, 255, 255, 0.06);
-      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-bg: rgba(255, 255, 255, 0.04);
+      --glass-border: rgba(255, 255, 255, 0.08);
       --glass-blur: 14px;
       /* geometry */
       --r: 32px;
@@ -145,13 +145,13 @@
       display: flex;
       width: calc(100% - 48px);
       max-width: 380px;
-      background: rgba(24, 32, 47, 0.94);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, .16);
+      background: rgba(19, 24, 33, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, .1);
       border-radius: 40px;
       padding: 6px 8px;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, .6), 0 2px 8px rgba(0, 0, 0, .4), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .6), 0 2px 8px rgba(0, 0, 0, .4);
     }
 
     .nav-item {
@@ -243,12 +243,11 @@
     ══════════════════════════════════════════════════ */
     .glass {
       background: var(--surface);
-      border: 1px solid rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: var(--r);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.06) inset,
-        0 2px 4px rgba(0, 0, 0, .4),
-        0 8px 28px rgba(0, 0, 0, .32);
+        0 1px 2px rgba(0, 0, 0, .3),
+        0 8px 24px rgba(0, 0, 0, .25);
     }
 
     /* ══════════════════════════════════════════════════
@@ -261,10 +260,8 @@
       position: relative;
       overflow: hidden;
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.07) inset,
-        0 2px 6px rgba(0, 0, 0, .4),
-        0 12px 36px rgba(0, 0, 0, .36);
-      border: 1px solid rgba(255, 255, 255, 0.10);
+        0 1px 2px rgba(0, 0, 0, .3),
+        0 8px 24px rgba(0, 0, 0, .25);
       transition: transform .15s, box-shadow .15s;
     }
 
@@ -279,7 +276,7 @@
       left: 0;
       right: 0;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0), transparent);
     }
 
     /* ── Card header ── */
@@ -390,8 +387,8 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       transition: all 0.2s ease;
     }
 
@@ -800,9 +797,9 @@
     .field select {
       display: block;
       width: 100%;
-      background: var(--surface2);
+      background: #1a2133;
       color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, .12);
+      border: 1px solid rgba(255, 255, 255, .09);
       border-radius: var(--r-sm);
       padding: 13px 14px;
       font-family: inherit;
@@ -888,8 +885,8 @@
       padding: 14px 16px;
       margin-bottom: 10px;
       border-radius: var(--r-sm);
-      background: var(--surface2);
-      border: 1px solid rgba(255, 255, 255, .09);
+      background: #1a2133;
+      border: 1px solid rgba(255, 255, 255, .07);
       cursor: pointer;
       transition: border-color .18s, background .18s;
       -webkit-tap-highlight-color: transparent;
@@ -1416,8 +1413,8 @@
       justify-content: center;
       gap: 10px;
       padding: 16px 10px;
-      background: var(--surface);
-      border: 1px solid rgba(255, 255, 255, .11);
+      background: #131821;
+      border: 1px solid rgba(255, 255, 255, .07);
       border-radius: var(--r-sm);
       color: #ffffff;
       font-family: inherit;
@@ -1449,8 +1446,8 @@
 
     /* inline sub-panels */
     .subpanel {
-      background: var(--surface);
-      border: 1px solid rgba(255, 255, 255, .10);
+      background: #131821;
+      border: 1px solid rgba(255, 255, 255, .07);
       border-radius: var(--r);
       padding: 18px;
       margin-top: 2px;
@@ -1762,7 +1759,7 @@
 
     .admin-stat-label.sub {
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.65);
+      color: rgba(255, 255, 255, 0.5);
       text-transform: uppercase;
       letter-spacing: 0.4px;
       margin-top: 2px;
