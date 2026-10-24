@@ -85,6 +85,7 @@ _TG_MAX_LEN: int = 4000
 # a full vault scan. Updated by renewise/watcher/inprocess_watcher.py.
 # Initialised to current time so the monitor doesn't false-alarm at startup.
 watcher_last_heartbeat: float = time.monotonic()
+watcher_is_sleeping: bool = False
 
 
 # ── Internal state ────────────────────────────────────────────────────────────
@@ -236,6 +237,9 @@ async def _check_telegram_api(bot: "Bot") -> None:
 
 
 async def _check_watcher_heartbeat(bot: "Bot") -> None:
+    if watcher_is_sleeping:
+        await _resolve(bot, _state.watcher, "Payment Watcher")
+        return
     age = time.monotonic() - watcher_last_heartbeat
     if age > WATCHER_STALE_SECONDS:
         await _alert(

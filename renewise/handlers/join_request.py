@@ -445,8 +445,10 @@ async def cb_ive_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         try:
             from renewise.watcher.toncenter import fetch_transactions, extract_tx_hash, extract_in_msg_value
             from renewise.watcher.db import is_tx_processed
-            from renewise.watcher.inprocess_watcher import _process_payment_inprocess
+            from renewise.watcher.inprocess_watcher import _process_payment_inprocess, wake_watcher_for_vault
             from renewise.db.connection import _db as _conn
+
+            wake_watcher_for_vault(vault_address)
 
             # Fetch required amount from DB avoids re-computing the exchange rate
             async with _conn() as db:
@@ -596,7 +598,9 @@ async def cb_ive_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         from renewise.watcher.toncenter import fetch_transactions, extract_tx_hash, extract_in_msg_value
         from renewise.watcher.db import is_tx_processed
-        from renewise.watcher.inprocess_watcher import _process_payment_inprocess
+        from renewise.watcher.inprocess_watcher import _process_payment_inprocess, wake_watcher_for_vault
+
+        wake_watcher_for_vault(vault_address)
 
         # Fetch the locked-in required amount from DB to avoid exchange-rate drift
         user_row_inner = await queries.get_user_by_telegram_id(user.id)

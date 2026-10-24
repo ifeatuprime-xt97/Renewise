@@ -207,6 +207,13 @@ _pg_lock = asyncio.Lock()
 async def _get_pool() -> Any:
     global _pg_pool
     if _pg_pool is not None:
+        try:
+            cur_loop = asyncio.get_running_loop()
+            if _pg_pool._loop is not cur_loop or _pg_pool._loop.is_closed():
+                _pg_pool = None
+        except Exception:
+            _pg_pool = None
+    if _pg_pool is not None:
         return _pg_pool
     async with _pg_lock:
         if _pg_pool is None:

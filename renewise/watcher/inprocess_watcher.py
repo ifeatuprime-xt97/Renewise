@@ -25,6 +25,7 @@ poll_vaults_inprocess(app)
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 import logging
 from typing import TYPE_CHECKING
 
@@ -50,6 +51,83 @@ if TYPE_CHECKING:
     from telegram.ext import Application
 
 log = logging.getLogger(__name__)
+
+
+# ── Active Vault Registry & Trigger System ───────────────────────────────────
+
+@dataclass
+class VaultWatchEntry:
+    vault_address: str
+    canonical: str
+    network: str
+    created_at: float
+    expires_at: float
+    confirmed_at: float | None = None
+
+
+# Authoritative in-memory registry of vaults actively being monitored.
+# Woken when a new vault is created or visited; cleared once paid (after 5m grace)
+# or expired (after 30m).
+_active_vaults: dict[str, VaultWatchEntry] = {}
+_wake_event: asyncio.Event = asyncio.Event()
+
+
+def wake_watcher_for_vault(vault_address: str, network: str = "mainnet") -> None:
+    """
+    Register a newly created vault address in memory and wake the in-process watcher.
+    Safe to call from any async or sync handler.
+    """
+    if not vault_address:
+        return
+    try:
+        from pytoniq_core import Address as _Addr
+        canonical = f"0:{_Addr(vault_address).hash_part.hex()}"
+    except Exception:
+        canonical = vault_address
+
+    import time as _t
+    now = _t.time()
+    if canonical in _active_vaults:
+        existing = _active_vaults[canonical]
+        existing.expires_at = max(existing.expires_at, now + 1800.0)
+    else:
+        _active_vaults[canonical] = VaultWatchEntry(
+            vault_address=vault_address,
+            canonical=canonical,
+            network=network,
+            created_at=now,
+            expires_at=now + 1800.0,
+            confirmed_at=None,
+        )
+    _wake_event.set()
+    log.info(
+        "wake_watcher_for_vault: registered vault %s (canonical=%s network=%s). Active count=%d",
+        vault_address, canonical, network, len(_active_vaults),
+    )
+
+
+def mark_vault_confirmed(vault_address: str) -> None:
+    """
+    Mark vault payment as confirmed. Starts the 5-minute post-confirmation timer.
+    The watcher will continue watching for 5 minutes before stopping.
+    """
+    if not vault_address:
+        return
+    try:
+        from pytoniq_core import Address as _Addr
+        canonical = f"0:{_Addr(vault_address).hash_part.hex()}"
+    except Exception:
+        canonical = vault_address
+
+    entry = _active_vaults.get(canonical)
+    if entry:
+        import time as _t
+        if entry.confirmed_at is None:
+            entry.confirmed_at = _t.time()
+            log.info(
+                "mark_vault_confirmed: vault %s marked confirmed. Will stop watching after 5-minute grace period.",
+                canonical,
+            )
 
 
 # ── Insufficient payment notifier ─────────────────────────────────────────────
@@ -207,6 +285,7 @@ async def _process_platform_charge_inprocess(
         )
     
     log.info("inprocess_platform: charge %d status updated to completed", charge["id"])
+    mark_vault_confirmed(charge.get("vault_address") or "")
         
     from renewise.services.webhooks import dispatch_webhook
     asyncio.create_task(dispatch_webhook(charge["id"]))
@@ -410,6 +489,7 @@ async def _process_payment_inprocess(
 
     # Step 5 activate subscription in DB
     new_renewal_date = await activate_subscription(user_id, group_id, tx_hash=tx_hash)
+    mark_vault_confirmed(vault_address)
     log.info(
         "inprocess: activated | sub_id=%d user=%d group=%d tx=%s is_renewal=%s",
         sub_id, user_id, group_id, tx_hash, is_renewal,
@@ -727,14 +807,15 @@ async def poll_vaults_inprocess(app: "Application") -> None:
     # Track hashes that failed the amount check so we don't re-notify on every poll.
     _insufficient: set[str] = set()
 
+    import time as _init_time
     # Stale pending cleanup: run once per hour in dev mode.
-    _last_cleanup: float = 0.0
+    _last_cleanup: float = _init_time.monotonic()
     # Wallet change apply: run every 15 minutes in dev mode.
-    _last_wallet_apply: float = 0.0
-    # Charge expiration: run every 5 minutes
-    _last_charge_expire: float = 0.0
+    _last_wallet_apply: float = _init_time.monotonic()
+    # Charge expiration: run every 30 minutes
+    _last_charge_expire: float = _init_time.monotonic()
     # Pending-send refund retry: run every 10 minutes in dev mode.
-    _last_refund_retry: float = 0.0
+    _last_refund_retry: float = _init_time.monotonic()
 
     # Track in-flight payment tasks so they can be awaited/cancelled on shutdown.
     # WeakSet would lose references before tasks complete; use a plain set and
@@ -744,15 +825,35 @@ async def poll_vaults_inprocess(app: "Application") -> None:
     def _remove_done(t: asyncio.Task) -> None:
         _inflight.discard(t)
 
-    # ── Vault poll-tier constants ─────────────────────────────────────────────
-    # Hot  vault active within HOT_WINDOW_SECONDS → poll every POLL_INTERVAL_SECONDS
-    # Warm older than HOT_WINDOW_SECONDS           → poll every WARM_POLL_SECONDS
-    HOT_WINDOW_SECONDS: float = 1800.0   # 30 minutes
-    WARM_POLL_SECONDS:  float = 60.0     # 1 minute between warm polls
-
     # Per-vault last-polled timestamp (canonical address → monotonic time).
-    # Checked before each fetch to skip vaults whose tier interval hasn't elapsed.
     _last_polled: dict[str, float] = {}
+
+    # ── Startup recovery ──────────────────────────────────────────────────────
+    # Seed _active_vaults from DB for any pending subscriptions/charges created in the last 30m
+    try:
+        import time as _init_time
+        startup_vaults = await get_vaults_to_watch()
+        now_wall = _init_time.time()
+        for v_addr, v_net, last_act in startup_vaults:
+            try:
+                from pytoniq_core import Address as _Addr
+                canonical = f"0:{_Addr(v_addr).hash_part.hex()}"
+            except Exception:
+                canonical = v_addr
+            _active_vaults[canonical] = VaultWatchEntry(
+                vault_address=v_addr,
+                canonical=canonical,
+                network=v_net,
+                created_at=last_act if last_act else now_wall,
+                expires_at=max(now_wall + 300.0, (last_act or now_wall) + 1800.0),
+                confirmed_at=None,
+            )
+        if _active_vaults:
+            log.info("inprocess watcher startup: loaded %d active pending vault(s) from DB", len(_active_vaults))
+        else:
+            log.info("inprocess watcher startup: 0 pending vaults. Ready for on-demand trigger.")
+    except Exception as seed_exc:
+        log.warning("inprocess watcher startup seed failed (non-fatal): %s", seed_exc)
 
     try:
         while True:
@@ -774,7 +875,7 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                     await _apply_wallet_changes_inprocess(app)
                     _last_wallet_apply = now
 
-                if now - _last_charge_expire >= 1800:  # every 30 min reduced from 5 min to save DB compute
+                if now - _last_charge_expire >= 1800:  # every 30 min
                     await _expire_stale_charges_inprocess()
                     _last_charge_expire = now
 
@@ -782,58 +883,53 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                     await _retry_pending_send_refunds_inprocess(app)
                     _last_refund_retry = now
 
-                # ── Fetch vault list with activity timestamps ─────────────────
-                vaults = await get_vaults_to_watch()
+                # ── Evict expired or post-confirmation grace completed vaults ─
+                evicted = []
+                for c_addr, entry in list(_active_vaults.items()):
+                    if entry.confirmed_at is not None:
+                        if wall_now - entry.confirmed_at >= 300.0:  # 5 minutes grace
+                            evicted.append((c_addr, "confirmed_grace_ended"))
+                    elif wall_now >= entry.expires_at:  # 30 minutes expired without payment
+                        evicted.append((c_addr, "checkout_expired"))
 
-                hot_count  = 0
-                warm_count = 0
-                skip_count = 0
+                for c_addr, reason in evicted:
+                    _active_vaults.pop(c_addr, None)
+                    seen.pop(c_addr, None)
+                    _last_polled.pop(c_addr, None)
+                    log.info("inprocess: stopped watching vault %s (reason=%s). Active count=%d", c_addr, reason, len(_active_vaults))
 
-                for vault_address, network, last_activity_epoch in vaults:
-                    # Normalise address → stable canonical key
+                # ── Standby mode when no vaults need watching ─────────────────
+                if not _active_vaults:
+                    import renewise.monitor as _monitor
+                    _monitor.watcher_is_sleeping = True
+                    _monitor.watcher_last_heartbeat = _time.monotonic()
+                    log.info("inprocess watcher: no active vaults. Standby until next payment vault is generated...")
+
+                    _wake_event.clear()
                     try:
-                        from pytoniq_core import Address as _Addr
-                        _a = _Addr(vault_address)
-                        canonical = f"0:{_a.hash_part.hex()}"
-                    except Exception:
-                        canonical = vault_address
+                        # Sleep until a new checkout is generated, or wake every 10 min for maintenance
+                        await asyncio.wait_for(_wake_event.wait(), timeout=600.0)
+                        log.info("inprocess watcher: woken by trigger! Active count=%d", len(_active_vaults))
+                    except asyncio.TimeoutError:
+                        log.debug("inprocess watcher: standby maintenance tick")
+                    finally:
+                        _monitor.watcher_is_sleeping = False
+                        _monitor.watcher_last_heartbeat = _time.monotonic()
+                    continue
 
-                    # ── Tier decision ─────────────────────────────────────────
-                    # A vault is HOT if its last DB activity was within
-                    # HOT_WINDOW_SECONDS.  This covers:
-                    #   • Brand-new pending subscriptions (just created)
-                    #   • Vaults where a payment was processed recently
-                    #   • Platform charges just issued
-                    # Everything else is WARM and polled at 1-minute intervals
-                    # to drastically reduce API call volume at scale.
-                    #
-                    # Special case: if last_activity_epoch is 0 (NULL in DB),
-                    # treat as hot so we never silently miss a new vault.
-                    activity_age = wall_now - last_activity_epoch if last_activity_epoch else 0.0
-                    is_hot = activity_age <= HOT_WINDOW_SECONDS
-
-                    last_poll = _last_polled.get(canonical, 0.0)
-                    time_since_poll = now - last_poll
-
-                    if is_hot:
-                        # Hot: poll every POLL_INTERVAL_SECONDS (already enforced
-                        # by the outer sleep just always poll hot vaults)
-                        hot_count += 1
-                    else:
-                        # Warm: only poll when WARM_POLL_SECONDS have elapsed
-                        if time_since_poll < WARM_POLL_SECONDS:
-                            skip_count += 1
-                            continue
-                        warm_count += 1
+                # ── Poll active checkout vaults ───────────────────────────────
+                polled_count = 0
+                for canonical, entry in list(_active_vaults.items()):
+                    network = entry.network
 
                     # ── TonCenter fetch ───────────────────────────────────────
                     try:
                         txs = await fetch_transactions(canonical, limit=20, network=network)
                         _last_polled[canonical] = now
+                        polled_count += 1
                         if not txs:
                             log.debug(
-                                "inprocess: no txs returned for vault %s (network=%s) "
-                                "vault may be undeployed, or API key invalid for this network",
+                                "inprocess: no txs returned for vault %s (network=%s)",
                                 canonical, network,
                             )
                     except Exception as exc:
@@ -841,14 +937,12 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                         if "429" in err_str:
                             poll_backoff = max(poll_backoff, 5)
                             log.warning(
-                                "inprocess: 429 on vault %s after key manager exhausted "
-                                "outer backoff %ds",
+                                "inprocess: 429 on vault %s after key manager exhausted outer backoff %ds",
                                 canonical, poll_backoff,
                             )
                         elif "401" in err_str or "Unauthorized" in err_str or "Invalid api-key" in err_str:
                             log.error(
-                                "inprocess: API key rejected for vault %s (network=%s) "
-                                "check TONCENTER_API_KEYS_TESTNET is set for testnet vaults",
+                                "inprocess: API key rejected for vault %s (network=%s)",
                                 canonical, network,
                             )
                         else:
@@ -881,9 +975,8 @@ async def poll_vaults_inprocess(app: "Application") -> None:
 
                         seen[canonical].add(tx_hash)
                         log.info(
-                            "inprocess: NEW tx detected tx=%s vault=%s amount=%d tier=%s",
+                            "inprocess: NEW tx detected tx=%s vault=%s amount=%d",
                             tx_hash, canonical, amount_nano,
-                            "hot" if is_hot else "warm",
                         )
                         t = asyncio.create_task(
                             _process_payment_inprocess(
@@ -897,9 +990,8 @@ async def poll_vaults_inprocess(app: "Application") -> None:
                         t.add_done_callback(_remove_done)
 
                 log.info(
-                    "inprocess watcher: %d vault(s) total "
-                    "hot=%d polled, warm=%d polled, warm=%d skipped",
-                    len(vaults), hot_count, warm_count, skip_count,
+                    "inprocess watcher: %d active vault(s) being watched (polled=%d)",
+                    len(_active_vaults), polled_count,
                 )
 
             except asyncio.CancelledError:

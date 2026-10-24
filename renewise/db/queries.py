@@ -749,7 +749,7 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
     async with _db() as db:
         if USE_POSTGRES:
             rows = await db.fetch(
-                # Bot subscription vaults activity from subscription timestamps
+                # Bot subscription vaults activity from subscription timestamps (only pending within 30 min)
                 "SELECT DISTINCT vr.vault_address, $1::text AS network, "
                 "  EXTRACT(EPOCH FROM GREATEST("
                 "    COALESCE(s.updated_at, s.created_at), "
@@ -757,7 +757,8 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
                 "  )) AS last_activity "
                 "FROM vault_registry vr "
                 "JOIN subscriptions s ON s.id = vr.subscription_id "
-                "WHERE s.status IN ('pending', 'active') "
+                "WHERE s.status = 'pending' "
+                "AND COALESCE(s.updated_at, s.created_at) >= NOW() - INTERVAL '30 minutes' "
                 "UNION "
                 "SELECT DISTINCT vault_address, $1::text AS network, "
                 "  EXTRACT(EPOCH FROM GREATEST("
@@ -766,7 +767,8 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
                 "  )) AS last_activity "
                 "FROM subscriptions "
                 "WHERE vault_address IS NOT NULL "
-                "AND status IN ('pending', 'active') "
+                "AND status = 'pending' "
+                "AND COALESCE(updated_at, created_at) >= NOW() - INTERVAL '30 minutes' "
                 "UNION "
                 "SELECT DISTINCT vault_address, "
                 "  CASE WHEN mode = 'test' THEN 'testnet' ELSE $1::text END AS network, "
@@ -776,8 +778,9 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
                 "  )) AS last_activity "
                 "FROM platform_charges "
                 "WHERE vault_address IS NOT NULL "
-                "AND status IN ('pending', 'expired') "
-                "AND tx_hash IS NULL",
+                "AND status = 'pending' "
+                "AND tx_hash IS NULL "
+                "AND created_at >= NOW() - INTERVAL '30 minutes'",
                 bot_network,
             )
         else:
@@ -790,7 +793,8 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
                 "  )) AS REAL) AS last_activity "
                 "FROM vault_registry vr "
                 "JOIN subscriptions s ON s.id = vr.subscription_id "
-                "WHERE s.status IN ('pending', 'active') "
+                "WHERE s.status = 'pending' "
+                "AND datetime(COALESCE(s.updated_at, s.created_at)) >= datetime('now', '-30 minutes') "
                 "GROUP BY vr.vault_address "
                 "UNION "
                 "SELECT DISTINCT vault_address, $1 AS network, "
@@ -800,7 +804,8 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
                 "  )) AS REAL) AS last_activity "
                 "FROM subscriptions "
                 "WHERE vault_address IS NOT NULL "
-                "AND status IN ('pending', 'active') "
+                "AND status = 'pending' "
+                "AND datetime(COALESCE(updated_at, created_at)) >= datetime('now', '-30 minutes') "
                 "GROUP BY vault_address "
                 "UNION "
                 "SELECT DISTINCT vault_address, "
@@ -811,8 +816,9 @@ async def get_vaults_to_watch() -> list[tuple[str, str, float]]:
                 "  )) AS REAL) AS last_activity "
                 "FROM platform_charges "
                 "WHERE vault_address IS NOT NULL "
-                "AND status IN ('pending', 'expired') "
+                "AND status = 'pending' "
                 "AND tx_hash IS NULL "
+                "AND datetime(COALESCE(created_at, CURRENT_TIMESTAMP)) >= datetime('now', '-30 minutes') "
                 "GROUP BY vault_address",
                 bot_network,
             )

@@ -339,6 +339,13 @@ async def api_public_checkout(request: Request, charge_id: int) -> dict:
         else:
             _global_buyer_bps = _stored_bps
 
+        if row["status"] == "pending" and vault_address:
+            try:
+                from renewise.watcher.inprocess_watcher import wake_watcher_for_vault
+                wake_watcher_for_vault(vault_address, network="testnet" if is_test else "mainnet")
+            except Exception:
+                pass
+
         return {
             "id": row["id"],
             "external_reference": row["external_reference"],
@@ -390,6 +397,12 @@ async def api_public_checkout_recheck(request: Request, charge_id: int) -> dict:
     # Route to the right TonCenter network based on the charge mode
     network = "testnet" if row["mode"] == "test" else "mainnet"
 
+    try:
+        from renewise.watcher.inprocess_watcher import wake_watcher_for_vault, mark_vault_confirmed
+        wake_watcher_for_vault(vault_address, network=network)
+    except Exception:
+        pass
+
     from renewise.watcher.toncenter import fetch_transactions, extract_tx_hash, extract_in_msg_value
     from renewise.watcher.db import is_tx_processed, mark_tx_processed
     from renewise.db.queries import get_platform_charge_by_vault
@@ -426,6 +439,11 @@ async def api_public_checkout_recheck(request: Request, charge_id: int) -> dict:
                 "completed_at = NOW(), tx_hash = $1 WHERE id = $2",
                 tx_hash, charge["id"],
             )
+        try:
+            from renewise.watcher.inprocess_watcher import mark_vault_confirmed
+            mark_vault_confirmed(vault_address)
+        except Exception:
+            pass
         log.info("public recheck: completed charge %d via tx=%s", charge_id, tx_hash)
         asyncio.create_task(dispatch_webhook(charge["id"]))
         return {"status": "completed", "tx_hash": tx_hash}

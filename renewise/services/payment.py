@@ -194,6 +194,12 @@ async def generate_payment_request(
         # This is the column the polling loop reads; vault_registry is a secondary index.
         await queries.set_subscription_vault_address(subscription_id, link.vault_address)
         try:
+            from renewise.watcher.inprocess_watcher import wake_watcher_for_vault
+            from renewise.config import is_testnet as _cfg_testnet
+            wake_watcher_for_vault(link.vault_address, network="testnet" if _cfg_testnet() else "mainnet")
+        except Exception as _w_err:
+            log.debug("wake_watcher_for_vault failed (non-fatal): %s", _w_err)
+        try:
             from renewise.watcher.db import register_vault
             await register_vault(
                 vault_address=link.vault_address,
@@ -300,6 +306,15 @@ async def generate_platform_payment_request(
             )
     except Exception:
         pass  # Webhook server may not be running in dev; non-fatal
+
+    # Wake in-process watcher to begin monitoring this platform charge vault
+    try:
+        from renewise.watcher.inprocess_watcher import wake_watcher_for_vault
+        from renewise.config import is_testnet as _cfg_testnet
+        _net = "testnet" if (platform.get("mode") == "test" or _cfg_testnet()) else "mainnet"
+        wake_watcher_for_vault(link.vault_address, network=_net)
+    except Exception as _w_err:
+        log.debug("wake_watcher_for_vault platform failed (non-fatal): %s", _w_err)
 
     return PaymentRequest(
         payment_url=link.ton_deep_link,
