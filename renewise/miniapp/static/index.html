@@ -3129,6 +3129,7 @@ http_response_code(200);</pre>
 
     const App = {
       _cur: 'dashboard',
+      _bbHandler: null, // tracks current BackButton listener so we can remove it before adding a new one
 
       // Maps each sub-page to where its back button should go
       _backTargets: {
@@ -3163,7 +3164,9 @@ http_response_code(200);</pre>
           if (bnd) bnd.style.display = 'none';
           // Show Telegram native back button for sub-pages
           if (this._backTargets[page]) {
-            WebApp.BackButton.onClick = this._backTargets[page];
+            if (this._bbHandler) { WebApp.BackButton.offClick(this._bbHandler); }
+            this._bbHandler = this._backTargets[page];
+            WebApp.BackButton.onClick(this._bbHandler);
             WebApp.BackButton.show();
           }
         } else {
@@ -3175,6 +3178,7 @@ http_response_code(200);</pre>
             if (bnd) bnd.style.display = 'none';
           }
           // Hide Telegram native back button on root/tab pages
+          if (this._bbHandler) { WebApp.BackButton.offClick(this._bbHandler); this._bbHandler = null; }
           WebApp.BackButton.hide();
         }
 
