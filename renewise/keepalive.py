@@ -83,11 +83,11 @@ def load_settings(
     except ValueError:
         port = 0
 
-    interval_raw = env.get("KEEP_ALIVE_INTERVAL", "600")
+    interval_raw = env.get("KEEP_ALIVE_INTERVAL", "300")
     try:
         interval = int(interval_raw)
     except ValueError:
-        interval = 600
+        interval = 300
     interval = max(30, interval)
 
     urls: list[str] = []
@@ -216,7 +216,7 @@ async def _ping_once(session: ClientSession, url: str) -> None:
     try:
         async with session.get(url) as resp:
             log.info("keep-alive ping %s → %s", url, resp.status)
-    except (ClientError, asyncio.TimeoutError, OSError) as exc:
+    except Exception as exc:
         log.warning("keep-alive ping failed %s: %s", url, exc)
 
 
@@ -230,22 +230,47 @@ async def ping_loop(
     if not urls:
         return
 
-    owns_session = session is None
-    if session is None:
-        session = ClientSession(
-            timeout=ClientTimeout(total=60),
-            headers={"User-Agent": _USER_AGENT},
-        )
-
     try:
         if initial_delay > 0:
             await asyncio.sleep(initial_delay)
+    except asyncio.CancelledError:
+        return
+
+    owns_session = session is None
+    curr_session = session
+
+    try:
         while True:
-            await asyncio.gather(*(_ping_once(session, url) for url in urls))
-            await asyncio.sleep(interval)
+            try:
+                if curr_session is None or getattr(curr_session, "closed", False) is True:
+                    curr_session = ClientSession(
+                        timeout=ClientTimeout(total=30),
+                        headers={"User-Agent": _USER_AGENT},
+                    )
+                    owns_session = True
+
+                await asyncio.gather(
+                    *(_ping_once(curr_session, url) for url in urls),
+                    return_exceptions=True,
+                )
+                await asyncio.sleep(interval)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                log.warning("keep-alive unexpected ping loop error: %s", exc)
+                if owns_session and curr_session is not None and not curr_session.closed:
+                    try:
+                        await curr_session.close()
+                    except Exception:
+                        pass
+                    curr_session = None
+                await asyncio.sleep(min(30, interval))
     finally:
-        if owns_session:
-            await session.close()
+        if owns_session and curr_session is not None and not curr_session.closed:
+            try:
+                await curr_session.close()
+            except Exception:
+                pass
 
 
 async def run_keepalive(settings: KeepAliveSettings | None = None) -> None:
@@ -264,6 +289,7 @@ async def run_keepalive(settings: KeepAliveSettings | None = None) -> None:
 
     runner: web.AppRunner | None = None
     ping_task: asyncio.Task | None = None
+    stop_event = asyncio.Event()
 
     if settings.should_serve:
         try:
@@ -290,10 +316,9 @@ async def run_keepalive(settings: KeepAliveSettings | None = None) -> None:
         )
 
     try:
-        if ping_task is not None:
-            await ping_task
-        else:
-            await asyncio.Event().wait()
+        # Keep the HTTP server running until explicitly cancelled,
+        # decoupled from ping_task lifecycle so transient pinger failures never kill the server.
+        await stop_event.wait()
     except asyncio.CancelledError:
         raise
     finally:

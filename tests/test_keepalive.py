@@ -61,7 +61,7 @@ def test_load_settings_render_defaults():
     assert settings.should_run is True
     assert settings.port == 10000
     assert settings.urls == ("https://renewise-bot.onrender.com/health",)
-    assert settings.interval == 600
+    assert settings.interval == 300
 
 
 def test_load_settings_extra_urls_deduped_and_normalized():
@@ -101,7 +101,7 @@ def test_load_settings_invalid_port_and_interval():
         "KEEP_ALIVE_INTERVAL": "nope",
     })
     assert settings.port == 0
-    assert settings.interval == 600
+    assert settings.interval == 300
 
 
 def test_config_ignores_invalid_port_values(monkeypatch):
@@ -119,12 +119,17 @@ def test_config_ignores_invalid_port_values(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_health_endpoints():
-    async with TestClient(TestServer(_build_app())) as client:
-        for path in ("/", "/health", "/healthz"):
-            resp = await client.get(path)
-            assert resp.status == 200
-            body = await resp.json()
-            assert body == {"status": "ok", "service": "renewise-bot"}
+    import json
+    app = _build_app()
+    paths = {r.resource.canonical for r in app.router.routes() if r.resource}
+    assert "/" in paths
+    assert "/health" in paths
+    assert "/healthz" in paths
+
+    req = MagicMock(spec=web.Request)
+    resp = await handle_health(req)
+    assert resp.status == 200
+    assert json.loads(resp.text) == {"status": "ok", "service": "renewise-bot"}
 
 
 @pytest.mark.asyncio
@@ -170,12 +175,13 @@ async def test_start_keepalive_background_is_idempotent_and_skips_idle():
     assert await start_keepalive_background(load_settings({})) is None
 
     settings = load_settings({"KEEP_ALIVE_URLS": "https://bot.onrender.com/health"})
-    first = await start_keepalive_background(settings)
-    assert first is not None
-    second = await start_keepalive_background(settings)
-    assert second is None
-    first.cancel()
-    try:
-        await first
-    except (asyncio.CancelledError, Exception):
-        pass
+    with patch("renewise.keepalive.ping_loop", AsyncMock()):
+        first = await start_keepalive_background(settings)
+        assert first is not None
+        second = await start_keepalive_background(settings)
+        assert second is None
+        first.cancel()
+        try:
+            await first
+        except (asyncio.CancelledError, Exception):
+            pass

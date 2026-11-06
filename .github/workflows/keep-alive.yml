@@ -1,0 +1,36 @@
+name: Keep Alive Ping
+
+on:
+  schedule:
+    # Run every 10 minutes (safely within Render's 15-minute inactivity window)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Optional custom URL to ping'
+        required: false
+        default: ''
+
+jobs:
+  ping-services:
+    name: Ping Render Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Bot Service
+        run: |
+          TARGET="${{ github.event.inputs.target_url || vars.BOT_HEALTH_URL || secrets.BOT_HEALTH_URL || 'https://renewise-bot.onrender.com/health' }}"
+          echo "Pinging Bot URL: $TARGET"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 "$TARGET" || echo "failed")
+          echo "Response HTTP Status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "Bot service is awake and healthy."
+          else
+            echo "Warning: Response status was $STATUS (cold start may take 30-60s)."
+          fi
+
+      - name: Ping Mini App Service (Optional)
+        run: |
+          TARGET="${{ vars.MINIAPP_HEALTH_URL || secrets.MINIAPP_HEALTH_URL || 'https://renewise-miniapp.onrender.com/healthz' }}"
+          echo "Pinging Mini App URL: $TARGET"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 "$TARGET" || echo "failed")
+          echo "Response HTTP Status: $STATUS"

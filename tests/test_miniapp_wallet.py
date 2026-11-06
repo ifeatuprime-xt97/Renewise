@@ -13,6 +13,11 @@ DB is an in-memory SQLite instance shared per test via a lifespan override.
 from __future__ import annotations
 
 import os
+import sys
+
+# Ensure repo root is on sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import pytest
 import pytest_asyncio
 import aiosqlite
