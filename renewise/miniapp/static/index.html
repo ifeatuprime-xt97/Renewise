@@ -88,9 +88,9 @@
       --dur-page:      380ms;
 
       /* ── Geometry ── */
-      --r:    20px;
-      --r-sm: 14px;
-      --r-xs: 10px;
+      --r:    28px;
+      --r-sm: 20px;
+      --r-xs: 14px;
 
       /* ── Fonts ── */
       --font-display: 'Concert One', cursive;
@@ -133,7 +133,7 @@
       align-items: center;
       justify-content: flex-start;
       gap: 10px;
-      padding: 12px 18px;
+      padding: calc(env(safe-area-inset-top) + 10px) 18px 10px;
       background: var(--bg);
       border-bottom: 1px solid var(--line);
     }
