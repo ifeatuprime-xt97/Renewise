@@ -193,16 +193,17 @@
       cursor: pointer;
       color: var(--sub);
       font-family: inherit;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 600;
-      letter-spacing: .15px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
       transition: color var(--dur-micro) var(--ease-out);
       -webkit-tap-highlight-color: transparent;
       border-radius: 32px;
     }
     .nav-item svg {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       stroke: currentColor;
       transition: transform var(--dur-component) var(--ease-bounce), stroke var(--dur-micro) var(--ease-out);
     }
@@ -244,12 +245,10 @@
     }
     .page-title {
       font-size: var(--step-2);
-      font-weight: 800;
-      letter-spacing: -0.03em;
+      font-weight: 700;
+      letter-spacing: -0.02em;
       color: var(--text);
-      font-family: var(--font-display);
-      font-weight: 400;
-      letter-spacing: .3px;
+      font-family: var(--font-body);
       text-wrap: balance;
     }
 
@@ -258,7 +257,6 @@
     ══════════════════════════════════════════════════ */
     .glass {
       background: var(--surface);
-      border: 1px solid var(--line);
       border-radius: var(--r);
       box-shadow: 0 1px 3px oklch(5% 0.02 248 / 0.4), 0 8px 28px oklch(5% 0.02 248 / 0.3);
     }
@@ -271,11 +269,10 @@
       margin-bottom: 12px;
       background: var(--surface);
       border-radius: var(--r);
-      border: 1px solid var(--line);
       position: relative;
       overflow: hidden;
       box-shadow: 0 2px 8px oklch(5% 0.02 248 / 0.35), 0 8px 28px oklch(5% 0.02 248 / 0.25);
-      transition: transform var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out), border-color var(--dur-component) var(--ease-out);
+      transition: transform var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
     }
     .net-card:active {
       transform: scale(.985);
@@ -911,7 +908,7 @@
     .mgmt-btn:active { background: var(--surface2); transform: scale(.97); }
     .mgmt-ico { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .mgmt-ico svg { stroke: var(--text); }
-    .subpanel { background: var(--surface3); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin-top: 2px; }
+    .subpanel { background: var(--surface3); border-radius: var(--r); padding: 16px; margin-top: 2px; }
     .subpanel h3 { font-size: var(--step-1); font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
     .member-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); }
     .member-row:last-child { border-bottom: none; }
@@ -955,7 +952,7 @@
     }
     .admin-hero-btn:active { background: oklch(100% 0 0 / 0.18); transform: scale(0.985); }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .admin-card-title { font-size: var(--step-2); font-weight: 400; font-family: var(--font-display); margin-bottom: 18px; letter-spacing: .3px; color: var(--text); }
+    .admin-card-title { font-size: var(--step-0); font-weight: 500; font-family: var(--font-body); margin-bottom: 4px; letter-spacing: 0; color: oklch(70% 0.06 230); }
     .admin-stats { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
     .admin-stat { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 8px 16px; }
     .admin-stat-left { display: flex; align-items: center; }
@@ -964,9 +961,9 @@
     .admin-stat-info { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
     .admin-stat-label { font-size: 10px; color: oklch(80% 0.04 230); text-transform: uppercase; letter-spacing: .06em; margin-top: 3px; line-height: 1.3; }
     .admin-stat-value { font-size: var(--step-2); font-weight: 800; white-space: nowrap; color: var(--text); display: flex; align-items: center; font-variant-numeric: tabular-nums; }
-    .admin-stat-value.hero { font-family: var(--font-mono); font-size: clamp(32px, 11vw, 56px); font-weight: 700; letter-spacing: -0.04em; line-height: 1; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
-    .hero-symbol { font-size: 0.85em; opacity: 0.75; }
-    .hero-cents  { font-size: 0.65em; opacity: 0.75; }
+    .admin-stat-value.hero { font-family: var(--font-body); font-size: clamp(38px, 13vw, 60px); font-weight: 500; letter-spacing: -0.03em; line-height: 1; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+    .hero-symbol { font-size: 0.55em; opacity: 0.6; align-self: flex-start; margin-top: 0.25em; font-weight: 400; }
+    .hero-cents  { font-size: 0.50em; opacity: 0.6; align-self: flex-end; margin-bottom: 0.1em; font-weight: 400; }
     .hero-pill { display: inline-flex; align-items: center; background: var(--success-dim); color: var(--success); padding: 3px 10px; border-radius: 20px; font-size: var(--step--1); font-weight: 700; margin-top: 8px; letter-spacing: .02em; border: 1px solid oklch(65% 0.10 148 / 0.28); }
     .rev-toggle { display: inline-flex; align-items: center; gap: 3px; background: oklch(100% 0 0 / 0.08); border: 1px solid oklch(100% 0 0 / 0.12); border-radius: 20px; padding: 3px; margin-top: 10px; }
     .rev-toggle-btn { background: transparent; border: none; cursor: pointer; color: oklch(70% 0.04 230); font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: .05em; padding: 4px 12px; border-radius: 16px; transition: background var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); line-height: 1; }
@@ -974,7 +971,14 @@
     .hero-wallet { display: inline-flex; align-items: center; background: oklch(0% 0 0 / 0.12); padding: 5px 12px; border-radius: 20px; font-size: var(--step--1); color: var(--text); gap: 6px; margin-top: 14px; letter-spacing: .04em; }
     .admin-stat-value.sub { font-size: var(--step-1); font-weight: 600; color: oklch(90% 0.04 230); }
     .admin-stat-label.sub { font-size: 10px; color: oklch(65% 0.04 230); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
-    .admin-sub-stats { display: flex; flex-direction: row; gap: 16px; margin-top: 4px; align-items: center; }
+    .admin-sub-stats { display: flex; flex-direction: row; gap: 0; margin-top: 4px; align-items: stretch; border-top: 1px solid oklch(100% 0 0 / 0.10); }
+    .admin-stat-cell {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; padding: 12px 6px 10px;
+      border-right: 1px solid oklch(100% 0 0 / 0.10);
+    }
+    .admin-stat-cell:last-child { border-right: none; }
+    .admin-stat-cell svg { stroke: oklch(70% 0.06 230); margin-bottom: 2px; }
     .admin-sub-stats > div { padding-right: 16px; border-right: 1px solid oklch(100% 0 0 / 0.18); }
     .admin-sub-stats > div:last-child { border-right: none; padding-right: 0; }
     .admin-card-footer { font-size: var(--step--1); color: oklch(65% 0.04 230); text-align: center; border-top: 1px solid oklch(100% 0 0 / 0.14); padding-top: 12px; }
@@ -995,12 +999,12 @@
     }
     .dev-tab.active { background: var(--accent-dim); border-color: var(--accent-ring); color: var(--accent); }
     .plat-card {
-      background: var(--surface); border: 1px solid var(--line);
+      background: var(--surface);
       border-radius: 18px; margin-bottom: 12px; overflow: hidden;
       box-shadow: 0 2px 8px oklch(5% 0.02 248 / 0.3), 0 6px 20px oklch(5% 0.02 248 / 0.2);
-      transition: border-color var(--dur-component) var(--ease-out);
+      transition: box-shadow var(--dur-component) var(--ease-out);
     }
-    .plat-card:hover { border-color: oklch(32% 0.025 248); }
+    .plat-card:hover { box-shadow: 0 4px 16px oklch(5% 0.02 248 / 0.45), 0 10px 32px oklch(5% 0.02 248 / 0.3); }
     .plat-act-btn {
       flex: 1; padding: 11px 8px; background: none; border: none;
       border-right: 1px solid var(--line); color: var(--sub);
@@ -1232,23 +1236,27 @@
       <div class="admin-card-title" id="admin-welcome-title">Welcome back!</div>
       <div class="admin-stats">
         <!-- Hero: Total Revenue -->
-        <div style="padding: 10px 0 20px; text-align: center;">
+        <div style="padding: 6px 0 18px; text-align: center;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:oklch(65% 0.06 230);margin-bottom:8px;">Total Revenue</div>
           <div class="admin-stat-value hero" id="admin-total-revenue">
             <span class="hero-symbol">$</span>0<span class="hero-cents">.00</span>
           </div>
         </div>
 
-        <!-- Sub-stats row: active members + networks -->
+        <!-- Sub-stats row: active members + networks — icon-stack cells -->
         <div class="admin-sub-stats">
-          <div>
+          <div class="admin-stat-cell">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <div class="admin-stat-value sub" id="admin-total-members">0</div>
-            <div class="admin-stat-label sub">Active Members</div>
+            <div class="admin-stat-label sub">Members</div>
           </div>
-          <div>
+          <div class="admin-stat-cell">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
             <div class="admin-stat-value sub" id="admin-total-groups">0</div>
             <div class="admin-stat-label sub">Groups</div>
           </div>
-          <div>
+          <div class="admin-stat-cell">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18" aria-hidden="true"><path d="M22 8.01V16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8l10-5 10 5Z"/><path d="M2 8l10 6 10-6"/></svg>
             <div class="admin-stat-value sub" id="admin-total-channels">0</div>
             <div class="admin-stat-label sub">Channels</div>
           </div>
